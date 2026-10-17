@@ -39,7 +39,7 @@ Status: open / in progress / in review / done. Size S = short (1 unit), L = long
 | T15 | Armor outline default off (owner) | targets.armor = false, tests | - | Sonnet | S | done (6645192); docs in T9 final |
 | G1 | World glint presets under Iris | Iris FullyBufferedMultiBufferSource hook + substituteBuffered, slot lifetime safe, shader-pack rule unchanged, tests, DESIGN; build green; in-game re-capture shows preset colours on armor/frames | investigation | Opus | S | in review: code committed 2109d84 (366 green); in-game re-capture queued (session 11: waits until the owner's own client exits) |
 | R1 | Capture rig fixes | room A panels re-summoned for outline_vanilla/gap_*, universal_wall FOV 30 close-up, glint shot scale/strength | T22 | Sonnet | S | done (panels, universal_wall close-up, glint scale/strength) |
-| T12r | Art docs + GIF settings | art/README rewrap, SHOTLIST reflects R1 (universal_wall close-up, panels, glint scale), cards.json GIF 1440x810/down 2/16 per caption/4 fps, gif.py defaults | R1 | Sonnet | S | in progress (session 11) |
+| T12r | Art docs + GIF settings | art/README rewrap, SHOTLIST reflects R1 (universal_wall close-up, panels, glint scale), cards.json GIF 1440x810/down 2/16 per caption/4 fps, gif.py defaults | R1 | Sonnet | S | done (session 11, Sonnet + 1 correction: universal wall panel sentence); universal_wall card crop widened in T12 |
 | T9b-5 | Docs: stray dots verified, big-atlas limitation | DESIGN stray-dots marker -> verified; big-atlas glint tip in README/description/DESIGN; scale tooltips en/de; preview --check 0; build green | T24 | Sonnet | S | done (session 11, Sonnet + 1 correction: German "Modpacks") |
 
 Parallel: T2 (Opus) with T3 + T4 (Sonnet) after T1. T5 (Opus) with T6/T7 (Sonnet), files disjoint.

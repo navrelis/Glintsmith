@@ -9,10 +9,11 @@ Input: art/captures/showcase/0001.png, 0002.png, ... (any names that sort in pla
 camera (see SHOTLIST.md, "Showcase GIF").  Each frame is cropped (and scaled by a whole factor if the manifest
 says so), every `step`-th frame is kept, a caption bar in the vanilla font is added under the picture, and one
 global 255 colour palette is used with delta frames (pixels that do not change between frames cost nothing).
-The frames are meant to be 20 fps (`source_fps`); a kept frame lasts step / fps seconds, so the clip keeps its
-length.  The GIF loops forever and must stay below `max_mb` (8 MB by default): if it does not, the step is raised
-(up to `max_step`) and, failing that, the build stops and says which knobs to turn (crop, down).  If the frames are not there nothing is faked: a one frame grey
-"capture missing" GIF is written instead, a warning is printed and --strict fails.
+The frames are taken 0.25 s apart (4 fps, `source_fps`), 16 per look (`frames_per_caption`); a kept frame lasts
+step / fps seconds, so the clip keeps its length.  The GIF loops forever and must stay below `max_mb` (8 MB by
+default): if it does not, the step is raised (up to `max_step`) and, failing that, the build stops and says which
+knobs to turn (crop, down).  If the frames are not there nothing is faked: a one frame grey "capture missing" GIF
+is written instead, a warning is printed and --strict fails.
 
 Standard library only.  Byte-identical output from run to run.
 """
@@ -45,7 +46,7 @@ def caption_for(spec, n):
     caps = spec.get("captions", [])
     if not caps:
         return ""
-    return caps[min((n - 1) // spec.get("frames_per_caption", 40), len(caps) - 1)]
+    return caps[min((n - 1) // spec.get("frames_per_caption", 16), len(caps) - 1)]
 
 
 def bar(width, height, text, scale, colour):
@@ -71,7 +72,7 @@ def build_gif(spec, captures, report, log=None):
 
     step = max(1, spec.get("step", 1))
     limit = spec.get("max_mb", 8) * MB
-    fps = spec.get("source_fps", 20)
+    fps = spec.get("source_fps", 4)
     while True:
         data = encode(spec, captures, files, step, fps, (w, h, bar_h), log)
         if len(data) < limit:

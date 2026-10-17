@@ -1090,14 +1090,14 @@
    "crop": [
     "c",
     "c",
-    720,
-    405
+    1440,
+    810
    ],
-   "down": 1,
+   "down": 2,
    "scale": 1,
-   "frames_per_caption": 40,
-   "step": 2,
-   "source_fps": 20,
+   "frames_per_caption": 16,
+   "step": 1,
+   "source_fps": 4,
    "max_step": 4,
    "max_mb": 8,
    "caption_bar": {

@@ -7,7 +7,15 @@ running. The only things set by code are layout: the card frame and panels, and 
 
 **Light theme.** The page is cream and white: cards are cream-white panels with dark ink text, a violet accent and a thin darker
 edge round every capture, and the in-game captures are shot on a **white backdrop** (see `gallery/SHOTLIST.md`). The edge (2 px, dark
-brass then soft tan, `lib.BORDER_DARK` / `lib.RIM`) keeps a white picture from melting into the cream card. Every colour comes from the
+brass then soft tan, `lib.BORDER_DARK` / `lib.RIM`) keeps a white picture from melting into the cream card.
+
+**The in-game backdrop.** The rooms are built of white blocks (a `snow_block` studio for the hero shots, smooth quartz
+with a birch floor for the item and stand rooms), every air cell holds a level 15 light block, and the game runs at
+gamma 1.0 with Night Vision, so nothing is dim and nothing is tinted. A block wall still tops out at about 200 of 255
+under Minecraft's face shade, so every close-up (FOV 30) stands in front of a full-bright white / cream panel: a
+`text_display` with a white background and light 15 / 15, which is drawn without any shade. The outline and the glint
+are rendered by the real mod on top of it. The wide FOV 70 shots (Sodium and Iris, targets, screens) have no panel; the universal wall is an
+FOV 30 close-up and has one. Details, coordinates and expected subject sizes are in `gallery/SHOTLIST.md`. Every colour comes from the
 palette in `lib.py`; nothing in the builders is hard-coded (see "Theme" below).
 
 * **The gallery** (`docs/curseforge/img/banner.png`, `card_*.png`, `showcase.gif`) is composed from in-game captures: cropped,
@@ -77,7 +85,8 @@ captures exist; `build.py --list` shows every capture, including the hero shots 
 
 `py -B art/gallery/synth.py DIR` writes a 1920 x 1080 stand-in for every capture the manifest names (a gradient with a coordinate
 grid, a diagonal bar, the file name and the words "SYNTHETIC TEST CAPTURE"; the manifest names the hero shots and the logo capture
-too) and 40 numbered GIF frames. Build from it with `build.py --captures DIR --out DIR2` and `logo.py --captures DIR --out DIR3` and
+too) and 40 numbered GIF frames (a short stand-in clip, not the 112 real frames). Build from it with
+`build.py --captures DIR --out DIR2` and `logo.py --captures DIR --out DIR3` and
 look at `DIR2` / `DIR3` to check crops, scales, labels and spacing. The grid labels show which source
 pixels a crop picks. These files are only ever written to a folder you name (use a temp folder); they carry the text in a PNG
 chunk and `verify.py` fails if one ends up in `art/captures/`.
@@ -86,7 +95,7 @@ chunk and `verify.py` fails if one ends up in `art/captures/`.
 
 The palette lives in `lib.py` (section 2); `cards.json` only names colours (`text`, `dim`, `accent`, `gold`, `good`, `bad`) or stays
 with the defaults. Contrast is the WCAG ratio (`lib.contrast`); every text pair is at least 4.5:1, none relies on the 3:1 allowance
-for large text.
+for large text. `py -B art/verify.py` checks this on every build (see "Verify").
 
 | Role | Name | Hex |
 | --- | --- | --- |
@@ -145,8 +154,11 @@ Picture size on the card is `crop size / down * scale`, or `size` with `resample
 `down: 2` is lossless: one GUI pixel becomes one card pixel and the game's text stays crisp. The card text uses only ASCII, set in the game's own
 font read from the Minecraft 1.21.1 client jar at build time.
 
-The `gifs` entry takes `frames_dir`, `crop`, `down`, `scale`, `step` (keep every n-th frame), `source_fps` (20), `max_step`, `max_mb`, the
+The `gifs` entry takes `frames_dir`, `crop`, `down`, `scale`, `step` (keep every n-th frame), `source_fps`, `max_step`, `max_mb`, the
 `caption_bar` (`height`, `scale`, `color`) and the `captions` (one per look, each lasting `frames_per_caption` source frames).
+The showcase clip is 7 looks x 16 frames = 112 frames, 0.25 s apart: `frames_per_caption` 16, `source_fps` 4, `step` 1 (every
+frame, 25 cs each), `crop` `["c","c",1440,810]` with `down` 2, so the 1920 x 1080 capture becomes a 720 x 405 picture under a
+36 px caption bar. The in-game script shoots a burst of 50 screenshots per look and keeps the 16 frames that lie 0.25 s apart.
 
 ## Verify
 
@@ -154,6 +166,13 @@ The `gifs` entry takes `frames_dir`, `crop`, `down`, `scale`, `step` (keep every
 
 * the PNG reader decodes every filter type, RGB, RGBA and a 1-bit palette image exactly, and rejects garbage;
 * the manifest only uses known elements, every picture box lies inside its card, and every capture is described in `SHOTLIST.md`;
+* every text colour the build puts on a cream surface has a WCAG contrast of at least **4.5:1** (`MIN_CONTRAST`; the 3:1
+  allowance for large text is not used). It checks the pairs of the table above (`TEXT`, `TEXT_DIM`, `GOOD`, `BAD`,
+  `GOLD_TEXT`, `ACCENT`, `TITLE` on `PANEL` and on the darkest dither speck of a real card, `INK` on `BORDER`, the
+  neutral colours also on `PANEL_MID` and `PANEL_DARK`), `INK` on the grey-beige "capture missing" slab, the text colour
+  of every label style on the label box, every named text colour of `lib.COLOURS` on the card, the colour of every
+  `text` and `bullets` element of `cards.json` on the card, the dither speck and the panel it sits in, and the caption
+  bar text of the GIF on `PAGE`. Text that is part of an in-game capture is the game's own and is not checked;
 * the area filter averages exactly (a 4 x 4 image becomes the 2 x 2 block means, 3 -> 2 weights by covered fraction, a flat colour
   stays flat, transparent pixels do not darken, whole factors equal the box downscale), and the logo crop picks the centred square
   of the full height by default;
@@ -188,7 +207,7 @@ The `gifs` entry takes `frames_dir`, `crop`, `down`, `scale`, `step` (keep every
 | `docs/curseforge/img/card_rules.png` | 1000 x 590 | the rule list and the rule editor |
 | `docs/curseforge/img/card_config.png` | 1000 x 590 | the settings screen, Outline and Glint tabs |
 | `docs/curseforge/img/card_shaders.png` | 1000 x 590 | Sodium, and an Iris shader pack in the world, the hand and the inventory |
-| `docs/curseforge/img/showcase.gif` | 720 x 441 | seven looks cycling on one armor stand, captioned |
+| `docs/curseforge/img/showcase.gif` | 720 x 441 | seven looks cycling on one armor stand, captioned (16 frames per look, 4 fps source) |
 
 ## Licence and sources
 
