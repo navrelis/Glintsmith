@@ -31,12 +31,17 @@ import org.jetbrains.annotations.Nullable;
  * (packed into the colour by {@code mask.fsh}). It repeats the source's layering, so that depth equals the item's
  * depth in the scene and the passes can tell visible from hidden item pixels ({@link OutlineDepth}). The flat type
  * (GUI) has no depth test and no depth write.
+ * <p>
+ * The occluder type (first-person hand under a shader pack) writes only depth, tested {@code LEQUAL} against the mask
+ * depth with the source's layering and cutout: the geometry hides outlines and item pixels behind it, as it would in
+ * the main depth. Only source types that write depth themselves (depth test on, depth write on) get one.
  * Render thread only.
  */
 final class MaskTypes {
 	/** 1x1 white texture used for source formats without UV0; registered by {@link OutlineSystem}. */
 	static final ResourceLocation WHITE = ResourceLocation.fromNamespaceAndPath("glintsmith", "outline/white");
 	static final String MASK_NAME = "glintsmith_outline_mask";
+	static final String OCCLUDER_NAME = "glintsmith_outline_occluder";
 	/** The identity cache is dropped above this size (protects against mods creating types every frame). */
 	static final int MAX_CACHED_SOURCES = 4096;
 
@@ -54,7 +59,7 @@ final class MaskTypes {
 	 * What the mask needs to know about one source type.
 	 */
 	static final class Entry {
-		static final Entry NOT_MASKABLE = new Entry(null, null, false, RenderStateShard.NO_LAYERING);
+		static final Entry NOT_MASKABLE = new Entry(null, null, false, RenderStateShard.NO_LAYERING, false);
 
 		final ResourceLocation texture;
 		final VertexFormat.Mode mode;
@@ -62,18 +67,38 @@ final class MaskTypes {
 		final boolean defaultUv;
 		/** The source's layering, repeated by the depth-tested mask type (for example the armor's view offset). */
 		final RenderStateShard.LayeringStateShard layering;
+		/** The source writes depth, so its geometry hides what lies behind it. */
+		final boolean occludes;
 		private RenderType depthTested;
 		private RenderType flat;
+		private RenderType occluder;
 
-		Entry(ResourceLocation texture, VertexFormat.Mode mode, boolean defaultUv, RenderStateShard.LayeringStateShard layering) {
+		Entry(ResourceLocation texture, VertexFormat.Mode mode, boolean defaultUv, RenderStateShard.LayeringStateShard layering,
+			boolean occludes) {
 			this.texture = texture;
 			this.mode = mode;
 			this.defaultUv = defaultUv;
 			this.layering = layering == null ? RenderStateShard.NO_LAYERING : layering;
+			this.occludes = occludes;
 		}
 
 		boolean maskable() {
 			return texture != null;
+		}
+
+		/**
+		 * @return the depth-only occluder type for this source, or null if the source is not maskable or writes no
+		 *         depth
+		 */
+		@Nullable
+		RenderType occluderType() {
+			if (texture == null || !occludes) {
+				return null;
+			}
+			if (occluder == null) {
+				occluder = createOccluder(texture, mode, layering);
+			}
+			return occluder;
 		}
 
 		/**
@@ -121,6 +146,14 @@ final class MaskTypes {
 	}
 
 	/**
+	 * @return the occluder type for a source type, or null if its geometry cannot hide outlines
+	 */
+	@Nullable
+	static RenderType occluderFor(RenderType source) {
+		return lookup(source).occluderType();
+	}
+
+	/**
 	 * @return whether the source format has no UV0, so the mask writes a default UV
 	 */
 	static boolean needsDefaultUv(RenderType source) {
@@ -164,7 +197,16 @@ final class MaskTypes {
 		if (chosen == null) {
 			return Entry.NOT_MASKABLE;
 		}
-		return new Entry(chosen, source.mode(), !hasUv, shards.glintsmith$outlineLayeringState());
+		return new Entry(chosen, source.mode(), !hasUv, shards.glintsmith$outlineLayeringState(),
+			writesDepth(shards.glintsmith$outlineWriteMaskState(), shards.glintsmith$outlineDepthTestState()));
+	}
+
+	/**
+	 * Whether geometry of a type ends up in the depth buffer: depth writes on and a real depth test. Vanilla's
+	 * {@code NO_DEPTH_TEST} leaves the depth test as it is (usually off, and then OpenGL writes no depth either).
+	 */
+	static boolean writesDepth(RenderStateShard.WriteMaskStateShard writeMask, RenderStateShard.DepthTestStateShard depthTest) {
+		return writeMask != RenderStateShard.COLOR_WRITE && depthTest != RenderStateShard.NO_DEPTH_TEST;
 	}
 
 	/**
@@ -233,6 +275,24 @@ final class MaskTypes {
 				.setDepthTestState(depth ? RenderStateShard.LEQUAL_DEPTH_TEST : RenderStateShard.NO_DEPTH_TEST)
 				.setLayeringState(depth ? layering : RenderStateShard.NO_LAYERING)
 				.setWriteMaskState(depth ? RenderStateShard.COLOR_DEPTH_WRITE : RenderStateShard.COLOR_WRITE)
+				.setOutputState(MASK_TARGET)
+				.createCompositeState(false));
+	}
+
+	private static RenderType createOccluder(ResourceLocation texture, VertexFormat.Mode mode, RenderStateShard.LayeringStateShard layering) {
+		RenderStateShard.EmptyTextureStateShard textureShard = new RenderStateShard.EmptyTextureStateShard(
+			() -> RenderSystem.setShaderTexture(0, texture), () -> {
+			});
+		// The mask shader for its cutout; the colour it writes is masked off, only the depth is kept.
+		return RenderType.create(OCCLUDER_NAME, DefaultVertexFormat.POSITION_TEX_COLOR, mode, 1536, false, false,
+			RenderType.CompositeState.builder()
+				.setShaderState(MASK_SHADER)
+				.setTextureState(textureShard)
+				.setTransparencyState(RenderStateShard.NO_TRANSPARENCY)
+				.setCullState(RenderStateShard.NO_CULL)
+				.setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
+				.setLayeringState(layering)
+				.setWriteMaskState(RenderStateShard.DEPTH_WRITE)
 				.setOutputState(MASK_TARGET)
 				.createCompositeState(false));
 	}

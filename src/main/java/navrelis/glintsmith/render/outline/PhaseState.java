@@ -4,22 +4,33 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.RenderType;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 
 /**
  * Everything one phase collects until its composite: the mask geometry, the styles in use and the screen bounds.
  * Phases never share a buffer source, so a nested phase cannot flush another phase's geometry.
+ * <p>
+ * The first-person phase under a shader pack also collects occluder geometry (arms, sleeves, everything else drawn in
+ * the hand pass) in a buffer source of its own, which is drawn after the item masks, and remembers the depth terms of
+ * the hand projection for the deferred composite.
  */
 final class PhaseState {
 	final OutlinePhase phase;
 	/** Mask types keep the nearest item surface and its depth (world and hand) or have no depth at all (GUI). */
 	final boolean depthTested;
 	final MaskBufferSource maskSource = new MaskBufferSource();
+	/** Depth-only geometry that hides outlines (first person under a shader pack); drawn after {@link #maskSource}. */
+	final MaskBufferSource occluderSource = new MaskBufferSource();
 	final StyleTable styles = new StyleTable();
 	final ScreenBounds bounds = new ScreenBounds();
 	boolean hasGeometry;
 	boolean open;
 	/** Thickness factor for this phase, set when the phase opens. */
 	float thicknessScale = 1.0f;
+	/** z terms of the projection the mask was drawn with ({@link #captureProjection}); valid if {@link #hasProjection}. */
+	float projZ;
+	float projW;
+	boolean hasProjection;
 
 	PhaseState(OutlinePhase phase, boolean depthTested) {
 		this.phase = phase;
@@ -32,6 +43,19 @@ final class PhaseState {
 	void prepareCapture() {
 		if (!bounds.hasSnapshot()) {
 			bounds.snapshot(RenderSystem.getProjectionMatrix(), RenderSystem.getModelViewMatrix());
+		}
+	}
+
+	/**
+	 * Remembers the depth terms of the projection the mask is drawn with, so a composite that runs later (under
+	 * another projection) can still turn the mask depth into distances. A projection {@link OutlineDepth#linear}
+	 * cannot invert leaves the terms unset.
+	 */
+	void captureProjection(Matrix4f projection) {
+		if (OutlineDepth.invertible(projection.m22(), projection.m23(), projection.m32(), projection.m33())) {
+			projZ = projection.m22();
+			projW = projection.m32();
+			hasProjection = true;
 		}
 	}
 
@@ -49,14 +73,33 @@ final class PhaseState {
 	}
 
 	/**
-	 * Forgets styles, bounds and geometry flags (after a composite or a discard). If the mask source has reached its
-	 * type cap, its buffers are freed so that new textures can be outlined again.
+	 * @return the buffer for an occluder type, or null if the type cap is reached. Occluders alone are no reason to
+	 *         composite, so they leave {@link #hasGeometry} alone.
+	 */
+	@Nullable
+	VertexConsumer occluderBuffer(RenderType occluderType) {
+		return occluderSource.bufferFor(occluderType);
+	}
+
+	/**
+	 * Throws away the geometry that was not drawn (both sources).
+	 */
+	void discardGeometry() {
+		maskSource.discard();
+		occluderSource.discard();
+	}
+
+	/**
+	 * Forgets styles, bounds, projection and geometry flags (after a composite or a discard). If a mask source has
+	 * reached its type cap, its buffers are freed so that new textures can be outlined again.
 	 */
 	void reset() {
 		styles.reset();
 		bounds.reset();
 		hasGeometry = false;
+		hasProjection = false;
 		maskSource.trimIfFull();
+		occluderSource.trimIfFull();
 	}
 
 	/**
@@ -66,6 +109,17 @@ final class PhaseState {
 		if (hasGeometry || maskSource.hasStarted()) {
 			maskSource.discard();
 		}
+		if (occluderSource.hasStarted()) {
+			occluderSource.discard();
+		}
 		reset();
+	}
+
+	/**
+	 * Frees the native memory of both sources (client shutdown).
+	 */
+	void close() {
+		maskSource.close();
+		occluderSource.close();
 	}
 }

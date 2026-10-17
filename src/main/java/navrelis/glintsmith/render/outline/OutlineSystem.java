@@ -65,6 +65,7 @@ public final class OutlineSystem {
 	@Nullable
 	private static PhaseState current;
 	private static final TeePool TEES = new TeePool();
+	private static final OccluderBufferSource OCCLUDERS = new OccluderBufferSource();
 
 	private static final LivingEntity[] HOLDERS = new LivingEntity[MAX_HOLDERS];
 	private static int holderDepth;
@@ -252,15 +253,19 @@ public final class OutlineSystem {
 
 	/**
 	 * Opens the HAND phase around {@code renderHandsWithItems}.
+	 *
+	 * @param source the buffer source the hands are drawn with
+	 * @return the buffer source to draw the hands with: {@code source}, or under a shader pack an
+	 *         {@link OccluderBufferSource} over it that also records the hand geometry as occluders
 	 */
-	public static void beginHands() {
+	public static MultiBufferSource.BufferSource beginHands(MultiBufferSource.BufferSource source) {
 		PhaseState phase = hand;
 		if (phase == null || !ready()) {
-			return;
+			return source;
 		}
 		try {
 			if (phase.open || !settings.handPhaseAllowed(shaderPack) || (!shaderPack && OutlineCompositor.depthCopyBroken())) {
-				return;
+				return source;
 			}
 			if (!handPending) {
 				phase.discard();
@@ -268,9 +273,15 @@ public final class OutlineSystem {
 			handRenders = 0;
 			handCaptures = 0;
 			open(phase);
+			if (shaderPack && source != null) {
+				// The pack draws the hand into its own targets, so the main depth cannot hide the outline where the
+				// arm covers the item: record the hand geometry as occluders for the mask depth instead.
+				return OCCLUDERS.bind(source, phase);
+			}
 		} catch (Throwable t) {
 			OutlineFailsafe.trip("outline hand begin", t);
 		}
+		return source;
 	}
 
 	/**
@@ -280,9 +291,11 @@ public final class OutlineSystem {
 	public static void endHands() {
 		PhaseState phase = hand;
 		if (phase == null || !phase.open) {
+			releaseOccluders();
 			return;
 		}
 		try {
+			OCCLUDERS.release(); // completes the last occluder vertex before the mask is drawn
 			close(phase);
 			if (OutlineFailsafe.tripped()) {
 				return;
@@ -299,6 +312,14 @@ public final class OutlineSystem {
 			}
 		} catch (Throwable t) {
 			OutlineFailsafe.trip("outline hand composite", t);
+		}
+	}
+
+	private static void releaseOccluders() {
+		try {
+			OCCLUDERS.release();
+		} catch (Throwable t) {
+			OutlineFailsafe.trip("outline occluder release", t);
 		}
 	}
 
@@ -469,6 +490,7 @@ public final class OutlineSystem {
 		}
 		try {
 			TEES.releaseAll();
+			OCCLUDERS.release();
 			while (openCount > 0) {
 				close(OPEN[openCount - 1]);
 			}
@@ -643,6 +665,7 @@ public final class OutlineSystem {
 		handPending = false;
 		mainSource = null;
 		TEES.releaseAll();
+		OCCLUDERS.release();
 	}
 
 	private static void logShaderPackNotice() {
@@ -698,7 +721,7 @@ public final class OutlineSystem {
 
 	private static void closePhase(@Nullable PhaseState phase) {
 		if (phase != null) {
-			phase.maskSource.close();
+			phase.close();
 		}
 	}
 

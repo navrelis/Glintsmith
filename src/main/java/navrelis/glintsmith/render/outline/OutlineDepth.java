@@ -6,7 +6,9 @@ package navrelis.glintsmith.render.outline;
  * {@link OutlineCompositor} sets. Kept in one place so the rules can be tested on the JVM.
  * <p>
  * The mask holds every item pixel, visible or not, with the depth of the nearest item surface packed into G, B and A
- * (24 bits, window depth). The mask target's depth attachment holds a copy of the scene depth. From both:
+ * (24 bits, window depth). The mask target's depth attachment holds the scene depth: a copy of the main depth, or for
+ * the first-person hand under a shader pack the nearest of the item and the captured hand geometry (arms, sleeves,
+ * other held things), which is what the main depth would hold there without the pack. From both:
  * <ul>
  * <li>an item pixel is a <b>seed</b> only if the item is visible there: the scene is not in front of the item by more
  * than {@link #SEED_EPSILON} (window depth);</li>
@@ -36,6 +38,8 @@ final class OutlineDepth {
 	static final float COVER_TOLERANCE = 0.15f;
 	/** Relative part of every tolerance (fraction of the seed distance). */
 	static final float RELATIVE_TOLERANCE = 0.02f;
+	/** What {@link #linear} returns for a window depth beyond the far end of the projection: nothing is there. */
+	static final float BEYOND_FAR = 1.0e9f;
 
 	private OutlineDepth() {
 	}
@@ -74,10 +78,38 @@ final class OutlineDepth {
 	}
 
 	/**
-	 * {@code linearDepth} in the composite: distance in blocks from a window depth.
+	 * The z row term {@code m22} (JOML naming) of the vanilla perspective projection with these planes.
 	 */
-	static float linear(float windowZ, float near, float far) {
-		return (2.0f * near * far) / (far + near - (2.0f * windowZ - 1.0f) * (far - near));
+	static float projectionZ(float near, float far) {
+		return -(far + near) / (far - near);
+	}
+
+	/**
+	 * The z row term {@code m32} (JOML naming) of the vanilla perspective projection with these planes.
+	 */
+	static float projectionW(float near, float far) {
+		return -2.0f * far * near / (far - near);
+	}
+
+	/**
+	 * Whether a projection matrix (JOML element names) is a perspective projection that {@link #linear} can invert:
+	 * clip w is minus the view z, and both z terms are negative (camera looks down -z, near plane in front).
+	 */
+	static boolean invertible(float m22, float m23, float m32, float m33) {
+		return Math.abs(m23 + 1.0f) < 1.0e-4f && Math.abs(m33) < 1.0e-6f && m22 < 0.0f && m32 < 0.0f
+			&& Float.isFinite(m22) && Float.isFinite(m32);
+	}
+
+	/**
+	 * {@code linearDepth} in the composite: distance in blocks from a window depth, given the z terms of the
+	 * perspective projection the depth was drawn with ({@link #projectionZ}, {@link #projectionW} for the vanilla
+	 * planes). With the vanilla terms this is the familiar {@code 2nf / (f + n - ndc (f - n))}. Iris draws the
+	 * first-person hand with the projection scaled by 1/8 in z; its terms keep distances right, and window depths past
+	 * the scaled far end (the cleared depth 1.0) lie beyond infinity and count as {@link #BEYOND_FAR}.
+	 */
+	static float linear(float windowZ, float projZ, float projW) {
+		float v = (2.0f * windowZ - 1.0f) + projZ;
+		return v < 0.0f ? projW / v : BEYOND_FAR;
 	}
 
 	/**

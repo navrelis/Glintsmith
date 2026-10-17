@@ -2,6 +2,7 @@ package navrelis.glintsmith.render.outline;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.DynamicTexture;
@@ -11,7 +12,8 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Turns the mask of a phase into outlines on the main target: draw the mask into the mask target (every item pixel
- * with its own depth, then a copy of the scene depth where the phase needs one), run the horizontal distance pass
+ * with its own depth, then the scene depth where the phase needs one: a copy of the main depth, or under a shader pack
+ * the first-person occluders drawn into the mask depth), run the horizontal distance pass
  * into the EDT target, then the vertical pass that blends the outline onto the main target. All passes are clipped to the bounds of the mask grown by the
  * search radius. The GL state is saved before and restored after, also on errors, which are rethrown for the
  * caller's failsafe.
@@ -31,7 +33,10 @@ final class OutlineCompositor {
 		 * of the main depth for the passes, which compare both to tell visible from hidden item pixels.
 		 */
 		COPY,
-		/** Cleared to the far plane: no scene depth available (shader packs). */
+		/**
+		 * Cleared to the far plane and not replaced: the main depth is not the scene (shader packs). The hand's
+		 * occluder geometry, drawn after the item masks, makes the depth attachment the hand depth.
+		 */
 		CLEAR,
 		/** Not used at all (GUI). */
 		NONE
@@ -84,12 +89,14 @@ final class OutlineCompositor {
 			}
 			drawn = drawMask(phase, depth, width, height, true, true);
 			if (drawn) {
-				passes(phase, main, width, height, useDepth, fadeStart, fadeEnd);
+				float far = Minecraft.getInstance().gameRenderer.getDepthFar();
+				passes(phase, main, width, height, useDepth, fadeStart, fadeEnd, OutlineDepth.projectionZ(NEAR_PLANE, far),
+					OutlineDepth.projectionW(NEAR_PLANE, far));
 			}
 		} finally {
 			STATE.restore();
 			if (!drawn) {
-				phase.maskSource.discard();
+				phase.discardGeometry();
 			}
 			phase.reset();
 		}
@@ -98,6 +105,8 @@ final class OutlineCompositor {
 	/**
 	 * Draws the mask geometry collected so far without compositing; the bounds and styles stay for
 	 * {@link #resolve}. Used for the hand under a shader pack, where the composite must wait for the final image.
+	 * The item masks are drawn first, then the occluders into the depth only, and the depth terms of the hand
+	 * projection are kept for the composite.
 	 *
 	 * @param clear whether this is the first flush of the frame (clears colour and depth of the mask target)
 	 * @return false if nothing could be drawn (the phase was discarded)
@@ -119,11 +128,12 @@ final class OutlineCompositor {
 		try {
 			checkForcedFailure();
 			OutlineTargets.ensureSize(width, height);
+			phase.captureProjection(RenderSystem.getProjectionMatrix());
 			drawn = drawMask(phase, clear ? MaskDepth.CLEAR : MaskDepth.NONE, width, height, false, clear);
 		} finally {
 			STATE.restore();
 			if (!drawn) {
-				phase.maskSource.discard();
+				phase.discardGeometry();
 				phase.reset();
 			}
 		}
@@ -131,7 +141,8 @@ final class OutlineCompositor {
 	}
 
 	/**
-	 * Runs both passes over a mask drawn earlier by {@link #drawMaskOnly}, without depth test, then resets the phase.
+	 * Runs both passes over a mask drawn earlier by {@link #drawMaskOnly}, then resets the phase. The depth rules use
+	 * the mask depth (items and occluders), linearised with the projection the mask was drawn with.
 	 */
 	static void resolve(PhaseState phase) {
 		if (phase.bounds.isEmpty() || !OutlineShaders.available()) {
@@ -152,7 +163,10 @@ final class OutlineCompositor {
 			if (region(phase, width, height)) {
 				GlStateManager._enableScissorTest();
 				GlStateManager._scissorBox(REGION[0], REGION[1], REGION[2] - REGION[0] + 1, REGION[3] - REGION[1] + 1);
-				passes(phase, main, width, height, false, 0.0f, 0.0f);
+				float far = Minecraft.getInstance().gameRenderer.getDepthFar();
+				float projZ = phase.hasProjection ? phase.projZ : OutlineDepth.projectionZ(NEAR_PLANE, far);
+				float projW = phase.hasProjection ? phase.projW : OutlineDepth.projectionW(NEAR_PLANE, far);
+				passes(phase, main, width, height, true, 0.0f, 0.0f, projZ, projW);
 			}
 		} finally {
 			STATE.restore();
@@ -220,6 +234,11 @@ final class OutlineCompositor {
 			GlStateManager._disableDepthTest();
 		}
 		phase.maskSource.endBatch();
+		if (phase.occluderSource.hasStarted()) {
+			// Depth only, after the items: drawn first, an occluder would keep the item pixels behind it out of the
+			// mask colour, and outlines on it could no longer be told apart from outlines next to the item.
+			phase.occluderSource.endBatch();
+		}
 		if (depth == MaskDepth.COPY) {
 			// The item depth now lives in the mask colour; the depth attachment becomes the scene depth.
 			GlStateManager._depthMask(true);
@@ -259,9 +278,12 @@ final class OutlineCompositor {
 
 	/**
 	 * Pass H into the EDT target, then pass V blended onto the main target. Expects the scissor box to be set.
+	 *
+	 * @param projZ z term {@code m22} of the projection the depth was drawn with ({@link OutlineDepth#linear})
+	 * @param projW z term {@code m32} of that projection
 	 */
 	private static void passes(PhaseState phase, RenderTarget main, int width, int height, boolean useDepth,
-		float fadeStart, float fadeEnd) {
+		float fadeStart, float fadeEnd, float projZ, float projW) {
 		ShaderInstance edtShader = OutlineShaders.edt();
 		ShaderInstance compositeShader = OutlineShaders.composite();
 		RenderTarget mask = OutlineTargets.mask();
@@ -301,7 +323,7 @@ final class OutlineCompositor {
 		compositeShader.safeGetUniform("Radius").set(radius);
 		compositeShader.safeGetUniform("Region").set(x0, y0, x1, y1);
 		compositeShader.safeGetUniform("UseDepth").set(useDepth ? 1 : 0);
-		compositeShader.safeGetUniform("NearFar").set(NEAR_PLANE, Minecraft.getInstance().gameRenderer.getDepthFar());
+		compositeShader.safeGetUniform("DepthProj").set(projZ, projW);
 		compositeShader.safeGetUniform("DepthTolerance").set(frontTolerance(phase.phase));
 		compositeShader.safeGetUniform("CoverTolerance").set(OutlineDepth.COVER_TOLERANCE);
 		compositeShader.safeGetUniform("SeedEpsilon").set(OutlineDepth.SEED_EPSILON);

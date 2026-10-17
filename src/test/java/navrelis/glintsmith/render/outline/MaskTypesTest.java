@@ -109,6 +109,42 @@ class MaskTypesTest {
 		assertSame(RenderStateShard.NO_LAYERING, flatArmor.glintsmith$outlineLayeringState());
 	}
 
+	@Test
+	void armAndSleeveTypesGetADepthOnlyOccluder() {
+		// PlayerRenderer.renderHand: arm entitySolid(skin), sleeve entityTranslucent(skin); both write depth.
+		RenderType arm = RenderType.entitySolid(TEXTURE);
+		RenderType sleeve = RenderType.entityTranslucent(TEXTURE);
+		RenderType occluder = MaskTypes.occluderFor(arm);
+		assertNotNull(occluder);
+		assertNotNull(MaskTypes.occluderFor(sleeve));
+		assertSame(occluder, MaskTypes.occluderFor(arm), "built once per source");
+		assertNotSame(occluder, MaskTypes.occluderFor(sleeve));
+		assertNotSame(occluder, MaskTypes.forSource(arm, true), "never shared with the item mask type");
+		assertTrue(occluder.toString().contains(MaskTypes.OCCLUDER_NAME));
+		assertEquals(DefaultVertexFormat.POSITION_TEX_COLOR, occluder.format());
+
+		// Depth only, LEQUAL against the mask depth, with the source's layering (armor worn on the arm).
+		CompositeStateAccessor state = stateOf(occluder);
+		assertSame(RenderStateShard.DEPTH_WRITE, state.glintsmith$outlineWriteMaskState());
+		assertSame(RenderStateShard.LEQUAL_DEPTH_TEST, state.glintsmith$outlineDepthTestState());
+		CompositeStateAccessor armor = stateOf(MaskTypes.occluderFor(RenderType.armorCutoutNoCull(TEXTURE)));
+		assertSame(RenderStateShard.VIEW_OFFSET_Z_LAYERING, armor.glintsmith$outlineLayeringState());
+	}
+
+	@Test
+	void typesThatWriteNoDepthAndUnmaskableTypesOccludeNothing() {
+		assertNull(MaskTypes.occluderFor(RenderType.eyes(TEXTURE)), "glowing eyes write colour only");
+		assertNull(MaskTypes.occluderFor(RenderType.entityGlint()));
+		assertNull(MaskTypes.occluderFor(RenderType.waterMask()));
+		assertNull(MaskTypes.occluderFor(RenderType.lines()));
+		assertTrue(MaskTypes.lookup(RenderType.eyes(TEXTURE)).maskable(), "still outlined as an item would be");
+
+		assertTrue(MaskTypes.writesDepth(RenderStateShard.COLOR_DEPTH_WRITE, RenderStateShard.LEQUAL_DEPTH_TEST));
+		assertTrue(MaskTypes.writesDepth(RenderStateShard.COLOR_DEPTH_WRITE, RenderStateShard.EQUAL_DEPTH_TEST));
+		assertFalse(MaskTypes.writesDepth(RenderStateShard.COLOR_WRITE, RenderStateShard.LEQUAL_DEPTH_TEST));
+		assertFalse(MaskTypes.writesDepth(RenderStateShard.COLOR_DEPTH_WRITE, RenderStateShard.NO_DEPTH_TEST));
+	}
+
 	private static CompositeStateAccessor stateOf(RenderType type) {
 		assertNotNull(type);
 		RenderType.CompositeState state = ((CompositeRenderTypeAccessor) (Object) type).glintsmith$outlineState();

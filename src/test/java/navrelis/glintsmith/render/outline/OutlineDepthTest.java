@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.joml.Matrix4f;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -16,6 +17,8 @@ class OutlineDepthTest {
 	private static final float NEAR = OutlineCompositor.NEAR_PLANE;
 	private static final float FAR = 256.0f;
 	private static final int RADIUS = 2;
+	/** Iris draws the first-person hand with the projection scaled by this in z (HandRenderer.DEPTH). */
+	private static final float IRIS_HAND_SCALE = 0.125f;
 
 	// ---- rules
 
@@ -158,7 +161,7 @@ class OutlineDepthTest {
 
 	@Test
 	void withoutDepthEveryMaskPixelIsASeed() {
-		// GUI and the shader-pack hand: no scene depth, the mask alone decides.
+		// GUI: no scene depth, the mask alone decides.
 		Grid g = new Grid(16, 10);
 		g.item(4, 3, 9, 6, 0.5f);
 		g.scene(0, 0, 15, 9, 0.1f); // would hide everything if it were used
@@ -167,12 +170,116 @@ class OutlineDepthTest {
 		assertFalse(flat[g.at(6, 4)]);
 	}
 
+	// ---- projection terms
+
+	@Test
+	void linearDepthWithVanillaTermsIsTheNearFarFormula() {
+		float projZ = OutlineDepth.projectionZ(NEAR, FAR);
+		float projW = OutlineDepth.projectionW(NEAR, FAR);
+		for (float d : new float[] { 0.06f, 0.3f, 0.5f, 2.0f, 10.0f, 200.0f }) {
+			float z = window(d);
+			float formula = (2.0f * NEAR * FAR) / (FAR + NEAR - (2.0f * z - 1.0f) * (FAR - NEAR));
+			float linear = OutlineDepth.linear(z, projZ, projW);
+			assertEquals(formula, linear, formula * 1.0e-3f, "same distance as before at " + d);
+			assertEquals(d, linear, d * 0.01f, "distance back from the depth buffer at " + d);
+		}
+		assertEquals(FAR, OutlineDepth.linear(1.0f, projZ, projW), FAR * 1.0e-3f, "cleared depth is the far plane");
+
+		// The terms are the z row of the vanilla projection (JOML perspective, as GameRenderer builds it).
+		Matrix4f vanilla = new Matrix4f().perspective(1.2f, 16.0f / 9.0f, NEAR, FAR);
+		assertEquals(projZ, vanilla.m22(), 1.0e-6f);
+		assertEquals(projW, vanilla.m32(), 1.0e-6f);
+		assertTrue(OutlineDepth.invertible(vanilla.m22(), vanilla.m23(), vanilla.m32(), vanilla.m33()));
+		Matrix4f ortho = new Matrix4f().ortho(0.0f, 1920.0f, 1080.0f, 0.0f, 1000.0f, 21000.0f);
+		assertFalse(OutlineDepth.invertible(ortho.m22(), ortho.m23(), ortho.m32(), ortho.m33()), "GUI projection");
+		Matrix4f identity = new Matrix4f();
+		assertFalse(OutlineDepth.invertible(identity.m22(), identity.m23(), identity.m32(), identity.m33()));
+	}
+
+	@Test
+	void irisHandProjectionNeedsItsOwnTerms() {
+		// Iris HandRenderer: new Matrix4f().scale(1, 1, 1/8).mul(handProjection).
+		Matrix4f hand = new Matrix4f().perspective(1.2f, 16.0f / 9.0f, NEAR, FAR);
+		Matrix4f iris = new Matrix4f().scale(1.0f, 1.0f, IRIS_HAND_SCALE).mul(hand);
+		assertTrue(OutlineDepth.invertible(iris.m22(), iris.m23(), iris.m32(), iris.m33()));
+		float projZ = iris.m22();
+		float projW = iris.m32();
+		assertEquals(IRIS_HAND_SCALE * OutlineDepth.projectionZ(NEAR, FAR), projZ, 1.0e-6f);
+		for (float d : new float[] { 0.2f, 0.4f, 0.5f, 0.8f }) {
+			assertEquals(d, OutlineDepth.linear(window(d, IRIS_HAND_SCALE), projZ, projW), d * 1.0e-3f);
+		}
+		// The cleared depth lies beyond the scaled far end: nothing there.
+		assertEquals(OutlineDepth.BEYOND_FAR, OutlineDepth.linear(1.0f, projZ, projW));
+		// Read with the vanilla terms the whole hand would sit at about 0.11 blocks, 10 cm of depth in under a millimetre.
+		float vz = OutlineDepth.projectionZ(NEAR, FAR);
+		float vw = OutlineDepth.projectionW(NEAR, FAR);
+		float arm = OutlineDepth.linear(window(0.4f, IRIS_HAND_SCALE), vz, vw);
+		float blade = OutlineDepth.linear(window(0.5f, IRIS_HAND_SCALE), vz, vw);
+		assertTrue(blade - arm < 0.001f && blade < 0.2f);
+	}
+
+	// ---- shader pack hand: arm geometry as occluders in the mask depth
+
+	@Test
+	void shaderPackHandWithoutOccludersKeepsTheWholeOutline() {
+		// Only the item in the mask depth: every item pixel is visible, the background is beyond the far end. The same
+		// outline as the old composite without depth.
+		Grid g = new Grid(20, 12, IRIS_HAND_SCALE);
+		g.item(5, 3, 9, 7, 0.5f);
+		g.item(8, 6, 13, 9, 0.6f); // a second item partly behind the first
+		assertArrayEquals(g.composite(false, 0.0f), g.composite(true, OutlineDepth.HAND_TOLERANCE));
+	}
+
+	@Test
+	void shaderPackHandArmOccluderHidesTheOutlineOnTheSleeve() {
+		// The reported bug: blade from x 2 to 17, the sleeve covers it from x 10, 5 cm in front. Under the pack the
+		// main depth holds no arm; the sleeve is now drawn into the mask depth after the item (Grid.scene).
+		Grid g = new Grid(24, 12, IRIS_HAND_SCALE);
+		g.item(2, 4, 17, 7, 0.5f);
+		g.scene(10, 0, 23, 11, 0.45f);
+		boolean[] now = g.composite(true, OutlineDepth.HAND_TOLERANCE);
+		for (int y = 0; y < 12; y++) {
+			for (int x = 10; x < 24; x++) {
+				assertFalse(now[g.at(x, y)], "outline on the sleeve at " + x + "," + y);
+			}
+		}
+		assertTrue(now[g.at(1, 5)] && now[g.at(5, 3)] && now[g.at(5, 8)] && now[g.at(9, 3)], "the visible blade keeps its outline");
+
+		// Before: no depth under a shader pack, the outline of the hidden blade was drawn across the sleeve.
+		boolean[] before = g.composite(false, 0.0f);
+		assertTrue(before[g.at(12, 3)] && before[g.at(18, 5)] && before[g.at(15, 8)]);
+	}
+
+	@Test
+	void shaderPackHandArmNextToTheItemHidesTheOutlineOnlyWithTheHandTerms() {
+		// The arm beside the grip, 10 cm in front of the item and not covering it: the front rule hides the outline on
+		// it, as it does without a pack.
+		Grid g = new Grid(24, 12, IRIS_HAND_SCALE);
+		g.item(2, 4, 9, 7, 0.5f);
+		g.scene(10, 0, 23, 11, 0.4f);
+		boolean[] now = g.composite(true, OutlineDepth.HAND_TOLERANCE);
+		assertFalse(now[g.at(10, 5)] || now[g.at(11, 5)] || now[g.at(10, 3)], "outline on the arm");
+		assertTrue(now[g.at(1, 5)] && now[g.at(5, 3)], "outline over the background");
+
+		// With the vanilla near/far terms the compressed hand depths are all but equal and the arm hides nothing.
+		g.projZ = OutlineDepth.projectionZ(NEAR, FAR);
+		g.projW = OutlineDepth.projectionW(NEAR, FAR);
+		assertTrue(g.composite(true, OutlineDepth.HAND_TOLERANCE)[g.at(10, 5)]);
+	}
+
 	// ---- mirror
 
 	/** Window depth of a linear distance (inverse of the composite's linearDepth), quantised like a depth buffer. */
 	private static float window(float linear) {
-		float z = ((FAR + NEAR - 2.0f * NEAR * FAR / linear) / (FAR - NEAR) + 1.0f) * 0.5f;
-		return OutlineDepth.pack(z) / (float) OutlineDepth.DEPTH_STEPS;
+		return window(linear, 1.0f);
+	}
+
+	/**
+	 * The same for a projection scaled by {@code zScale} in z after the vanilla one (Iris draws the hand with 1/8).
+	 */
+	private static float window(float linear, float zScale) {
+		float ndc = zScale * ((FAR + NEAR - 2.0f * NEAR * FAR / linear) / (FAR - NEAR));
+		return OutlineDepth.pack((ndc + 1.0f) * 0.5f) / (float) OutlineDepth.DEPTH_STEPS;
 	}
 
 	private static final class Grid {
@@ -181,8 +288,19 @@ class OutlineDepthTest {
 		final int[] id;
 		final float[] itemZ;
 		final float[] sceneZ;
+		/** z scale of the projection everything is drawn with, and its z terms as the compositor passes them. */
+		final float zScale;
+		float projZ;
+		float projW;
 
 		Grid(int w, int h) {
+			this(w, h, 1.0f);
+		}
+
+		Grid(int w, int h, float zScale) {
+			this.zScale = zScale;
+			this.projZ = zScale * OutlineDepth.projectionZ(NEAR, FAR);
+			this.projW = zScale * OutlineDepth.projectionW(NEAR, FAR);
 			this.w = w;
 			this.h = h;
 			id = new int[w * h];
@@ -206,7 +324,7 @@ class OutlineDepthTest {
 		}
 
 		void itemAt(int x, int y, float linear) {
-			float z = window(linear);
+			float z = window(linear, zScale);
 			int i = at(x, y);
 			if (z <= itemZ[i]) {
 				// mask.fsh: nearest item surface, depth packed into the colour
@@ -219,7 +337,7 @@ class OutlineDepthTest {
 
 		/** Scene geometry drawn after the item, with LEQUAL. */
 		void scene(int x0, int y0, int x1, int y1, float linear) {
-			float z = window(linear);
+			float z = window(linear, zScale);
 			for (int y = y0; y <= y1; y++) {
 				for (int x = x0; x <= x1; x++) {
 					int i = at(x, y);
@@ -255,8 +373,8 @@ class OutlineDepthTest {
 						continue;
 					}
 					if (useDepth) {
-						float zp = OutlineDepth.linear(sceneZ[p], NEAR, FAR);
-						float zs = OutlineDepth.linear(sceneZ[s], NEAR, FAR);
+						float zp = OutlineDepth.linear(sceneZ[p], projZ, projW);
+						float zs = OutlineDepth.linear(sceneZ[s], projZ, projW);
 						if (OutlineDepth.hidden(onHidden, zp, zs, frontTolerance)) {
 							continue;
 						}
@@ -288,8 +406,8 @@ class OutlineDepthTest {
 					if (s < 0) {
 						continue;
 					}
-					float zp = OutlineDepth.linear(sceneZ[p], NEAR, FAR);
-					float zs = OutlineDepth.linear(sceneZ[s], NEAR, FAR);
+					float zp = OutlineDepth.linear(sceneZ[p], projZ, projW);
+					float zs = OutlineDepth.linear(sceneZ[s], projZ, projW);
 					if (zp < zs - Math.max(tolerance, zs * OutlineDepth.RELATIVE_TOLERANCE)) {
 						continue;
 					}

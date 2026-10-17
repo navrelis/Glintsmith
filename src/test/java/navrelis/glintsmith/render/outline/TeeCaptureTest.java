@@ -61,7 +61,7 @@ class TeeCaptureTest {
 
 	@AfterEach
 	void tearDown() {
-		phase.maskSource.close();
+		phase.close();
 		OutlineFailsafe.resetForTests();
 	}
 
@@ -260,7 +260,75 @@ class TeeCaptureTest {
 		phase.discard();
 	}
 
+	// ---- first-person occluders (shader pack)
+
+	@Test
+	void occluderSourceRecordsHandGeometryWithoutCountingAsAnItem() {
+		OccluderBufferSource occluders = new OccluderBufferSource().bind(source, phase);
+		RenderType arm = RenderType.entitySolid(TEXTURE);
+		VertexConsumer consumer = occluders.getBuffer(arm);
+		assertInstanceOf(TeeVertexConsumer.class, consumer);
+		assertSame(consumer, occluders.getBuffer(arm), "same type, same buffers: same consumer");
+
+		quad(consumer, -0.5f, -0.5f, 0.5f, 0.5f);
+		assertEquals(4, source.recorder(arm).bulkVertices, "the arm is drawn as before");
+		assertTrue(phase.occluderSource.hasStarted());
+		assertFalse(phase.hasGeometry, "occluders alone are no reason to composite");
+		assertTrue(phase.bounds.isEmpty(), "occluders never widen the composite region");
+		RenderType eyes = RenderType.eyes(TEXTURE);
+		assertSame(source.recorder(eyes), occluders.getBuffer(eyes), "colour-only geometry hides nothing");
+
+		occluders.release();
+		assertFalse(occluders.active());
+		ByteBuffer vertices = drainOccluders(arm);
+		assertEquals(4 * MASK_VERTEX_SIZE, vertices.remaining());
+		assertEquals(0, vertices.get(COLOR_OFFSET) & 0xFF, "style index 0: never a seed");
+		assertEquals(0.25f, vertices.getFloat(UV_OFFSET), "the occluder keeps the skin's cutout");
+		assertSame(source.recorder(arm), occluders.getBuffer(arm), "a released source hands out the real buffer");
+	}
+
+	@Test
+	void outlinedItemInTheHandPassReachesRealBufferOccludersAndMask() {
+		// Punchy and vanilla hand an item the hand pass's source: the item tee sits on top of the occluder source.
+		OccluderBufferSource occluders = new OccluderBufferSource().bind(source, phase);
+		TeePool pool = new TeePool();
+		TeeBufferSource item = pool.acquire(occluders, phase, 5);
+		RenderType type = RenderType.entityCutoutNoCull(TEXTURE);
+		quad(item.getBuffer(type), -0.5f, -0.5f, 0.5f, 0.5f);
+		pool.release(item);
+		occluders.release();
+		assertEquals(4, source.recorder(type).bulkVertices);
+		assertTrue(phase.hasGeometry);
+		assertEquals(4 * MASK_VERTEX_SIZE, drainMask(type).remaining());
+		assertEquals(4 * MASK_VERTEX_SIZE, drainOccluders(type).remaining());
+	}
+
+	@Test
+	void discardingThePhaseDropsPendingOccluders() {
+		OccluderBufferSource occluders = new OccluderBufferSource().bind(source, phase);
+		quad(occluders.getBuffer(RenderType.entityTranslucent(TEXTURE)), 0.0f, 0.0f, 0.1f, 0.1f);
+		occluders.release();
+		assertTrue(phase.occluderSource.hasStarted());
+		phase.discard();
+		assertFalse(phase.occluderSource.hasStarted());
+	}
+
 	// ---- helpers
+
+	/** Like {@link #drainMask}, for the occluder geometry of one source type. */
+	private ByteBuffer drainOccluders(RenderType sourceType) {
+		RenderType occluderType = MaskTypes.occluderFor(sourceType);
+		assertNotNull(occluderType);
+		BufferBuilder builder = (BufferBuilder) phase.occluderSource.bufferFor(occluderType);
+		try (MeshData mesh = builder.build()) {
+			assertNotNull(mesh, "no occluder geometry");
+			ByteBuffer src = mesh.vertexBuffer();
+			ByteBuffer copy = ByteBuffer.allocate(src.remaining()).order(ByteOrder.nativeOrder());
+			copy.put(src.duplicate());
+			copy.flip();
+			return copy;
+		}
+	}
 
 	private static ResourceLocation texture(int i) {
 		return ResourceLocation.fromNamespaceAndPath("glintsmith", "test/cap_" + i + ".png");

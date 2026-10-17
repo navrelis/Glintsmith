@@ -14,7 +14,9 @@ import org.spongepowered.asm.mixin.Mixin;
 
 /**
  * O2: remembers who holds the item being drawn (O2a, for "only local player") and opens the first-person HAND phase
- * around {@code renderHandsWithItems} (O2b).
+ * around {@code renderHandsWithItems} (O2b). Under a shader pack O2b hands the wrapped body (vanilla, and a
+ * first-person animation mod's code injected into it, such as Punchy's arm renderer at HEAD) a buffer source that
+ * records the arm geometry as occluders for the outline.
  */
 @Mixin(ItemInHandRenderer.class)
 public abstract class ItemInHandRendererOutlineMixin {
@@ -38,9 +40,10 @@ public abstract class ItemInHandRendererOutlineMixin {
 	)
 	private void glintsmith$outlineHands(float partialTick, PoseStack pose, MultiBufferSource.BufferSource source,
 		LocalPlayer player, int light, Operation<Void> original) {
-		OutlineSystem.beginHands();
+		// Under a shader pack the hands get a source that also records their geometry as outline occluders.
+		MultiBufferSource.BufferSource hands = OutlineSystem.beginHands(source);
 		try {
-			original.call(partialTick, pose, source, player, light);
+			original.call(partialTick, pose, hands, player, light);
 		} finally {
 			OutlineSystem.endHands();
 		}

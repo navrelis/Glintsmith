@@ -12,7 +12,7 @@ uniform sampler2D StyleSampler;
 uniform int Radius;
 uniform vec4 Region;
 uniform int UseDepth;
-uniform vec2 NearFar;
+uniform vec2 DepthProj; // z terms (m22, m32) of the projection the depth was drawn with
 uniform float DepthTolerance; // front tolerance in blocks (per phase)
 uniform float CoverTolerance; // tolerance in blocks on hidden item pixels
 uniform float SeedEpsilon; // window depth
@@ -20,10 +20,10 @@ uniform vec2 DistanceFade; // (start, end) in blocks; end <= start disables
 
 out vec4 fragColor;
 
+// Distance in blocks (OutlineDepth.linear). Iris scales the hand projection in z; past its far end lies nothing.
 float linearDepth(float z) {
-	float n = NearFar.x;
-	float f = NearFar.y;
-	return (2.0 * n * f) / (f + n - (2.0 * z - 1.0) * (f - n));
+	float v = (2.0 * z - 1.0) + DepthProj.x;
+	return v < 0.0 ? DepthProj.y / v : 1.0e9;
 }
 
 float unpackDepth(vec3 gba) {

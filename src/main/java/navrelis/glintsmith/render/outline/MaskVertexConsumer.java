@@ -8,6 +8,8 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
  * <p>
  * The mask vertex is always completed: if the source never set a UV for a vertex, a default UV is written before
  * the next vertex starts (or in {@link #finish()}), so the mask buffer can never hold a half-written vertex.
+ * <p>
+ * Occluder geometry is bound without screen bounds: it only hides outlines and never widens the composite region.
  */
 final class MaskVertexConsumer implements VertexConsumer {
 	private VertexConsumer buffer;
@@ -58,7 +60,9 @@ final class MaskVertexConsumer implements VertexConsumer {
 		} else {
 			uvPending = true;
 		}
-		bounds.include(x, y, z);
+		if (bounds != null) {
+			bounds.include(x, y, z);
+		}
 		return this;
 	}
 

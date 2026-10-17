@@ -66,7 +66,15 @@ class OutlineShaderResourcesTest {
 		for (JsonElement uniform : json.getAsJsonArray("uniforms")) {
 			names.append(uniform.getAsJsonObject().get("name").getAsString()).append(' ');
 		}
-		assertEquals("Radius Region UseDepth NearFar DepthTolerance CoverTolerance SeedEpsilon DistanceFade ", names.toString());
+		assertEquals("Radius Region UseDepth DepthProj DepthTolerance CoverTolerance SeedEpsilon DistanceFade ", names.toString());
+		// The default terms are those of the vanilla projection (near 0.05, far 1024), as the compositor sets them.
+		for (JsonElement uniform : json.getAsJsonArray("uniforms")) {
+			JsonObject object = uniform.getAsJsonObject();
+			if ("DepthProj".equals(object.get("name").getAsString())) {
+				assertEquals(OutlineDepth.projectionZ(OutlineCompositor.NEAR_PLANE, 1024.0f), object.getAsJsonArray("values").get(0).getAsFloat(), 1.0e-6f);
+				assertEquals(OutlineDepth.projectionW(OutlineCompositor.NEAR_PLANE, 1024.0f), object.getAsJsonArray("values").get(1).getAsFloat(), 1.0e-6f);
+			}
+		}
 		assertEquals(4, json.getAsJsonArray("samplers").size(), "the compositor saves and restores four texture units");
 		assertEquals(GlState.TEXTURE_UNITS, json.getAsJsonArray("samplers").size());
 	}
@@ -104,6 +112,10 @@ class OutlineShaderResourcesTest {
 		assertTrue(composite.contains("zp < zs + max(CoverTolerance, relative) : zp < zs - max(DepthTolerance, relative)"));
 		assertTrue(composite.contains("float relative = zs * 0.02;"));
 		assertEquals(0.02f, OutlineDepth.RELATIVE_TOLERANCE);
+		// linearDepth is OutlineDepth.linear: projection terms, nothing beyond the far end.
+		assertTrue(composite.contains("float v = (2.0 * z - 1.0) + DepthProj.x;"));
+		assertTrue(composite.contains("return v < 0.0 ? DepthProj.y / v : 1.0e9;"));
+		assertEquals(1.0e9f, OutlineDepth.BEYOND_FAR);
 	}
 
 	/** The classpath resource vanilla would load for {@code minecraft:shaders/core/<file>}. */
