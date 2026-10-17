@@ -38,3 +38,5 @@ Sources studied (reference only, clones live in the session scratchpad, never in
 - Java 21.0.10 (Microsoft), gh logged in as `navrelis`, Gradle only via wrapper.
 - Template project with the same stack: `F:\Coding\DynamicLighting` (Loom plugin `net.fabricmc.fabric-loom-remap`, Gradle 9.5.0, JUnit with fabric-loader-junit).
 - Nytheria pack: Sodium 0.8.13, Iris 1.8.14-beta.1, Mod Menu 11.0.5.
+
+- 2026-10-17 (session 8) Owner: logo and image showcase on a white / cream-white background (in-game backdrop for the hero/logo/showcase captures, light card panels), not black.

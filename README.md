@@ -15,9 +15,12 @@ reloaded while the game runs.
 ### Item outlines
 
 - The outline is computed from what the game really draws: the item's geometry is copied into a screen-space mask and an
-  exact distance transform turns it into an outline. Flat items, 3D models, shields, tridents, banners, armor, elytra and
-  items of other mods are treated the same way. <!-- VERIFY IN GAME: outlines look right on items of advancednetherite, eternal_starlight, cataclysm, immersive_armors, and on shield, trident, banner, elytra -->
-- The outline is depth aware: it is hidden where a wall or another block is in front of the item. <!-- VERIFY IN GAME: no outline through walls, for dropped items, item frames and other players' held items -->
+  exact distance transform turns it into an outline. Flat items, 3D models and items of other mods are treated the same
+  way. Checked in game on the vanilla netherite sword, trident and shield, and on items of advancednetherite,
+  eternal_starlight, cataclysm and immersive_armors (an ingot, a morning star, a targe and a worn chestplate).
+- The outline is depth aware: it is hidden where a wall or another block is in front of the item. Checked in game: no
+  outline through a pillar, and dropped items and item frames behind blocks have none. In first person the arm hides the
+  outline without a shader pack. Held items of other players were not tested.
 - Where outlines are drawn: first-person hand, third-person held items (players and mobs), dropped items and item frames
   are on by default. Worn armor (this includes worn elytra), items in the GUI (inventory, hotbar, menus) and other places
   such as items worn on the head are available and off by default. Each place has its own switch.
@@ -50,9 +53,10 @@ reloaded while the game runs.
   contiguous pixel runs only.
 - Modes: off, automatic (values chosen by the mod: it slightly widens the side faces to close the 1 px corner cracks of
   generated item models, and macOS gets its own values because its drivers bleed without UV shrink) or custom (your values). With "precise spans" the sides are built from more, smaller faces, which is exact but creates
-  many more quads on HD textures; it is off by default.
+  many more quads on HD textures; it is off by default. In game, automatic mode closed the step-corner cracks without
+  slivers.
 - Automatic mode switches itself off when the mod `modelfix` (Model Gap Fix) is installed, because that mod already closes
-  the seams. Custom mode still applies next to it, on top of that mod's own changes; precise spans do nothing then. <!-- VERIFY IN GAME: AUTO really stays off with modelfix present; this depends on the T8 wiring, which was not in the source when this was written -->
+  the seams. Custom mode still applies next to it, on top of that mod's own changes; precise spans do nothing then.
 - If the fix throws an error while a model is generated, it logs it once and stays off for the session.
 
 ### Rules
@@ -112,30 +116,44 @@ Client side only. Do not put it on a server; the mod does nothing there and is d
 | Mod Menu | optional (11.0.5 was used) |
 | Sodium | optional, supported (0.8.13 was used) |
 | Iris | optional, supported (1.8.14-beta.1 was used) |
+| ImmediatelyFast | optional, HUD batching supported (1.6.15 was used) |
 
 ## Compatibility
 
-- **Sodium.** Supported. <!-- VERIFY IN GAME: outlines, glint and gap fix with Sodium 0.8.13; the design expects one Sodium warning in the log about unoptimised vertex writing for outlined items -->
-- **First-person animation mods (Punchy).** The held item keeps its first-person outline and glint rules. Items such as
+- **Sodium.** Supported. Works with Sodium 0.8.13 in the test pack. The log has one expected Sodium WARN that
+  `TeeVertexConsumer` does not support optimized vertex writing; it is harmless.
+- **ImmediatelyFast.** HUD batching works with GUI outlines. An outlined GUI item flushes the batch before its outline
+  is drawn, so the hotbar sprite, the items and the counts are drawn and outlined as usual. Checked in game with
+  ImmediatelyFast 1.6.15.
+- **First-person animation mods (Punchy).** The held item keeps its first-person outline and glint rules (checked in
+  game with Punchy 2.8f, main hand and offhand). Items such as
   Punchy's bedrock-geometry items, chests and boats are not outlined in first person, and with player-animation-lib or
   Better Combat in first-person mode the held item is outlined as a third-person item (none under a shader pack).
 - **Iris with no shader pack selected.** Treated like vanilla rendering.
 - **Iris with a shader pack.** World outlines (third person, armor, dropped items, item frames) are turned off, because the
   scene depth they need is not available. Hand outlines are best effort and can be switched off ("Hand with shader
-  pack"); GUI outlines work. "Off with shader packs" disables all outlines while a pack is active. The glint keeps the vanilla
-  look in the world and in the hand under a shader pack and is customised in the GUI. <!-- VERIFY IN GAME: Iris behaviour as listed; hand alignment with a shader pack; glint in the GUI under a shader pack -->
-- **Fabulous graphics.** Supported by design. <!-- VERIFY IN GAME: outlines and glint on Fabulous -->
+  pack"). <!-- PENDING T21 --> GUI outlines work. "Off with shader packs" disables all outlines while a pack is active. The glint keeps the vanilla
+  look in the world and in the hand under a shader pack and is customised in the GUI. Checked in game with Iris
+  1.8.14-beta.1 and Complementary Unbound with Euphoria Patches: no crash, one INFO line in the log ("A shader pack is
+  active: world outlines are off, first-person and GUI outlines stay on."), world outlines off, GUI outlines (inventory,
+  hotbar) work, and the settings screen shows a hint about shader packs.
+- **Fabulous graphics.** Should work, but it was not tested in game for 1.0.0.
 - **Other glint mods.** A mod that replaces the vanilla glint render types itself can win over Glintsmith's glint, or the
   other way round. Use one of them.
-- **Items drawn without the game's normal item rendering** (some mods that batch GUI items) are not outlined.
+- **Items drawn without the game's normal item rendering** are not outlined. This means items that never go through
+  `ItemRenderer.render`, for example some items that a mod draws with its own code. Mods that only batch the drawing of
+  GUI items, like ImmediatelyFast, are not affected.
 - **Model Gap Fix (`modelfix`).** Compatible. Only the precise spans part of the gap fix is left out while it is installed,
   because that mod replaces the same game method; the other parts of the gap fix work as usual. In automatic mode the gap fix
   stays off, and `modelfix` handles the seams. In custom mode the settings of Glintsmith stack on top of `modelfix` (logged
-  once at INFO), and precise spans are inactive.
+  once at INFO), and precise spans are inactive. This is covered by unit tests; it was not tested in game for 1.0.0,
+  because `modelfix` was not in the test pack.
 - **Failure behaviour.** Outlines, glint and gap fix each have a failsafe: after an error in a render hook the feature
   logs it once and stays off for the session; the game keeps rendering the vanilla way.
-- **Cost.** Frames in which no outlined item is drawn do no outline work except the rule lookup per drawn item.
-  <!-- VERIFY IN GAME: performance with and without outlines; no figures have been measured yet -->
+- **Cost.** Frames in which no outlined item is drawn do no outline work except the rule lookup per drawn item. One
+  measurement, on one test scene and one machine (Nytheria pack, no shader pack): three identical windows without the
+  mod gave 656, 470 and 531 fps, and with the mod 496, 643 and 587 fps. The cost of the outlines is within the
+  run-to-run noise of that scene. This says nothing about other scenes or machines.
 
 ## Compared with other mods and packs
 

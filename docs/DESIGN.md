@@ -436,7 +436,9 @@ Known risk: the seed rule needs the item's main draw and the mask draw to produc
 32 steps of 24-bit depth. This holds when the mask uses the same vertex expression, the same matrices
 and the same layering as the source type. If a source type changes the depth in a way the mask does not
 copy, its item pixels would look hidden and the item would get no outline, or only a partial one.
-Not verified for any such type.
+The visible-seed depth match was checked in game on the modded items of the Nytheria test pack (advancednetherite,
+eternal_starlight, cataclysm, immersive_armors) and on the vanilla netherite sword, trident and shield, with no
+missing segments. The risk remains for exotic vertex paths.
 
 **Frame-buffer stencil caveat.** If a mod gives the main target a `DEPTH24_STENCIL8` attachment, the
 depth blit into our `DEPTH_COMPONENT` target fails with `GL_INVALID_OPERATION`. Check `glGetError()`
@@ -1230,7 +1232,7 @@ specs. Generation cost at start-up is **[UNVERIFIED, not measured]**.
 | Sodium 0.8.13 | Full. Sodium replaces terrain only. Its item fast path (`ItemRendererMixin`) and `putBulkData` intrinsics fall back to vanilla code for our tee because it is not a `BufferBuilder` or `VertexBufferWriter`. Sodium logs **one** WARN per class (`VertexConsumerTracker`: "does not support optimized vertex writing code paths"). FRAPI models render through the `MultiBufferSource` we pass. | Full | Full | Full |
 | Iris installed, shaders off | Full (Iris batching and hand pathway inactive) | Full | Full | Full |
 | Iris, shader pack on | **Off** (log once per pack activation, at INFO). Main depth is not the scene depth and entities go to Iris gbuffers. The shadow pass is skipped too (phase closed, plus an explicit `isRenderingShadowPass()` check). | **Best effort, default on, option to disable.** The mask is flushed at TAIL of `renderHandsWithItems` with Iris's hand matrices; the composite happens after Iris's final pass at `GameRenderer.renderLevel` RETURN. No occluder test. Packs that move or distort the hand (DOF, hand sway) may misalign it. **[UNVERIFIED in game]** | Full | GUI full. World and hand use the vanilla look unless G7 is on; with G7 our slots go through Iris's glint program (texture and matrix honoured; tint and strength pack-dependent). |
-| First-person animation mods (Punchy 2.8f) | n/a | Full for items drawn through `ItemRenderer.render` inside `renderHandsWithItems`: THIRD_PERSON hand contexts there count as FIRST_PERSON. Not outlined: items Punchy draws without `ItemRenderer.render` (bedrock-geometry items, chests, boats). **[UNVERIFIED in game]** | n/a | Full: the hand pass marker (G8) applies first-person rules to the same items |
+| First-person animation mods (Punchy 2.8f) | n/a | Full for items drawn through `ItemRenderer.render` inside `renderHandsWithItems`: THIRD_PERSON hand contexts there count as FIRST_PERSON. Not outlined: items Punchy draws without `ItemRenderer.render` (bedrock-geometry items, chests, boats). Verified in game: first-person outlines and glint rules on Punchy-held items drawn through `ItemRenderer.render` (main hand and offhand). | n/a | Full: the hand pass marker (G8) applies first-person rules to the same items |
 | First-person mode of player-animation-lib / Better Combat | The held item is drawn in the world pass as THIRD_PERSON and is outlined as a third-person item; none under a shader pack | Not applicable (the item is not drawn in the HAND phase) | n/a | THIRD_PERSON rules |
 | Other glint mods | Unaffected | Unaffected | Unaffected | If they replace the `RenderType.glint()` getters, our G5a never sees vanilla types and their look wins. If they also hook `BufferSource.getBuffer`, the last modifier wins. Document as incompatible-by-design. |
 | Mods with a stencil main framebuffer (e.g. portals) | Disabled after the first failed depth blit (one log line) | Vanilla: disabled likewise | Full | Full |

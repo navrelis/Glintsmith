@@ -29,3 +29,4 @@
 - 2026-10-17 CUSTOM gap-fix stored default sideExpansion mirrors AUTO non-macOS (0.005): switching AUTO -> CUSTOM must not bring the corner cracks back.
 - 2026-10-17 Optional perf work (5.5) dropped: the no-mod baseline varies ±20 % between identical windows, larger than any measured outline cost.
 - 2026-10-17 Outline mask stores the item's own depth and only visible item pixels seed the outline (hand front tolerance 0.03 blocks): hidden item pixels (blade inside the arm, item leaning on a pillar) drew outlines over the occluder.
+- 2026-10-17 Gallery/logo backdrop switched from black to white/cream (owner request); capture rooms use light blocks + night vision + gamma Bright; close-ups use the vanilla FOV option 30 because the Director fov override does not change the world view.

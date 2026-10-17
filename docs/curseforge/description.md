@@ -4,13 +4,13 @@
 
 Item outlines, custom enchantment glints and a fix for the gaps in item models, for every item from every mod, in one Fabric mod for Minecraft 1.21.1.
 
-Glintsmith works on what the game really draws, so there are no item whitelists and no per-item resource-pack overrides. A sword from a mod, a helmet, a shield, an elytra, a dropped stack and an item in a frame get the same treatment as vanilla tools. Set it up in one screen in the game, in English or German.
+Glintsmith works on what the game really draws, so there are no item whitelists and no per-item resource-pack overrides. A sword from a mod, a shield, a dropped stack and an item in a frame get the same treatment as vanilla tools. Set it up in one screen in the game, in English or German.
 
 >>> PASTE IMAGE: showcase.gif | The looks you can set up: outline colours, glint presets, and rules <<<
 
 ## What it does
 
-**Outlines for every item.** The outline is computed from the item's real rendered shape, so flat items, 3D models, shields, tridents, banners, armor and the items of other mods all get a clean outline of the same width. It is depth aware: where a wall or a block is in front of the item, the outline is hidden. <!-- VERIFY IN GAME: no outline through walls; works on items of advancednetherite, eternal_starlight, cataclysm, immersive_armors, and on shield, trident, banner, elytra -->
+**Outlines for every item.** The outline is computed from the item's real rendered shape, so flat items, 3D models, shields, tridents and the items of other mods all get a clean outline of the same width. Worn armor and worn elytra can be outlined too; that is an option and it is off by default. The outline is depth aware: where a wall or a block is in front of the item, the outline is hidden. It was checked in game on vanilla items and on items of advancednetherite, eternal_starlight, cataclysm and immersive_armors.
 
 >>> PASTE IMAGE: card_universal.png | Every item from every mod <<<
 
@@ -26,7 +26,7 @@ Glintsmith works on what the game really draws, so there are no item whitelists 
 
 >>> PASTE IMAGE: card_glint_presets.png | Pick your glint <<<
 
-**A fix for gaps in item models.** Some flat item models show thin seams and gaps between their faces (Mojang bug MC-73186), which the vanilla glint leaves visible. Glintsmith scales the UV shrink on the block atlas, grows and moves the side faces of generated items, and can build the sides from contiguous pixel runs only. Set it to off, automatic or custom. Automatic slightly widens the side faces to close the corner cracks, and it turns itself off when the mod Model Gap Fix (`modelfix`) is installed, because that mod already closes the seams. Custom still applies next to it, on top of that mod's own changes. <!-- VERIFY IN GAME: gap fix visible effect on 16x and HD items; AUTO stays off with modelfix present (depends on the wiring task T8) -->
+**A fix for gaps in item models.** Some flat item models show thin seams and gaps between their faces (Mojang bug MC-73186), which the vanilla glint leaves visible. Glintsmith scales the UV shrink on the block atlas, grows and moves the side faces of generated items, and can build the sides from contiguous pixel runs only. Set it to off, automatic or custom. Automatic slightly widens the side faces to close the corner cracks, and it turns itself off when the mod Model Gap Fix (`modelfix`) is installed, because that mod already closes the seams. Custom still applies next to it, on top of that mod's own changes. In game, automatic mode closed the step-corner cracks without slivers.
 
 >>> PASTE IMAGE: card_gap_fix.png | Seams closed, edges clean <<<
 
@@ -43,11 +43,12 @@ Glintsmith works on what the game really draws, so there are no item whitelists 
 Glintsmith is made to run with Sodium and Iris. With Iris and no shader pack selected, outlines and glint work as in vanilla rendering. With a shader pack:
 
 - Outlines in the world are turned off, because they need the scene depth that the shader pack changes.
-- Outlines on the item in your hand are best effort and can be switched off ("Hand with shader pack").
+- Outlines on the item in your hand are best effort and can be switched off ("Hand with shader pack"). <!-- PENDING T21 -->
 - Outlines in the GUI work.
 - "Off with shader packs" turns all outlines off while a pack is active.
+- The glint keeps the vanilla look in the world and in your hand, and is customised in the GUI.
 
-<!-- VERIFY IN GAME: each Iris statement above; hand alignment with shader packs; glint under a shader pack (GUI only is customised); Sodium 0.8.13 and Fabulous graphics -->
+Checked in game with Sodium 0.8.13 and Iris 1.8.14-beta.1, and with the shader pack Complementary Unbound with Euphoria Patches: no crash, and the settings screen shows a hint about shader packs. Fabulous graphics should work, but it was not tested in game for 1.0.0.
 
 >>> PASTE IMAGE: card_shaders.png | Sodium and Iris friendly <<<
 
@@ -80,17 +81,22 @@ Sources, as read on 2026-10-17: the Modrinth, CurseForge and GitHub pages of Cus
 
 - Minecraft 1.21.1, Fabric Loader, Java 21
 - Fabric API
-- Optional: Mod Menu (config button), Sodium, Iris
+- Optional: Mod Menu (config button), Sodium, Iris, ImmediatelyFast
 
 Client side only. Install it on your client; it does nothing on a server.
 
 ## Compatibility notes
 
-- First-person animation mods like Punchy keep the hand outline and the first-person glint rules.
+- Sodium 0.8.13 works. The log has one expected Sodium warning that `TeeVertexConsumer` does not support optimized vertex writing; it is harmless.
+- ImmediatelyFast: HUD batching works with GUI outlines. An outlined GUI item flushes the batch before its outline is drawn, so the hotbar, the items and the counts are drawn and outlined as usual (checked with ImmediatelyFast 1.6.15).
+- First-person animation mods like Punchy keep the hand outline and the first-person glint rules (checked with Punchy 2.8f, main hand and offhand).
 - A mod that replaces the vanilla glint render types itself can win over Glintsmith's glint, or the other way round. Use one of them.
-- Items that a mod draws without the game's normal item rendering are not outlined.
-- Outlines and glint on items in the GUI work for items drawn by the game's own inventory code. Mods that batch their own GUI items may bypass this.
-- Model Gap Fix (`modelfix`) can stay installed. Glintsmith's automatic mode stays off while it is present. In custom mode the settings stack on top of it, and precise spans are inactive.
+- Items that never go through the game's normal item rendering (`ItemRenderer.render`) are not outlined. Mods that only batch the drawing of GUI items, like ImmediatelyFast, are not affected.
+- Model Gap Fix (`modelfix`) can stay installed. Glintsmith's automatic mode stays off while it is present. In custom mode the settings stack on top of it, and precise spans are inactive. This is covered by unit tests; it was not tested in game for 1.0.0.
+
+## Performance
+
+Frames without an outlined item do almost no outline work. One measurement, on one test scene and one machine (no shader pack): three identical windows without the mod gave 656, 470 and 531 fps, and with the mod 496, 643 and 587 fps. The cost of the outlines is within the run-to-run noise of that scene. This says nothing about other scenes or machines.
 
 ## Commands and keys
 
