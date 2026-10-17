@@ -35,6 +35,7 @@ public final class Glintsmith implements ClientModInitializer {
 	/** A gap fix change that still has to be applied by a resource reload. */
 	private static boolean reloadPending;
 	private static boolean modelfixLogged;
+	private static boolean modelfixCustomLogged;
 
 	@Override
 	public void onInitializeClient() {
@@ -78,6 +79,12 @@ public final class Glintsmith implements ClientModInitializer {
 			return GapFix.vanilla();
 		}
 		if (fix.mode == GapFixMode.CUSTOM) {
+			if (FabricLoader.getInstance().isModLoaded(MODELFIX_MOD_ID) && !modelfixCustomLogged) {
+				modelfixCustomLogged = true;
+				LOGGER.info("The mod '{}' is installed: in the custom mode the precise spans setting stays inactive because that mod replaces the code it needs. "
+					+ "The side expansion, side indent and UV shrink settings are applied on top of that mod's own adjustments, so the two stack. "
+					+ "Use the automatic mode (it leaves the seams to that mod) or remove one of the two.", MODELFIX_MOD_ID);
+			}
 			return new GapFix.Settings(true, fix.uvShrinkMultiplier, fix.sideExpansion, fix.sideIndent, fix.preciseSpans);
 		}
 		if (FabricLoader.getInstance().isModLoaded(MODELFIX_MOD_ID)) {

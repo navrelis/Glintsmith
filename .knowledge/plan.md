@@ -17,7 +17,7 @@ Status: open / in progress / in review / done. Size S = short (1 unit), L = long
 | T10h | Shadow harness | Working copy of the client harness in the lead's scratchpad; dry-run of smoke + owner scripts passes | - | Sonnet | S | done |
 | T10g | Gallery capture script | `.dev/ingame/gallery.json` (+ showcase frames) from `art/gallery/SHOTLIST.md`, dry-run passes in the shadow harness | T12 shot list | Sonnet | S | done (session 4; run via run_ingame.py) |
 | T10p | In-game test scripts | `.dev/ingame/` smoke.json, smoke_owner.json, README; dry-run passes | - | Sonnet | S | done (dry-run green against a shadow harness copy; real harness broken) |
-| T10 | In-game test | Nytheria client with `--add-mod`, Sodium + Iris, screenshots of all features (also used as showcase images) | T8 | Lead | - | open |
+| T10 | In-game test | Nytheria client with `--add-mod`, Sodium + Iris, screenshots of all features (also used as showcase images) | T8 | Lead | - | open (run 1 crashed at startup: modelfix mixin conflict; fix open, interrupted) |
 | T11 | Final acceptance | Full build/tests, Graphify, report, push | T10 | Lead | - | open |
 
 Parallel: T2 (Opus) with T3 + T4 (Sonnet) after T1. T5 (Opus) with T6/T7 (Sonnet), files disjoint.

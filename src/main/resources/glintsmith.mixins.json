@@ -3,12 +3,14 @@
 	"minVersion": "0.8",
 	"package": "navrelis.glintsmith.mixin",
 	"compatibilityLevel": "JAVA_21",
+	"plugin": "navrelis.glintsmith.mixin.GlintsmithMixinPlugin",
 	"client": [
 		"modelfix.ItemModelGeneratorMixin",
+		"modelfix.ItemModelGeneratorSpanMixin",
 		"modelfix.SpanMixin",
 		"modelfix.TextureAtlasSpriteMixin"
 	],
 	"injectors": {
-		"defaultRequire": 1
+		"defaultRequire": 0
 	}
 }

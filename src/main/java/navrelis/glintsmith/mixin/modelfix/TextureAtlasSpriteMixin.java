@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.At;
  */
 @Mixin(TextureAtlasSprite.class)
 public abstract class TextureAtlasSpriteMixin {
-	@ModifyReturnValue(method = "uvShrinkRatio", at = @At("RETURN"))
+	@ModifyReturnValue(method = "uvShrinkRatio", at = @At("RETURN"), require = 0)
 	private float glintsmith$scaleShrink(float vanilla) {
 		try {
 			boolean blocks = ((TextureAtlasSprite) (Object) this).atlasLocation().equals(TextureAtlas.LOCATION_BLOCKS);

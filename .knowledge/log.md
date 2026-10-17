@@ -48,3 +48,10 @@
 - 2026-10-17 Merged build: 304 tests, 3 fail in GlintMixinApplicationTest (glint handler now inside the outline's $mixinextras$wrapped copy; test does not follow the chain). Fix queued with T8.
 - 2026-10-17 T10g, Sonnet, S, accepted (3 scripts + run_ingame.py config launcher + copy_captures.py; dry-runs green). Its first launcher draft wrote config/glintsmith.json into the real instance; lead deleted it.
 - 2026-10-17 T8 wiring + glint mixin test fix, Sonnet, S, accepted (lead read Glintsmith.java + diffs; build 304 green). Open: lang key glintsmith.modelfix.mode.tooltip still overclaims (fix in final docs pass).
+- 2026-10-17 T10 run 1 (smoke, player): startup CRASH. modelfix (pack) merges ItemModelGenerator.createSideElements; our ItemModelGeneratorMixin @WrapOperation cannot inject there (invalid injection, require=0 does not help). glintsmith.mixins.json also had defaultRequire 1. Config + lock cleaned up.
+- 2026-10-17 Fix delegated, Sonnet, S (mixin config plugin skips colliding gap-fix mixins when modelfix is loaded; defaultRequire 0).
+- 2026-10-17 Session 4 stopped at the context limit; modelfix crash fix agent stopped (no file changes). State: F:\Coding\handoff.md
+- 2026-10-17 Session 5 start: repo matches handoff (dev ba13592, 3 .knowledge files modified, docs/curseforge img/preview untracked); shadow harness present; no game lock.
+- 2026-10-17 Crash cause confirmed (crash report: modelfix ItemModelMixin merges createOrExpandSpan). Owner asked to remove modelfix: lead moved mods/modelfix-1.21-1.6-fabric.jar from the instance to .dev/removed-mods/. modelfix fix re-delegated, Sonnet, S.
+- 2026-10-17 modelfix fix, Sonnet, S, accepted after 1 small correction (CUSTOM log wording): plugin skips only ItemModelGeneratorSpanMixin (modelfix @Overwrite of createOrExpandSpan); RETURN injectors on createSideElements/uvShrinkRatio coexist; defaultRequire 0; agent build 311 green. No glint/outline overlap.
+- 2026-10-17 T10 smoke run 1b (player, baseline jar, modelfix removed from pack): client started, 'Glintsmith initialised.', no ERROR at startup.
