@@ -312,7 +312,7 @@ public final class GlintsmithConfig {
 		/** 0..1. */
 		public float uvShrinkMultiplier = 0.0f;
 		/** -0.1..0.1. */
-		public float sideExpansion = 0.0f;
+		public float sideExpansion = 0.005f;
 		/** -0.1..0.1. */
 		public float sideIndent = 0.0001f;
 		public boolean preciseSpans = false;
@@ -325,7 +325,7 @@ public final class GlintsmithConfig {
 				mode = GapFixMode.AUTO;
 			}
 			uvShrinkMultiplier = Num.clamp(uvShrinkMultiplier, 0.0f, 1.0f, 0.0f);
-			sideExpansion = Num.clamp(sideExpansion, -0.1f, 0.1f, 0.0f);
+			sideExpansion = Num.clamp(sideExpansion, -0.1f, 0.1f, 0.005f);
 			sideIndent = Num.clamp(sideIndent, -0.1f, 0.1f, 0.0001f);
 		}
 	}

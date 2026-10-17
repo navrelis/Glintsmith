@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import net.minecraft.Util;
 import net.minecraft.core.Direction;
 import org.joml.Vector3f;
 import org.junit.jupiter.api.Test;
@@ -182,5 +183,18 @@ class GapFixTest {
 		GapFix.Settings auto = GapFix.autoSettings();
 		assertTrue(auto.enabled());
 		assertFalse(auto.preciseSpans());
+	}
+
+	@Test
+	void autoSettingsMatchThePlatformValues() {
+		GapFix.Settings auto = GapFix.autoSettings();
+		if (Util.getPlatform() == Util.OS.OSX) {
+			assertEquals(new GapFix.Settings(true, 1.0F, 0.0F, 0.0099F, false), auto);
+		} else {
+			assertEquals(new GapFix.Settings(true, 0.0F, 0.005F, 0.0001F, false), auto);
+			assertEquals(0.005F, auto.sideExpansion());
+			assertEquals(0.0001F, auto.sideIndent());
+			assertEquals(0.0F, auto.uvShrinkMultiplier());
+		}
 	}
 }

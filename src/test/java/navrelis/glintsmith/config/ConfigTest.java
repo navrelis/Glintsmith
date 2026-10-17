@@ -69,6 +69,7 @@ class ConfigTest {
 		assertNull(c.glint.gui.tint);
 		assertEquals(GapFixMode.AUTO, c.gapFix.mode);
 		assertEquals(0.0001f, c.gapFix.sideIndent);
+		assertEquals(0.005f, c.gapFix.sideExpansion);
 		assertTrue(c.durabilityAlert.enabled);
 		assertEquals(0.10f, c.durabilityAlert.threshold);
 		assertTrue(c.enchantmentColors.isEmpty());

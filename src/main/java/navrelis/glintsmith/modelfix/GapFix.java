@@ -30,12 +30,16 @@ public final class GapFix {
 	private GapFix() {
 	}
 
-	/** Platform dependent defaults: macOS drivers bleed without UV shrink, so it keeps vanilla shrink and a larger indent. */
+	/**
+	 * Platform dependent defaults: macOS drivers bleed without UV shrink, so it keeps vanilla shrink and a larger indent.
+	 * Elsewhere the side quads grow by 0.005 so they close the 1 px step-corner cracks of generated item models; 0.01 and
+	 * above showed jagged slivers along the step edges in game.
+	 */
 	public static Settings autoSettings() {
 		if (Util.getPlatform() == Util.OS.OSX) {
 			return new Settings(true, 1.0F, 0.0F, 0.0099F, false);
 		}
-		return new Settings(true, 0.0F, 0.0F, 0.0001F, false);
+		return new Settings(true, 0.0F, 0.005F, 0.0001F, false);
 	}
 
 	/** Settings that reproduce vanilla behaviour exactly. */

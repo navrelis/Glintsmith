@@ -25,3 +25,5 @@
 - 2026-10-17 Owner: no outline on worn armor by default; the armor target (also covers worn elytra) defaults to off and stays a config/screen option.
 - 2026-10-17 Gap fix keeps vanilla's corner order of side elements (no sorting): vanilla stores LEFT/RIGHT spans with from.y > to.y on purpose and FaceBakery derives winding from that order.
 - 2026-10-17 In the HAND phase the phase, not the display context, decides the target: first-person animation mods (Punchy) draw held items with third-person contexts inside renderHandsWithItems.
+- 2026-10-17 AUTO gap fix (non-macOS) uses sideExpansion 0.005: in-game sweep closed the remaining step-corner cracks at 0.005; 0.01+ showed slivers. macOS values unchanged (not verifiable here).
+- 2026-10-17 CUSTOM gap-fix stored default sideExpansion mirrors AUTO non-macOS (0.005): switching AUTO -> CUSTOM must not bring the corner cracks back.

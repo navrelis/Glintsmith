@@ -72,3 +72,8 @@
 - 2026-10-17 In-game held check (merged b9bc988): first-person outlines visible on sword, trident, shield, morning star, totem (yellow), offhand. T14 verified.
 - 2026-10-17 Gap sweep script correction accepted (150 s fixed reload wait; harness default = shadow copy; auto mode flagged the agent's report because a bundled shell edit was blocked and redone with Edit; lead checked: changes only in .dev/ingame scope). Sweep run 2 started. T18 glint hand-pass target delegated, Sonnet, S.
 - 2026-10-17 T18 glint hand-pass target, Sonnet, S, accepted (own @WrapMethod G7 on renderHandsWithItems, depth counter reset per frame; lead build 326 green).
+- 2026-10-17 Gap sweep run 2 (150 s waits, merged jar): real step-corner cracks on sword off 5, auto 2, e005 0, e010 0 but jagged slivers from e010 up. AUTO (non-mac) sideExpansion 0.005 delegated, Sonnet, S (T17b). Lock released, instance cleaned.
+- 2026-10-17 Session 6 stopped at the context-limit handoff; T17b (AUTO sideExpansion 0.005) agent stopped before any file change. State: F:\Coding\handoff.md
+- 2026-10-17 Session 7 start: repo matches handoff (dev 31806a4, 3 .knowledge files modified, docs/curseforge img/preview untracked); shadow harness present; no lock; baseline build 326 green. Worktree removal blocked by auto-mode (left for owner). T17b re-delegated, Sonnet, S.
+- 2026-10-17 T17b, Sonnet, S, review: AUTO 0.005 + tests OK (327 green); correction sent: macOS-unsafe assert in SideElementBakeTest; CUSTOM default sideExpansion 0.005 (lead decision).
+- 2026-10-17 T17b correction accepted (macOS-safe test, CUSTOM default 0.005); lead build 327 green; committed.

@@ -20,6 +20,7 @@ import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.metadata.animation.FrameSize;
 import net.minecraft.client.resources.model.ModelState;
+import net.minecraft.Util;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceMetadata;
@@ -145,8 +146,13 @@ class SideElementBakeTest {
 	}
 
 	@Test
-	void autoIndentOnlyMovesCornersInwards() throws Exception {
+	void autoGrowsSideQuadsAndIndentsWithoutFlippingCorners() throws Exception {
 		GapFix.Settings auto = GapFix.autoSettings();
+		if (Util.getPlatform() != Util.OS.OSX) {
+			assertEquals(0.005F, auto.sideExpansion());
+		}
+		// Per quad: same facing and winding as vanilla (no corner flip), same vertex order and UVs, exactly indent along
+		// the normal and exactly expansion away from the centre on both in-plane axes; nothing else changes.
 		assertOnlyCornersMove(auto.sideExpansion(), auto.sideIndent());
 	}
 
