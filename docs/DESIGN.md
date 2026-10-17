@@ -30,13 +30,17 @@ duplicated ("teed") into a per-phase *mask buffer source*. The mask buffer sourc
 vertices with a tiny mask shader. That shader samples the item's own texture, discards texels with
 alpha below 0.1 (the vanilla cutout threshold) and writes the item's per-frame *style index*. At the
 end of the phase (world, first-person hand, or one GUI item), the mask is drawn into an off-screen
-target that holds a copy of the scene depth. Two full-screen passes, clipped to the bounding box of
-the mask vertices, then run:
+target. In the world and the vanilla hand the mask is not tested against the scene: it records every
+item pixel, visible or hidden, together with the depth of the nearest item surface. The scene depth is
+copied into the mask target's depth attachment only after the mask draw. Two full-screen passes,
+clipped to the bounding box of the mask vertices, then run:
 
-1. A horizontal nearest-seed search.
+1. A horizontal nearest-seed search. A mask pixel is a seed only where the item is visible there
+   (the scene is not in front of the item).
 2. A vertical search that finishes the exact Euclidean distance transform, looks up colour,
    thickness, softness and opacity in a 256x2 style texture, suppresses pixels where scene geometry is
-   in front of the outlined item, and alpha-blends the outline onto the main target.
+   in front of the outlined item (or, over hidden item pixels, where the occluder is not clearly
+   behind the item), and alpha-blends the outline onto the main target.
 
 Why this approach:
 
@@ -47,7 +51,9 @@ Why this approach:
 * **Pixel-constant thickness and soft glow.** Each outlined item on screen gets its own colour,
   thickness and softness, with no re-rendering of the item and no "late replay".
 * **Cost scales with what is on screen.** Nothing at all happens on frames where no outlined item
-  is drawn. Otherwise the cost is one mask draw plus two clipped full-screen passes per phase.
+  is drawn. Otherwise the cost is one mask draw plus two clipped full-screen passes per phase (and a
+  scissored depth clear and depth blit in the world and the vanilla hand). Seeding only from visible
+  item pixels does not add a pass.
 * **No ordinal injections into `LevelRenderer.renderLevel`.** The world composite is triggered at
   run time when vanilla flushes `RenderType.waterMask()` on the main source.
 
@@ -142,10 +148,10 @@ Composite locations at a glance:
 
 | Phase | Mask depth | Composite point | Composite target |
 |---|---|---|---|
-| WORLD | copy of main depth, mask LEQUAL + polygon offset | `endBatch(waterMask)` TAIL (before translucent terrain, particles, weather) | main |
-| HAND, vanilla | copy of main depth after the hand's depth clear | after `renderHandsWithItems` returns (before screen effects) | main |
-| HAND, Iris pack | cleared (no scene depth available) | `GameRenderer.renderLevel` RETURN | main (contains Iris's final image) |
-| GUI | none (no depth test) | after each `GuiGraphics.renderItem` (the item is drawn by then: by its own flush, or under HUD batching by the O1-end flush of outlined GUI items) | main |
+| WORLD | mask LEQUAL against its own depth (cleared to far), then a copy of main depth for the passes | `endBatch(waterMask)` TAIL (before translucent terrain, particles, weather) | main |
+| HAND, vanilla | same, with the main depth as it is after the hand's depth clear | after `renderHandsWithItems` returns (before screen effects) | main |
+| HAND, Iris pack | mask depth cleared to far, no scene depth (every mask pixel is a seed) | `GameRenderer.renderLevel` RETURN | main (contains Iris's final image) |
+| GUI | none (no depth test, every mask pixel is a seed) | after each `GuiGraphics.renderItem` (the item is drawn by then: by its own flush, or under HUD batching by the O1-end flush of outlined GUI items) | main |
 
 ---
 
@@ -294,26 +300,36 @@ type is maskable only if all of these hold:
   If the format has UV0 but the texture is unknown (a custom lambda shard), the type is **not** masked,
   because a quad-shaped outline would look wrong.
 
-The mask type is memoized by (texture, mode, depthTested) and built like this:
+Each maskable source type owns its mask types: one depth-tested and one flat (GUI). They are created
+lazily and never shared with another source type, even for the same texture, so two source buffers
+used at the same time (for example through a `VertexMultiConsumer`) cannot interleave their vertices
+in one mask buffer. A mask type is built like this:
 
 ```
 RenderType.create("glintsmith_outline_mask", DefaultVertexFormat.POSITION_TEX_COLOR, mode, 1536, false, false,
   RenderType.CompositeState.builder()
     .setShaderState(new RenderStateShard.ShaderStateShard(OutlineShaders::mask))
-    .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+    .setTextureState(textureShard)    // EmptyTextureStateShard: binds the texture, leaves its filter alone
     .setTransparencyState(RenderStateShard.NO_TRANSPARENCY)
     .setCullState(RenderStateShard.NO_CULL)
-    .setDepthTestState(depthTested ? RenderStateShard.LEQUAL_DEPTH_TEST : RenderStateShard.NO_DEPTH_TEST)
-    .setLayeringState(depthTested ? RenderStateShard.POLYGON_OFFSET_LAYERING : RenderStateShard.NO_LAYERING)
-    .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+    .setDepthTestState(depth ? RenderStateShard.LEQUAL_DEPTH_TEST : RenderStateShard.NO_DEPTH_TEST)
+    .setLayeringState(depth ? sourceLayering : RenderStateShard.NO_LAYERING)
+    .setWriteMaskState(depth ? RenderStateShard.COLOR_DEPTH_WRITE : RenderStateShard.COLOR_WRITE)
+    .setOutputState(MASK_TARGET)      // binds the mask target
     .createCompositeState(false));
 ```
 
-There is no output shard. The compositor binds the mask target itself before calling
-`maskSource.endBatch()`. `POLYGON_OFFSET_LAYERING` is `polygonOffset(-1, -10)`. It makes the mask's
-fragments pass LEQUAL against the item's own depth even with precision noise. The mask vertex shader
-also uses the exact vanilla expression `ProjMat * ModelViewMat * vec4(Position, 1.0)`, the same
-invariance that vanilla glint relies on for its EQUAL depth test.
+* **Depth-tested type** (WORLD and HAND). It does not test against the scene. It tests `LEQUAL` against
+  the mask target's own depth attachment, which the compositor clears to the far plane before the mask
+  draw, and it writes depth. The nearest item surface therefore wins at every pixel, and the mask holds
+  all item pixels, visible or hidden by the scene. It copies the layering of its source type
+  (`sourceLayering`, read through `CompositeStateAccessor`; for example the view offset of armor
+  types), so that its depth equals the depth of the item's main draw. There is no polygon offset: the
+  mask is not meant to pass against the scene.
+* **Flat type** (GUI). `NO_DEPTH_TEST`, no layering, `COLOR_WRITE`. Unchanged.
+* The mask vertex shader uses the exact vanilla expression `ProjMat * ModelViewMat * vec4(Position, 1.0)`,
+  the same invariance that vanilla glint relies on for its EQUAL depth test. The seed rule in 3.3
+  depends on it.
 
 **Mask buffer source** (one per phase): `MultiBufferSource.immediateWithBuffers(new Object2ObjectLinkedOpenHashMap<>(), new ByteBufferBuilder(256))`.
 
@@ -338,32 +354,89 @@ invariance that vanilla glint relies on for its EQUAL depth test.
   memory only costs while outlines are on screen. At 1080p that is about 25 MB in use; at 4K about
   100 MB.
 
-Depth handling per phase:
+Why the mask is not tested against the scene. An earlier design drew the mask `LEQUAL` against a copy
+of the scene depth, with a polygon offset so that the mask would pass against the item's own depth.
+The offset also let item pixels through that lie slightly behind a nearby surface. With Punchy, a blade
+drawn partly inside the first-person arm left 1 to 2 px islands of hidden item pixels in the mask.
+They became seeds and drew outline rings on the sleeve. The composite had only the scene depth and no
+item depth, so it could not hide the outline over the hidden part of the blade. The same flaw applied
+in the world phase (an item inside a block or leaning on one). The mask now records the item's own
+depth, and the two passes decide per pixel whether the item is visible.
 
-* **WORLD.** Bind the mask target, clear colour to 0, then `mask.copyDepthFrom(main)` (a depth blit;
-  it leaves framebuffer 0 bound, so re-bind with `mask.bindWrite(false)`). Then draw the mask types
-  with `LEQUAL` and no depth write. By the composite point, all item batches have been flushed into
-  main depth: `translucentCullBlockSheet` (flat world items), the shield/banner sheets and the entity
-  sheets. So:
-  * The seed depth is the item's depth.
-  * Walls occlude the mask, so nothing outlines through walls.
-  * Fabulous translucent block items, which live in `itemEntityTarget`, still pass, because main
-    depth behind them is farther away.
-* **HAND, vanilla.** The same as WORLD. The main depth was cleared before the hand and now contains
-  hand plus arm depth.
-* **HAND, Iris.** Do not copy (main depth is not Iris's depth). Clear the mask depth to 1.0 once per
-  frame at the first hand flush. Under Iris, `renderHandsWithItems` runs twice per frame (solid and
-  translucent passes), so the mask accumulates across both calls. The composite uses `UseDepth=0`.
-* **GUI.** Scissored clear of the mask colour inside the item's bbox. Mask types use `NO_DEPTH_TEST`.
-  The composite uses `UseDepth=0`.
+Depth handling per phase (`OutlineCompositor.MaskDepth`):
 
-**Occluder suppression** (`UseDepth=1`). The composite reads the mask target's depth texture at the
-outline pixel p (`zp`, the scene) and at its nearest seed s (`zs`, the item). After linearising both
-with `NearFar = (0.05, GameRenderer.getDepthFar())`, the outline pixel is discarded if
-`zp < zs - max(DepthTolerance, 0.02·zs)` (DepthTolerance = 0.15 blocks). This removes outlines drawn
-onto things in front of the item: an arm in front of a held sword, a wall edge in front of a dropped
-item, a mob standing in front of an item frame. It keeps outlines over things behind the item: the
-holder's body, the floor, the sky.
+* **WORLD** (`COPY`). In order:
+  1. Bind the mask target, set the scissor box to the phase region, clear colour to 0 and depth to
+     1.0 (far), depth writes on.
+  2. Draw the mask: `phase.maskSource.endBatch()`. The depth-tested mask types test against the mask's
+     own depth and write it, so the colour holds, per pixel, the style index and the depth of the
+     nearest item surface (3.4).
+  3. Blit the main depth into the mask target's depth attachment (`mask.copyDepthFrom(main)`, inside
+     the scissor box; it leaves framebuffer 0 bound, so re-bind with `mask.bindWrite(false)`). From
+     here on the depth attachment is the scene depth, and the mask colour is the item depth.
+  4. Run the EDT pass and the composite with `UseDepth=1`.
+
+  By the composite point, all item batches have been flushed into main depth:
+  `translucentCullBlockSheet` (flat world items), the shield/banner sheets and the entity sheets. So
+  the scene depth contains the item itself. Fabulous translucent block items, which live in
+  `itemEntityTarget`, are not in main depth, which is fine: the scene there is farther than the item,
+  so the item counts as visible.
+* **HAND, vanilla** (`COPY`). The same as WORLD. The main depth was cleared before the hand and now
+  contains hand plus arm depth.
+* **HAND, Iris** (`CLEAR` at the first hand flush, then `NONE`). No copy (main depth is not Iris's
+  depth). The first flush of the frame clears mask colour and depth, with no scissor. Under Iris,
+  `renderHandsWithItems` runs twice per frame (solid and translucent passes), so the mask
+  accumulates across both calls. The deferred composite uses `UseDepth=0`: every mask pixel is a seed
+  and no outline is suppressed.
+* **GUI** (`NONE`). Scissored clear of the mask colour inside the item's bbox; the mask depth is not
+  touched. Mask types use `NO_DEPTH_TEST`. The composite uses `UseDepth=0`: every mask pixel is a seed.
+
+**Depth rules** (`UseDepth=1`; implemented in `outline_edt.fsh` and `outline_composite.fsh`, mirrored
+in plain Java by `OutlineDepth` so the rules can be tested on the JVM). Notation: the scene depth is
+the mask target's depth attachment after the copy; the item depth is unpacked from G, B and A of the
+mask colour (24-bit window depth).
+
+* **Visible item pixel.** The scene depth at the pixel is not smaller than the item depth minus
+  `SeedEpsilon`, that is, `sceneZ >= itemZ - SeedEpsilon`. `SeedEpsilon = 32 / 0xFFFFFF` in window
+  depth (32 steps of a 24-bit depth buffer). It only absorbs quantisation and rounding differences
+  between the item's own draw and the mask draw. It does not grow with the depth slope, as the old
+  polygon offset did.
+* **Seeds.** In the EDT pass, a mask pixel is a seed only if the item is visible there. Hidden item
+  pixels are no seeds. They are invisible to the distance search, as if the mask were empty there.
+* **Composite, per output pixel p.** After the distance search the nearest seed s is known. `zp` and
+  `zs` are the linearised scene depths at p and s, using `NearFar = (0.05, GameRenderer.getDepthFar())`.
+  Since s is a visible item pixel, `zs` is also the item's distance.
+  * p is a visible item pixel: no outline (inside the silhouette).
+  * p is a hidden item pixel (the mask has an item there, but the scene is in front): the item
+    continues behind an occluder at p, for example a blade going into the arm or a sword behind a
+    pillar. The outline is drawn only if the scene at p is clearly behind the seed:
+    discard if `zp < zs + max(CoverTolerance, RelativeTolerance·zs)`. Otherwise the outline would be
+    drawn on the occluder.
+  * Any other p: discard if `zp < zs - max(DepthTolerance, RelativeTolerance·zs)`. This is the rule the
+    pipeline always had. It removes outlines drawn onto things in front of the item: an arm in
+    front of a held sword, a wall edge in front of a dropped item, a mob standing in front of an item
+    frame. It keeps outlines over things behind the item: the holder's body, the floor, the sky.
+* **Constants.**
+
+  | Name | Value | Used for |
+  |---|---|---|
+  | `SEED_EPSILON` | 32 / 0xFFFFFF (window depth) | visible-item test, `SeedEpsilon` uniform |
+  | `WORLD_TOLERANCE` | 0.15 blocks | `DepthTolerance` in the WORLD phase (dropped items next to slightly nearer floor) |
+  | `HAND_TOLERANCE` | 0.03 blocks | `DepthTolerance` in the HAND phase (the hand scene is under one block deep) |
+  | `COVER_TOLERANCE` | 0.15 blocks | `CoverTolerance`: outline on a hidden item pixel |
+  | `RELATIVE_TOLERANCE` | 0.02 (fraction of `zs`) | added to every tolerance as `max(tolerance, 0.02·zs)` |
+
+  `DepthTolerance` is set per phase by `OutlineCompositor.frontTolerance(phase)`.
+
+Cost: unchanged. One mask draw plus two clipped full-screen passes per phase, plus the scissored depth
+clear and the depth blit that WORLD and vanilla HAND already had. The item depth is stored in the mask
+colour, so no extra target and no extra pass is needed.
+
+Known risk: the seed rule needs the item's main draw and the mask draw to produce the same depth within
+32 steps of 24-bit depth. This holds when the mask uses the same vertex expression, the same matrices
+and the same layering as the source type. If a source type changes the depth in a way the mask does not
+copy, its item pixels would look hidden and the item would get no outline, or only a partial one.
+Not verified for any such type.
 
 **Frame-buffer stencil caveat.** If a mod gives the main target a `DEPTH24_STENCIL8` attachment, the
 depth blit into our `DEPTH_COMPONENT` target fails with `GL_INVALID_OPERATION`. Check `glGetError()`
@@ -372,7 +445,15 @@ WORLD and HAND (vanilla) outlines; GUI keeps working.
 
 ### 3.4 Per-item data encoding
 
-* **Mask target, RGBA8.** R = style index / 255 (0 = empty, 1..255 = style). G, B and A are unused.
+* **Mask target, RGBA8 colour plus a depth attachment.**
+  * Colour: R = style index / 255 (0 = empty, 1..255 = style). G, B and A hold the window depth
+    (`gl_FragCoord.z`) of the item surface at the pixel as a 24-bit integer, rounded to nearest and
+    clamped so that 1.0 does not wrap to 0, most significant byte in G (`OutlineDepth.pack`). The mask
+    shader writes it for every mask type; only the passes with `UseDepth=1` read it.
+  * Depth attachment: during the mask draw it is the mask's own depth (cleared to far, nearest item
+    surface wins). In WORLD and vanilla HAND it is then overwritten with a copy of the main depth, so
+    that the passes read the item depth from the colour and the scene depth from the depth attachment
+    (3.3). Under a shader pack (HAND) it is only cleared. In GUI it is not used.
 * **Style table** (`StyleTable`, one per phase). Open addressing over `int[]` keys
   (argb, packed thickness/softness/opacity bytes). It is reset after each composite. At most 255
   entries per composite; further distinct styles reuse index 255 (rare, logged at debug level).
@@ -436,16 +517,28 @@ void main() {
 }
 ```
 
-`mask.fsh`
+`mask.fsh` (R = style index; G, B, A = 24-bit window depth of the item surface, most significant first)
 ```glsl
 #version 150
+
 uniform sampler2D Sampler0;
+
 in vec2 texCoord0;
 in vec4 vertexColor;
+
 out vec4 fragColor;
+
 void main() {
-    if (texture(Sampler0, texCoord0).a < 0.1) discard;   // vanilla cutout threshold → visible silhouette
-    fragColor = vertexColor;                              // R = style index / 255
+    // Vanilla cutout threshold: only the item's own silhouette becomes mask, visible or hidden by the scene.
+    if (texture(Sampler0, texCoord0).a < 0.1) {
+        discard;
+    }
+    // R = style index / 255, written by the mask vertex consumer. G, B, A = window depth of this item surface,
+    // 24 bits, most significant first (OutlineDepth.pack). The depth test against the mask's own depth keeps the
+    // nearest item surface; the passes compare it with the scene depth to tell visible from hidden item pixels.
+    uint z = min(uint(clamp(gl_FragCoord.z, 0.0, 1.0) * 16777215.0 + 0.5), 16777215u); // 1.0 must not wrap to 0
+    fragColor = vec4(vertexColor.r, float((z >> 16u) & 255u) / 255.0, float((z >> 8u) & 255u) / 255.0,
+        float(z & 255u) / 255.0);
 }
 ```
 
@@ -459,62 +552,112 @@ void main() { gl_Position = vec4(Position.xy, 0.0, 1.0); }
 `outline_edt.json`
 ```json
 {
-  "vertex": "glintsmith_fullscreen",
-  "fragment": "glintsmith_outline_edt",
-  "samplers": [ { "name": "MaskSampler" } ],
-  "uniforms": [
-    { "name": "Radius", "type": "int",   "count": 1, "values": [ 4 ] },
-    { "name": "Region", "type": "float", "count": 4, "values": [ 0, 0, 1, 1 ] }
-  ]
+    "vertex": "glintsmith_fullscreen",
+    "fragment": "glintsmith_outline_edt",
+    "samplers": [
+        { "name": "MaskSampler" },
+        { "name": "DepthSampler" }
+    ],
+    "uniforms": [
+        { "name": "Radius", "type": "int", "count": 1, "values": [ 4 ] },
+        { "name": "Region", "type": "float", "count": 4, "values": [ 0.0, 0.0, 1.0, 1.0 ] },
+        { "name": "UseDepth", "type": "int", "count": 1, "values": [ 0 ] },
+        { "name": "SeedEpsilon", "type": "float", "count": 1, "values": [ 0.0000019 ] }
+    ]
 }
 ```
 
-`outline_edt.fsh` (horizontal pass: nearest seed on the same row, signed)
+`outline_edt.fsh` (horizontal pass: nearest seed on the same row, signed; with `UseDepth`, only visible item pixels are seeds)
 ```glsl
 #version 150
+
+// Pass 1 of the exact separable distance transform: for every pixel the signed horizontal offset to the
+// nearest mask seed on the same row, searched up to Radius pixels. With UseDepth, a mask pixel is a seed only
+// where the item is visible (OutlineDepth.visible): item pixels hidden behind the scene are no seeds.
+
 uniform sampler2D MaskSampler;
+uniform sampler2D DepthSampler;
 uniform int Radius;
-uniform vec4 Region;          // x0, y0, x1, y1 inclusive, framebuffer pixels (GL origin bottom-left)
+uniform vec4 Region; // x0, y0, x1, y1 inclusive, framebuffer pixels (GL origin bottom-left)
+uniform int UseDepth;
+uniform float SeedEpsilon;
+
 out vec4 fragColor;
+
+float unpackDepth(vec3 gba) {
+    ivec3 b = ivec3(gba * 255.0 + 0.5);
+    return float((b.x << 16) | (b.y << 8) | b.z) / 16777215.0;
+}
+
+// Style id of the seed at q, or 0.0 if q is no seed.
+float seedId(ivec2 q) {
+    vec4 m = texelFetch(MaskSampler, q, 0);
+    if (m.r > 0.0 && UseDepth == 1 && texelFetch(DepthSampler, q, 0).r < unpackDepth(m.gba) - SeedEpsilon) {
+        return 0.0; // the scene is in front of the item here
+    }
+    return m.r;
+}
+
 void main() {
     ivec2 p = ivec2(gl_FragCoord.xy);
-    int x0 = int(Region.x), x1 = int(Region.z);
+    int x0 = int(Region.x);
+    int x1 = int(Region.z);
     for (int i = 0; i <= Radius; i++) {
         int xr = p.x + i;
         if (xr <= x1) {
-            float id = texelFetch(MaskSampler, ivec2(xr, p.y), 0).r;
-            if (id > 0.0) { fragColor = vec4((float(i) + 128.0) / 255.0, id, 0.0, 1.0); return; }
+            float id = seedId(ivec2(xr, p.y));
+            if (id > 0.0) {
+                fragColor = vec4((float(i) + 128.0) / 255.0, id, 0.0, 1.0);
+                return;
+            }
         }
         int xl = p.x - i;
         if (i > 0 && xl >= x0) {
-            float id = texelFetch(MaskSampler, ivec2(xl, p.y), 0).r;
-            if (id > 0.0) { fragColor = vec4((128.0 - float(i)) / 255.0, id, 0.0, 1.0); return; }
+            float id = seedId(ivec2(xl, p.y));
+            if (id > 0.0) {
+                fragColor = vec4((128.0 - float(i)) / 255.0, id, 0.0, 1.0);
+                return;
+            }
         }
     }
-    fragColor = vec4(0.0);    // A = 0 → no seed within Radius on this row
+    // A = 0: no seed within Radius on this row.
+    fragColor = vec4(0.0);
 }
 ```
 
 `outline_composite.json`
 ```json
 {
-  "vertex": "glintsmith_fullscreen",
-  "fragment": "glintsmith_outline_composite",
-  "samplers": [ { "name": "MaskSampler" }, { "name": "EdtSampler" }, { "name": "DepthSampler" }, { "name": "StyleSampler" } ],
-  "uniforms": [
-    { "name": "Radius",         "type": "int",   "count": 1, "values": [ 4 ] },
-    { "name": "Region",         "type": "float", "count": 4, "values": [ 0, 0, 1, 1 ] },
-    { "name": "UseDepth",       "type": "int",   "count": 1, "values": [ 0 ] },
-    { "name": "NearFar",        "type": "float", "count": 2, "values": [ 0.05, 1024.0 ] },
-    { "name": "DepthTolerance", "type": "float", "count": 1, "values": [ 0.15 ] },
-    { "name": "DistanceFade",   "type": "float", "count": 2, "values": [ 0.0, 0.0 ] }
-  ]
+    "vertex": "glintsmith_fullscreen",
+    "fragment": "glintsmith_outline_composite",
+    "samplers": [
+        { "name": "MaskSampler" },
+        { "name": "EdtSampler" },
+        { "name": "DepthSampler" },
+        { "name": "StyleSampler" }
+    ],
+    "uniforms": [
+        { "name": "Radius", "type": "int", "count": 1, "values": [ 4 ] },
+        { "name": "Region", "type": "float", "count": 4, "values": [ 0.0, 0.0, 1.0, 1.0 ] },
+        { "name": "UseDepth", "type": "int", "count": 1, "values": [ 0 ] },
+        { "name": "NearFar", "type": "float", "count": 2, "values": [ 0.05, 1024.0 ] },
+        { "name": "DepthTolerance", "type": "float", "count": 1, "values": [ 0.15 ] },
+        { "name": "CoverTolerance", "type": "float", "count": 1, "values": [ 0.15 ] },
+        { "name": "SeedEpsilon", "type": "float", "count": 1, "values": [ 0.0000019 ] },
+        { "name": "DistanceFade", "type": "float", "count": 2, "values": [ 0.0, 0.0 ] }
+    ]
 }
 ```
 
-`outline_composite.fsh` (vertical pass: exact EDT, style lookup, occluder test, output)
+`outline_composite.fsh` (vertical pass: exact EDT, style lookup, depth rules, output)
 ```glsl
 #version 150
+
+// Pass 2: finishes the exact Euclidean distance transform vertically, looks up the style of the nearest
+// seed, hides the outline where scene geometry is in front of the item and blends it onto the target.
+// The mask holds every item pixel, visible or hidden, with the item's own depth in G, B, A; DepthSampler is the
+// scene depth. The depth rules are mirrored in OutlineDepth (Java) and tested there.
+
 uniform sampler2D MaskSampler;
 uniform sampler2D EdtSampler;
 uniform sampler2D DepthSampler;
@@ -523,50 +666,92 @@ uniform int Radius;
 uniform vec4 Region;
 uniform int UseDepth;
 uniform vec2 NearFar;
-uniform float DepthTolerance;
-uniform vec2 DistanceFade;    // (start, end) in blocks; end <= start disables
+uniform float DepthTolerance; // front tolerance in blocks (per phase)
+uniform float CoverTolerance; // tolerance in blocks on hidden item pixels
+uniform float SeedEpsilon; // window depth
+uniform vec2 DistanceFade; // (start, end) in blocks; end <= start disables
+
 out vec4 fragColor;
 
 float linearDepth(float z) {
-    float n = NearFar.x, f = NearFar.y;
+    float n = NearFar.x;
+    float f = NearFar.y;
     return (2.0 * n * f) / (f + n - (2.0 * z - 1.0) * (f - n));
+}
+
+float unpackDepth(vec3 gba) {
+    ivec3 b = ivec3(gba * 255.0 + 0.5);
+    return float((b.x << 16) | (b.y << 8) | b.z) / 16777215.0;
 }
 
 void main() {
     ivec2 p = ivec2(gl_FragCoord.xy);
-    if (texelFetch(MaskSampler, p, 0).r > 0.0) discard;          // inside a silhouette: no outline
-    float best = 1.0e9; float bestId = 0.0; ivec2 seed = p;
-    int y0 = int(Region.y), y1 = int(Region.w);
+    vec4 m = texelFetch(MaskSampler, p, 0);
+    bool onHiddenItem = false;
+    if (m.r > 0.0) {
+        if (UseDepth != 1 || texelFetch(DepthSampler, p, 0).r >= unpackDepth(m.gba) - SeedEpsilon) {
+            discard; // inside the visible silhouette: no outline
+        }
+        onHiddenItem = true; // the item continues behind an occluder here
+    }
+    float best = 1.0e9;
+    float bestId = 0.0;
+    ivec2 seed = p;
+    int y0 = int(Region.y);
+    int y1 = int(Region.w);
     for (int j = 0; j <= Radius; j++) {
-        if (float(j * j) >= best) break;                          // early exit: no closer seed possible
+        if (float(j * j) >= best) {
+            break; // no closer seed possible
+        }
         for (int s = -1; s <= 1; s += 2) {
-            if (j == 0 && s > 0) continue;
+            if (j == 0 && s > 0) {
+                continue;
+            }
             int y = p.y + s * j;
-            if (y < y0 || y > y1) continue;                       // outside region = stale data, ignore
+            if (y < y0 || y > y1) {
+                continue; // outside the region the data is stale
+            }
             vec4 h = texelFetch(EdtSampler, ivec2(p.x, y), 0);
-            if (h.a < 0.5) continue;
+            if (h.a < 0.5) {
+                continue;
+            }
             float dx = h.r * 255.0 - 128.0;
             float d2 = dx * dx + float(j * j);
-            if (d2 < best) { best = d2; bestId = h.g; seed = ivec2(p.x + int(round(dx)), y); }
+            if (d2 < best) {
+                best = d2;
+                bestId = h.g;
+                seed = ivec2(p.x + int(round(dx)), y);
+            }
         }
     }
-    if (bestId <= 0.0) discard;
+    if (bestId <= 0.0) {
+        discard;
+    }
     int idx = int(bestId * 255.0 + 0.5);
     vec4 col = texelFetch(StyleSampler, ivec2(idx, 0), 0);
     vec4 par = texelFetch(StyleSampler, ivec2(idx, 1), 0);
     float thickness = par.r * 255.0 / 8.0;
-    float softness  = par.g;
-    float d = sqrt(best) - 0.5;                                   // distance to the seed pixel's edge
+    float softness = par.g;
+    float d = sqrt(best) - 0.5; // distance to the edge of the seed pixel
     float inner = thickness * (1.0 - softness);
     float outer = thickness * (1.0 + softness) + 0.5;
     float a = (1.0 - smoothstep(inner, outer, d)) * col.a;
     if (UseDepth == 1) {
         float zp = linearDepth(texelFetch(DepthSampler, p, 0).r);
         float zs = linearDepth(texelFetch(DepthSampler, seed, 0).r);
-        if (zp < zs - max(DepthTolerance, zs * 0.02)) discard;   // something in front of the item here
-        if (DistanceFade.y > DistanceFade.x) a *= 1.0 - smoothstep(DistanceFade.x, DistanceFade.y, zs);
+        // zs is the item's depth: seeds are visible item pixels. On a hidden item pixel the occluder must be clearly
+        // behind the seed, elsewhere it must not be clearly in front of it.
+        float relative = zs * 0.02;
+        if (onHiddenItem ? zp < zs + max(CoverTolerance, relative) : zp < zs - max(DepthTolerance, relative)) {
+            discard; // something is in front of the item here
+        }
+        if (DistanceFade.y > DistanceFade.x) {
+            a *= 1.0 - smoothstep(DistanceFade.x, DistanceFade.y, zs);
+        }
     }
-    if (a <= 0.003) discard;
+    if (a <= 0.003) {
+        discard;
+    }
     fragColor = vec4(col.rgb, a);
 }
 ```
@@ -588,23 +773,28 @@ state, return.
    the bound framebuffer is not necessarily `main`.
 3. Region: NDC bbox → pixels, grown by `R + 2`, clamped to the target. Use full-screen if the bbox
    is invalid.
-4. **Mask.** Bind `mask` for write (`bindWrite(false)`). Clear according to the phase (section 3.3).
-   For WORLD and vanilla HAND, copy depth and re-bind. Then `phase.maskSource.endBatch()`. This
-   draws every mask type using the *current* `RenderSystem` projection and model-view, which are the
-   same matrices vanilla just used. That is why each composite point sits exactly where vanilla
-   flushed the corresponding geometry.
+4. **Mask.** Bind `mask` for write (`bindWrite(false)`), set the scissor box to the region (not in the
+   Iris hand flush) and clear according to the phase (section 3.3: colour and depth for WORLD,
+   vanilla HAND and the first Iris hand flush; colour only for GUI). Then `phase.maskSource.endBatch()`.
+   This draws every mask type using the *current* `RenderSystem` projection and model-view, which are
+   the same matrices vanilla just used. That is why each composite point sits exactly where vanilla
+   flushed the corresponding geometry. Only after that draw, for WORLD and vanilla HAND, blit the main
+   depth into the mask depth attachment (`copyDepthFrom`) and re-bind. The order is: clear colour and
+   depth, mask draw, depth copy, then the passes.
 5. **Pass H.** Bind `edt` for write. `RenderSystem.enableScissor(region)`. Disable depth test; set
-   `depthMask(false)`; disable blend. Set uniforms `Radius`, `Region` and `setSampler("MaskSampler", mask.getColorTextureId())`.
+   `depthMask(false)`; disable blend. Set uniforms `Radius`, `Region`, `UseDepth` and `SeedEpsilon`, and
+   `setSampler("MaskSampler", mask.getColorTextureId())` and `setSampler("DepthSampler", mask depth texture)`.
    Draw with `FullscreenQuad.draw(edtShader)`, a static `VertexBuffer(Usage.STATIC)` holding a
    POSITION quad (-1,-1)(1,-1)(1,1)(-1,1), drawn with `drawWithShader(IDENTITY, IDENTITY, shader)`.
 6. **Pass V + composite.** Bind `main` for write (`bindWrite(false)`; the same size, so the viewport is
    unchanged). Keep the scissor. Upload the style table. Set samplers:
    * `MaskSampler` = mask colour
    * `EdtSampler` = edt colour
-   * `DepthSampler` = `Integer.valueOf(mask.getDepthTextureId())`
+   * `DepthSampler` = `Integer.valueOf(mask.getDepthTextureId())` (the scene depth after the copy)
    * `StyleSampler` = style `DynamicTexture`
 
-   Set uniforms `UseDepth`, `NearFar`, `DepthTolerance`, `DistanceFade`. Enable blend with
+   Set uniforms `UseDepth`, `NearFar`, `DepthTolerance` (`frontTolerance` of the phase: 0.15 blocks in
+   WORLD, 0.03 in HAND), `CoverTolerance` (0.15), `SeedEpsilon` and `DistanceFade`. Enable blend with
    `blendFuncSeparate(SRC_ALPHA, ONE_MINUS_SRC_ALPHA, ZERO, ONE)`, which keeps the main target's alpha.
    Draw.
 7. **Restore.** Disable scissor; disable blend; `defaultBlendFunc()`; `depthMask(true)`;
@@ -688,7 +878,7 @@ All mixins live in package `navrelis.glintsmith.mixin` (sub-packages `outline`, 
 | O7b | same | same | `render(Lnet/minecraft/client/DeltaTracker;Z)V` RETURN | `@Inject` | `onFrameEnd`: discard leftover mask geometry, close stray phases | Leftovers are discarded at the next phase open instead |
 | O7c | same | same | `renderLevel(Lnet/minecraft/client/DeltaTracker;)V` RETURN | `@Inject` | Iris only: deferred HAND composite | No hand outlines under a shader pack |
 | A1 | `outline.CompositeRenderTypeAccessor` | `net.minecraft.client.renderer.RenderType$CompositeRenderType` | `state()` | `@Invoker("state")` | Read the composite state | — |
-| A2 | `outline.CompositeStateAccessor` | `net.minecraft.client.renderer.RenderType$CompositeState` | fields `textureState`, `transparencyState` | `@Accessor` | Texture shard, glint detection | — |
+| A2 | `outline.CompositeStateAccessor` | `net.minecraft.client.renderer.RenderType$CompositeState` | fields `textureState`, `transparencyState`, `texturingState`, `writeMaskState`, `layeringState` | `@Accessor` | Texture shard, glint detection, invisible depth-only geometry, and the layering the depth-tested mask type copies | — |
 | A3 | `outline.EmptyTextureStateShardAccessor` | `net.minecraft.client.renderer.RenderStateShard$EmptyTextureStateShard` | `cutoutTexture()Ljava/util/Optional;` | `@Invoker("cutoutTexture")` | Texture for the mask | — |
 | E1 | Fabric event | `WorldRenderEvents.START` | — | event | Open the WORLD phase (gated) | — |
 | E2 | Fabric event | `WorldRenderEvents.LAST` | — | event | Fallback WORLD composite (the model-view is still pushed at LAST) | — |
@@ -1075,7 +1265,8 @@ Failure behaviour summary:
   16-FMA projection for the bbox. A flat generated item has a few hundred vertices, so this is a few
   µs. Real buffers lose Sodium's intrinsics for outlined items only.
 * **GPU per phase:** mask draw (a few draw calls, one per distinct texture) plus pass H and pass V over
-  the clipped region. Taps per pixel are at most 2(R+1) per pass, with early exit. Estimates
+  the clipped region, and in WORLD and vanilla HAND a scissored depth clear and a depth blit. The
+  visible-item rule (3.3) adds no pass and no target. Taps per pixel are at most 2(R+1) per pass, with early exit. Estimates
   **[UNVERIFIED, not measured]**:
   * 1080p, R = 6, region about 25 % of the screen: about 10 M texel fetches, under 0.1 ms on a GTX
     1060-class GPU.
@@ -1164,7 +1355,13 @@ final class ScreenBounds { void snapshot(); void include(float x, float y, float
 final class OutlineTargets { com.mojang.blaze3d.pipeline.RenderTarget mask(); com.mojang.blaze3d.pipeline.RenderTarget edt(); void ensureSize(com.mojang.blaze3d.pipeline.RenderTarget main); void tickIdle(boolean used); void release(); }
 final class OutlineShaders { static @Nullable ShaderInstance mask(); static @Nullable ShaderInstance edt(); static @Nullable ShaderInstance composite(); static void markDirty(); }
 final class FullscreenQuad { static void draw(ShaderInstance shader); static void close(); }
-final class OutlineCompositor { static void composite(PhaseState phase, boolean useDepth); }
+final class OutlineCompositor {
+    enum MaskDepth { COPY, CLEAR, NONE }                    // how the mask target's depth is prepared
+    static void composite(PhaseState phase, MaskDepth depth, boolean useDepth, float fadeStart, float fadeEnd);
+    static boolean drawMaskOnly(PhaseState phase, boolean clear);   // Iris hand: mask now, composite later
+    static void resolve(PhaseState phase);                          // passes over an earlier mask, UseDepth 0
+}
+final class OutlineDepth { /* constants and the depth rules as plain Java; mirrored by the shaders, tested on the JVM */ }
 final class OutlineFailsafe { static boolean tripped(); static void trip(String where, Throwable t); }
 // navrelis.glintsmith.render.outline.compat
 final class IrisCompat { static boolean loaded(); static boolean shaderPackInUse(); static boolean shadowPass(); static void refreshPerFrame(); }
@@ -1328,8 +1525,10 @@ the user folder `<configDir>/glintsmith/glints/` is created if missing.
 5. **The mask cannot see geometry drawn outside `MultiBufferSource`** (direct Tesselator draws in some
    mod BEWLRs).
    *Recommendation:* accept and document. GL-level interception would be far worse.
-6. **Outline drawn onto a non-outlined occluder** is handled by depth suppression in WORLD and HAND.
-   In GUI, overlapping neighbours simply overdraw each other in draw order.
+6. **Outline drawn onto a non-outlined occluder** is handled by the depth rules in WORLD and vanilla
+   HAND (3.3): hidden item pixels are no seeds, and an outline over a hidden item pixel needs the
+   occluder to be clearly behind the item. In GUI, overlapping neighbours simply overdraw each other in
+   draw order.
    *Recommendation:* fine as is.
 7. **Thickness on high-DPI and 4K screens** is in physical pixels, so it looks thinner at 4K.
    *Recommendation:* T3 adds an optional `scaleWithResolution` flag (thickness × framebufferHeight /
@@ -1354,6 +1553,13 @@ the user folder `<configDir>/glintsmith/glints/` is created if missing.
 14. **GLSL portability** (`texelFetch` on a depth `sampler2D`, int loops with uniform bounds). This is
     valid GLSL 1.50 **[UNVERIFIED on old Intel or macOS drivers]**.
     *Recommendation:* compile failures already degrade cleanly; test on macOS once.
+15. **Item depth in the mask must match the item's depth in the scene.** The seed rule (3.3) treats an
+    item pixel as visible only if the scene depth is at most 32 steps of 24-bit depth in front of the
+    mask's item depth. The item's main draw and the mask draw therefore have to produce the same depth
+    within that window: same vertex expression, same matrices, same layering. If they do not for some
+    source type, the item looks hidden and loses its outline (fully or in part).
+    *Recommendation:* the mask copies the layering of its source type. Check new item types in game; if
+    a type fails, widen `SEED_EPSILON` or copy more of its state. **[UNVERIFIED for mod render types]**
 
 ---
 
