@@ -7,7 +7,9 @@
     py -B art/gallery/build.py --captures DIR --out DIR
     py -B art/gallery/build.py --list               print every capture the manifest needs and whether it exists
 
-Reads art/gallery/cards.json and the screenshots in art/captures/ (what to capture: SHOTLIST.md).  A capture that
+Reads art/gallery/cards.json and the screenshots in art/captures/ (what to capture: SHOTLIST.md).  An element of type
+"studio" ({"scene", "frame", "at", "size", "shadow"}) sets a matted render from art/captures/studio/<scene>/ (see
+art/studio/) straight on the card, no frame, with an optional contact shadow.  A capture that
 is not there is never faked: its picture slot shows a grey "capture missing" placeholder, a warning is printed
 and --strict turns it into a failure.  The showcase GIF is built by gif.py (this script calls it unless
 --no-gif is given).
@@ -156,9 +158,59 @@ def el_strip(c, el, ctx):
     c.blit(strip, x, y)
 
 
+def studio_matte(ctx, scene_id, ref):
+    """The matted render of a studio scene frame (Canvas), or the repository-relative file that is missing.
+    Returns (canvas, None) or (None, missing file)."""
+    sys.path.insert(0, os.path.join(common.ART, "studio"))
+    try:
+        import scene as studio_scene
+        import pipeline
+    finally:
+        sys.path.pop(0)
+    cache = ctx.captures.__dict__.setdefault("_studio", {})
+    try:
+        sc = studio_scene.load(ctx.captures.folder, scene_id)
+    except studio_scene.SceneError as e:
+        if e.kind == "missing":
+            return None, "studio/%s/scene.json" % scene_id
+        sys.exit("error: %s" % e)
+    try:
+        frame = studio_scene.find_frame(sc, ref)
+    except studio_scene.SceneError as e:
+        sys.exit("error: %s" % e)
+    for path in sc.pair(frame):
+        if not os.path.isfile(path):
+            return None, "studio/%s/%s" % (scene_id, os.path.basename(path))
+    key = (scene_id, frame["index"])
+    if key not in cache:
+        try:
+            cache[key] = pipeline.matte_frame(sc, frame)
+        except (ValueError, OSError) as e:
+            sys.exit("error: cannot matte studio frame %s of %s: %s" % (frame["file"], scene_id, e))
+    return cache[key], None
+
+
+def el_studio(c, el, ctx):
+    """A studio render (transparent matte of a K / W frame pair, no frame or box) set straight on the card background,
+    fitted inside `size` at `at` and centred; "shadow": true lays the soft contact shadow under it."""
+    x, y = el["at"]
+    w, h = el["size"]
+    pic, missing = studio_matte(ctx, el["scene"], el["frame"])
+    if pic is None:
+        ctx.report.missing_capture(ctx.name, "art/captures/" + missing)
+        c.blit(lib.placeholder(w, h, "studio/" + el["scene"]), x, y)
+        return
+    sys.path.insert(0, os.path.join(common.ART, "studio"))
+    try:
+        import composite
+    finally:
+        sys.path.pop(0)
+    composite.place_on_canvas(c, pic, (x, y, w, h), el.get("shadow", True), composite.style(el.get("style")))
+
+
 ELEMENTS = {
     "capture": el_capture, "label": label, "text": el_text, "bullets": el_bullets, "chips": el_chips, "rule": el_rule,
-    "panel": el_panel, "heading": el_heading, "strip": el_strip,
+    "panel": el_panel, "heading": el_heading, "strip": el_strip, "studio": el_studio,
 }
 
 

@@ -15,6 +15,10 @@
 5. Sizes and GIF properties: card and banner sizes from the manifest, GIFs below their size limits, endless loop.
 6. Area-filter downscale (exact averages) and the logo / icon / animated logo from a synthetic capture, including what
    logo.py does when the capture is missing (a message, nothing written, exit 0, or 1 with --strict).
+6b. Studio (art/studio/): matte round trip of a black / white pair (alpha and colour within 1, exact empty / opaque pixels,
+   premultiplied supersampling), a synthetic turntable end to end (check, GIF with the expected frames, size, delays, delta
+   boxes, loop, budget and the step-down, identical bytes for any number of workers), stills, the "studio" card element
+   and its missing-scene behaviour, the CLI exit codes.
 7. Standard library only for every script under art/, and no __pycache__ anywhere below art/.
 
 Exit code 0 when everything passes, 1 otherwise.
@@ -33,6 +37,7 @@ sys.dont_write_bytecode = True
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, "gallery"))
+sys.path.insert(0, os.path.join(HERE, "studio"))
 
 import build     # noqa: E402
 import common    # noqa: E402
@@ -41,6 +46,12 @@ import imgio     # noqa: E402
 import lib       # noqa: E402
 import logo      # noqa: E402
 import synth     # noqa: E402
+import composite     # noqa: E402  (art/studio)
+import gifenc        # noqa: E402
+import matte         # noqa: E402
+import pipeline      # noqa: E402
+import scene as studio_scene   # noqa: E402
+import synth_studio  # noqa: E402
 
 ROOT = lib.ROOT
 MB = 1024 * 1024
@@ -170,6 +181,11 @@ def test_manifest(manifest):
                     bad.append("%s: picture %s at %d,%d size %dx%d leaves the card" % (card["out"], el["capture"], x, y, cw, ch))
                 if el["capture"] not in shotlist:
                     bad.append("%s is not described in SHOTLIST.md" % el["capture"])
+            if el["type"] == "studio":
+                x, y = el["at"]
+                sw, sh = el["size"]
+                if x < 0 or y < 0 or x + sw > w or y + sh > h or not el.get("scene") or el.get("frame") in (None, ""):
+                    bad.append("%s: studio element %s/%s is not inside the card or lacks scene / frame" % (card["out"], el.get("scene"), el.get("frame")))
     check(not bad, "%d cards: element types, picture boxes inside the cards, every capture in SHOTLIST.md%s" % (
         len(manifest["cards"]), "" if not bad else " -> " + "; ".join(bad)))
     check(len(names) == len(manifest["cards"]), "output names are unique")
@@ -511,6 +527,215 @@ def test_area():
         shutil.rmtree(outdir, ignore_errors=True)
 
 
+# ---------------------------------------------------------------------------------------- 6b. studio
+
+def kw_pair(pixels):
+    """K (over black) and W (over white) RGBA buffers for [(alpha 0..1, (r, g, b))], one row, like the in-game studio makes them."""
+    k, w = bytearray(), bytearray()
+    for a, c in pixels:
+        k += bytes(int(round(v * a)) for v in c) + b"\xff"
+        w += bytes(min(255, int(round(v * a + 255 * (1 - a)))) for v in c) + b"\xff"
+    return k, w
+
+
+def test_matte():
+    print("6b. studio: matte, composite, GIF encoder")
+    cases = [(0.0, (10, 20, 30)), (1.0, (10, 20, 30)), (0.4, (200, 100, 50)), (0.75, (255, 128, 0)), (0.5, (33, 200, 99)),
+             (0.9, (250, 250, 250)), (0.25, (120, 60, 240)), (0.05, (255, 0, 255))]
+    k, w = kw_pair(cases)
+    out = matte.matte_pair(k, w, len(cases), 1, 1)
+    px = [tuple(out.buf[i * 4:i * 4 + 4]) for i in range(len(cases))]
+    ok_alpha = all(abs(p[3] - round(255 * a)) <= 1 + (a < 0.1) for p, (a, _) in zip(px, cases))
+    ok_pre = all(abs(p[i] * p[3] / 255.0 - c[i] * a) <= 1.5 for p, (a, c) in zip(px, cases) for i in range(3))
+    ok_col = all(max(abs(p[i] - c[i]) for i in range(3)) <= 1 for p, (a, c) in zip(px, cases) if a >= 0.75)
+    check(ok_alpha and ok_pre and ok_col,
+          "matte round trip: alpha within 1/255, premultiplied colour within 1.5, straight colour within 1 where alpha >= 0.75")
+    check(px[0] == (0, 0, 0, 0) and px[1] == (10, 20, 30, 255) and px[2] == (200, 100, 50, 102),
+          "matte: empty is (0,0,0,0), W == K is opaque with colour K, a representable pair comes back exactly %s" % (px[:3],))
+    # noise: W a little below K (a > 1) clamps to opaque; a dark opaque pixel (K == W) stays opaque
+    noisy = matte.matte_pair(bytes((100, 100, 100, 255, 3, 2, 1, 255)), bytes((90, 100, 100, 255, 3, 2, 1, 255)), 2, 1, 1)
+    check(tuple(noisy.buf[0:4]) == (100, 100, 100, 255) and tuple(noisy.buf[4:8]) == (3, 2, 1, 255),
+          "matte: W below K (noise) clamps to opaque with colour K; W == K stays opaque")
+    # supersampling averages in premultiplied space: 1 opaque pixel of a 2 x 2 block is a quarter alpha at the full colour
+    k2, w2 = kw_pair([(1.0, (200, 40, 40)), (0.0, (0, 0, 0))])
+    ke, we = kw_pair([(0.0, (0, 0, 0)), (0.0, (0, 0, 0))])
+    s2 = matte.matte_pair(bytes(k2) + bytes(ke), bytes(w2) + bytes(we), 2, 2, 2)
+    check((s2.w, s2.h) == (1, 1) and tuple(s2.buf[:4]) == (200, 40, 40, 64),
+          "matte: S = 2 box filter in premultiplied space (1 opaque pixel of 4 -> alpha 64, colour unchanged) %s" % (tuple(s2.buf[:4]),))
+    k3, w3 = kw_pair([(1.0, (200, 40, 40)), (0.5, (0, 0, 255))])
+    s3 = matte.matte_pair(bytes(k3) + bytes(k3), bytes(w3) + bytes(w3), 2, 2, 2)
+    check(tuple(s3.buf[3:4]) == (191,) and s3.buf[2] > 100 and s3.buf[0] > 100,
+          "matte: S = 2 block of an opaque red and a half blue pixel mixes by alpha %s" % (tuple(s3.buf[:4]),))
+    check(list(matte.box_sums(bytes(range(16)), 4, 4, 2)) == [0 + 1 + 4 + 5, 2 + 3 + 6 + 7, 8 + 9 + 12 + 13, 10 + 11 + 14 + 15],
+          "matte.box_sums: 2 x 2 block sums of a 4 x 4 plane")
+
+
+def run_cli(*args):
+    return subprocess.run([sys.executable, "-B", os.path.join(HERE, "studio", "studio.py")] + list(args), capture_output=True, text=True)
+
+
+def test_studio():
+    tmp = tempfile.mkdtemp(prefix="glintsmith-studio-")
+    try:
+        # ---- a synthetic turntable, 12 frames of 96 x 96 at supersample 2 (never written below art/captures)
+        synth_studio.make_scene(tmp, "turn", frames=12, width=96, height=96, supersample=2, fps=30)
+        sc = studio_scene.load(tmp, "turn")
+        probs = studio_scene.validate(sc)
+        check(not probs and len(sc.frames) == 12, "synthetic scene: %d frames follow the frame contract (%s)" % (
+            len(sc.frames), "; ".join(m for _, m in probs[:2]) or "no problems"))
+        check(studio_scene.find_frame(sc, "hero")["index"] == 1 and studio_scene.find_frame(sc, 4)["index"] == 4
+              and studio_scene.find_frame(sc, "0007")["index"] == 7, "frames are found by still name, index and file stem")
+
+        # ---- stills: backdrop and transparent
+        fr = studio_scene.find_frame(sc, "hero")
+        a = pipeline.still(sc, fr, backdrop=True, caption=True)
+        b = pipeline.still(sc, fr, backdrop=False)
+        a2 = pipeline.still(sc, fr, backdrop=True, caption=True)
+        check((a.w, a.h) == (96, 96 + 36) and a.opaque() and a.to_png() == a2.to_png(),
+              "still: backdrop picture %dx%d (96x96 + caption bar), opaque, byte-identical on a rerun" % (a.w, a.h))
+        alphas = b.buf[3::4]
+        check((b.w, b.h) == (96, 96) and min(alphas) == 0 and max(alphas) == 255 and len([v for v in alphas if 0 < v < 255]) > 50,
+              "still --transparent: RGBA with empty, opaque and semi-transparent (glow) pixels, no backdrop")
+        bd = composite.backdrop(96, 96)
+        corner, centre = tuple(bd[0:3]), tuple(bd[(40 * 96 + 48) * 3:(40 * 96 + 48) * 3 + 3])
+        check(corner != (255, 255, 255) and lib.luminance(centre) > lib.luminance(corner) and lib.contrast(centre, corner) < 1.1,
+              "backdrop: cream radial gradient, subtle (centre %s, corner %s, contrast %.3f)" % (
+                  "#%02x%02x%02x" % centre, "#%02x%02x%02x" % corner, lib.contrast(centre, corner)))
+
+        # ---- GIF: frames, size, delays, delta boxes, loop, budget, determinism, workers
+        data, info = pipeline.build_gif(sc, caption=True, budget_mb=8, workers=1)
+        gi = imgio.parse_gif(data)
+        delays = [f["delay"] for f in gi["frames"]]
+        check((gi["width"], gi["height"]) == (96, 96 + 36) and len(gi["frames"]) == 12 and info["fps"] == 30 and info["scale"] == 1.0,
+              "GIF decodes: %dx%d, %d frames at the scene's 30 fps and scale 1.0" % (gi["width"], gi["height"], len(gi["frames"])))
+        check(len(data) < 8 * MB and gi["loop"] == 0 and sum(delays) == 40 and sorted(set(delays)) == [3, 4] and delays[:3] == [3, 3, 4],
+              "GIF: below 8 MB (%d bytes), loops forever, delays %s add up to the loop (40 cs), 30 fps = 3, 3, 4" % (len(data), delays[:6]))
+        f0 = gi["frames"][0]
+        same = [f for f, prev, cur in zip(gi["frames"][1:], sc.frames, sc.frames[1:]) if prev["caption"] == cur["caption"]]
+        check((f0["x"], f0["y"], f0["w"], f0["h"]) == (0, 0, 96, 132) and all(f["trans"] == 255 and f["disposal"] == 1 for f in gi["frames"])
+              and len(same) >= 6 and all(f["x"] > 0 and f["y"] + f["h"] <= 96 and f["w"] * f["h"] < 96 * 96 for f in same),
+              "GIF: first frame is full, the others are delta boxes (transparent index 255, disposal 1) that leave the backdrop edge and the caption bar alone while the caption stays")
+        check(len(gi["palette"]) == 256, "GIF: one global palette of 256 entries (255 colours + the transparent index)")
+        data2, _ = pipeline.build_gif(sc, caption=True, budget_mb=8, workers=1)
+        check(data == data2, "GIF: byte-identical on a rerun")
+        data3, _ = pipeline.build_gif(sc, caption=True, budget_mb=8, workers=2)
+        check(data == data3, "GIF: byte-identical with 2 worker processes")
+        small, _ = pipeline.build_gif(sc, size=(64, 64), caption=False, workers=1)
+        sgi = imgio.parse_gif(small)
+        check((sgi["width"], sgi["height"], len(sgi["frames"])) == (64, 64, 12), "GIF --size 64x64 --no-caption: %dx%d, %d frames" % (
+            sgi["width"], sgi["height"], len(sgi["frames"])))
+        # delta frames: applying every frame (transparent index = keep) reproduces the index frames exactly
+        fw, fh = 20, 10
+        seq = []
+        for t in range(6):
+            fr_ = bytearray([5]) * (fw * fh)
+            for y in range(3, 7):
+                for x in range(2 + 3 * t, 6 + 3 * t):
+                    fr_[y * fw + x] = 9 + t % 2
+            seq.append(bytes(fr_))
+        seq.append(seq[-1])                                            # an identical frame: a 1 x 1 transparent pixel
+        gd = imgio.parse_gif(gifenc.encode_gif(fw, fh, [(i, i, i) for i in range(255)], seq, [3] * len(seq)))
+        canvas = bytearray(fw * fh)
+        same = True
+        for want, f in zip(seq, gd["frames"]):
+            for yy in range(f["h"]):
+                for xx in range(f["w"]):
+                    v = f["indices"][yy * f["w"] + xx]
+                    if v != f["trans"]:
+                        canvas[(f["y"] + yy) * fw + f["x"] + xx] = v
+            same = same and bytes(canvas) == want
+        check(same and (gd["frames"][-1]["w"], gd["frames"][-1]["h"]) == (1, 1) and all(f["w"] * f["h"] < fw * fh for f in gd["frames"][1:]),
+              "delta frames: the GIF's frames applied in order give back every index frame; an unchanged frame is 1 x 1")
+        # the dither is anchored to the picture, so a flat subject colour gives the same pattern every frame
+        pal = gifenc.Palette([(i * 4 % 256, i * 7 % 256, i * 11 % 256) for i in range(255)])
+        flat = bytes([200, 150, 120]) * (16 * 16)
+        base = bytes([250, 245, 235]) * (16 * 16)
+        idx = gifenc.Indexer(pal, 16, 16, base, step=12, snap=0)
+        i1, i2 = idx.index(flat), idx.index(flat)
+        check(i1 == i2 and 1 < len(set(i1)) <= 8, "ordered dither: a flat colour dithers to the same pattern of a few palette colours every frame (%d)" % len(set(i1)))
+        check(len(set(idx.index(base))) == 1, "the unchanged backdrop is not dithered (one flat index)")
+        d540 = gifenc.delays_cs(540, 30, 540)
+        d432 = gifenc.delays_cs(432, 30, 540)
+        check(d540[:6] == [3, 3, 4, 3, 3, 4] and sum(d540) == 1800 and sum(d432) == 1800 and min(d432) >= 2,
+              "delays: 540 frames at 30 fps = 3,3,4 ... 1800 cs; 432 kept frames still add up to 1800 cs")
+        check(len(pipeline.kept_frames(540, 30, 24)) == 432 and pipeline.kept_frames(540, 30, 15)[:3] == [0, 2, 4]
+              and pipeline.fps_ladder(30) == [30, 24, 20, 15] and pipeline.fps_ladder(30, 20) == [20, 15],
+              "budget ladder: 30 -> 24 -> 20 -> 15 fps, frames dropped evenly (432 of 540 at 24 fps)")
+
+        # ---- the budget: a smaller limit steps down and says so, an impossible one stops with an error
+        bud = int(len(data) * 0.8)
+        d2, i2 = pipeline.build_gif(sc, caption=True, budget_mb=bud / MB, workers=1)
+        check(len(d2) <= bud and len(i2["tried"]) > 1,
+              "budget: a limit of 80%% of the size steps down to %g fps / scale %.2f (%d bytes) and reports it" % (i2["fps"], i2["scale"], len(d2)))
+        try:
+            quiet(pipeline.build_gif, sc, None, True, 0.0005, None, 1)
+            check(False, "an impossible GIF budget stops the build")
+        except SystemExit as e:
+            check("does not fit" in str(e), "an impossible GIF budget stops with a clear message and no file")
+
+        # ---- the card element
+        spec = {"out": "t.png", "size": [200, 160], "elements": [
+            {"type": "studio", "scene": "turn", "frame": "hero", "at": [10, 10], "size": [90, 90], "shadow": True},
+            {"type": "studio", "scene": "turn", "frame": "back", "at": [105, 10], "size": [90, 90], "shadow": False},
+            {"type": "studio", "scene": "nothere", "frame": "hero", "at": [10, 110], "size": [60, 40]}]}
+        report = common.Report()
+        card = quiet(build.build_card, spec, common.Captures(tmp), report)
+        empty = quiet(build.build_card, {"out": "t.png", "size": [200, 160], "elements": []}, common.Captures(tmp), common.Report())
+        again = quiet(build.build_card, spec, common.Captures(tmp), common.Report())
+        check(bytes(card.buf) != bytes(empty.buf) and bytes(card.buf) == bytes(again.buf),
+              "card element 'studio': draws the matted render on the card, byte-identical on a rerun")
+        check(tuple(card.get(10, 10)) == tuple(empty.get(10, 10)) and tuple(card.get(105, 10)) == tuple(empty.get(105, 10)),
+              "card element: no frame or box (the corners of the rect keep the card background)")
+        check(bool(report) and [m[1] for m in report.missing] == ["art/captures/studio/nothere/scene.json"],
+              "card element with a missing scene: warning for studio/nothere/scene.json and a placeholder")
+        check([tuple(card.get(x, 99)) for x in range(20, 90)] != [tuple(empty.get(x, 99)) for x in range(20, 90)],
+              "card element: shadow true lays a contact shadow under the render")
+
+        # ---- the CLI
+        out = os.path.join(tmp, "out")
+        r = run_cli("--captures", tmp, "check")
+        check(r.returncode == 0 and "turn" in r.stdout and "ok" in r.stdout, "studio.py check lists and validates the synthetic scene (exit 0)")
+        r = run_cli("--captures", tmp, "gif", "turn", "--out", os.path.join(out, "t.gif"), "--workers", "1")
+        check(r.returncode == 0 and os.path.isfile(os.path.join(out, "t.gif")) and read(os.path.join(out, "t.gif")) == data
+              and "wrote" in r.stdout, "studio.py gif writes the same bytes as the library call (exit 0)")
+        r = run_cli("--captures", tmp, "still", "turn", "back", "--out", os.path.join(out, "s.png"))
+        r2 = run_cli("--captures", tmp, "still", "turn", "2", "--out", os.path.join(out, "s2.png"), "--transparent")
+        check(r.returncode == 0 and r2.returncode == 0 and lib.Canvas.open(os.path.join(out, "s.png")).opaque()
+              and not lib.Canvas.open(os.path.join(out, "s2.png")).opaque(), "studio.py still writes a backdrop picture and a transparent one")
+        nothing = os.path.join(tmp, "empty")
+        os.makedirs(nothing)
+        for cmd in (["gif", "turn", "--out", os.path.join(out, "n.gif")], ["still", "turn", "hero", "--out", os.path.join(out, "n.png")]):
+            r = run_cli("--captures", nothing, *cmd)
+            check(r.returncode == 0 and "missing" in r.stdout and not os.path.exists(cmd[-1]),
+                  "studio.py %s without the scene: says what is missing, writes nothing, exit 0" % cmd[0])
+            r = run_cli("--captures", nothing, *(cmd + ["--strict"]))
+            check(r.returncode == 1 and not os.path.exists(cmd[-1]), "studio.py %s ... --strict without the scene: exit 1" % cmd[0])
+        check(run_cli("--captures", nothing, "check").returncode == 0 and run_cli("--captures", nothing, "check", "--strict").returncode == 1,
+              "studio.py check with no scenes: exit 0, with --strict exit 1")
+        # an incomplete scene (a W file gone) is 'missing'; a wrong size or missing field is an error
+        part = os.path.join(tmp, "part")
+        synth_studio.make_scene(part, "turn", frames=3, width=32, height=32, supersample=2)
+        os.remove(os.path.join(part, "studio", "turn", "0002_w.png"))
+        r = run_cli("--captures", part, "gif", "turn", "--out", os.path.join(out, "p.gif"))
+        check(r.returncode == 0 and "0002_w.png" in r.stdout and not os.path.exists(os.path.join(out, "p.gif")),
+              "an incomplete scene: names the missing 0002_w.png, writes nothing, exit 0")
+        r = run_cli("--captures", part, "check", "--strict")
+        check(r.returncode == 1 and "0002_w.png" in r.stdout, "studio.py check --strict names the missing pair and exits 1")
+        bad = os.path.join(tmp, "bad")
+        synth_studio.make_scene(bad, "turn", frames=2, width=32, height=32, supersample=2)
+        with open(os.path.join(bad, "studio", "turn", "0001_k.png"), "wb") as f:
+            f.write(imgio.png_bytes(10, 10, bytes(300), 3))
+        r = run_cli("--captures", bad, "check")
+        check(r.returncode == 1 and "0001_k.png" in r.stdout and "expected 64x64" in r.stdout,
+              "studio.py check finds a render whose size does not match width x supersample (exit 1)")
+        with open(os.path.join(bad, "studio", "turn", "scene.json"), "w", encoding="utf-8") as f:
+            f.write('{"scene": "turn", "width": 32}')
+        r = run_cli("--captures", bad, "check")
+        check(r.returncode == 1 and "lacks the fields" in r.stdout, "studio.py check reports scene.json fields that are missing")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def test_hygiene():
     print("7. standard library only, no bytecode")
     stdlib = set(sys.stdlib_module_names)
@@ -551,6 +776,8 @@ def main():
     test_builds(manifest)
     test_sizes(manifest)
     test_area()
+    test_matte()
+    test_studio()
     test_hygiene()
     print()
     if failures:

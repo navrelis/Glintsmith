@@ -131,6 +131,8 @@ def required_captures(manifest):
         for el in card.get("elements", []):
             if el.get("type") == "capture":
                 out.append((card["out"], el["capture"]))
+            elif el.get("type") == "studio":
+                out.append((card["out"], "studio/%s/scene.json" % el["scene"]))
     for gif in manifest.get("gifs", []):
         out.append((gif["out"], gif["frames_dir"] + "/NNNN.png"))
     logo = manifest.get("logo")

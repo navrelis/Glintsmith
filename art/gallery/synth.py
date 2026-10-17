@@ -60,7 +60,7 @@ def make(folder, manifest=None, frames=40, log=None):
     manifest = manifest or common.load_manifest()
     seen = {}
     for _image, rel in common.required_captures(manifest):
-        if rel.endswith("NNNN.png"):
+        if rel.endswith("NNNN.png") or rel.startswith("studio/"):      # frame folders and studio scenes: see art/studio/synth_studio.py
             continue
         seen.setdefault(rel, len(seen) + 1)
     for rel, seed in sorted(seen.items()):
