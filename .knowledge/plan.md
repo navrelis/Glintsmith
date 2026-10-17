@@ -48,6 +48,7 @@ Status: open / in progress / in review / done. Size S = short (1 unit), L = long
 | S3 | Scenes + captures | scene JSONs (hero_sword, lineup, armor_stand, stills for banner/universal/glint/outline/gap cards); lead runs runStudio and reviews frames | S1 | Sonnet + Lead | S | open |
 | S4 | New GIFs + cards | showcase/logo GIFs from studio scenes, cards.json for the 5 studio cards, art README/SHOTLIST, rebuild + checks | S2, S3 | Sonnet | S | open |
 | P1 | Live preview (2.0.0) | settings screen panel renders the main-hand item (fallback enchanted netherite sword) with hand-target outline + glint from the current settings, live on every change, slow turn + drag; works with GUI target off; no effect outside the screen; tests; build green x
+| G3 | Atlas scale + IF GUI glint (2.0.0) | atlas-independent glint scale option (default on, reference/actual atlas, u/v separate), custom GUI glints with ImmediatelyFast GUI/HUD sources, config migration, GlintTab toggle, lang, tests, CHANGELOG 2.0.0, build green | G2 | Opus | S | in progress |
 | P2 | 2.0.0 version + docs | mod_version 2.0.0, CHANGELOG 2.0.0, README/description/lang en+de for the preview, upload checklist for 2.0.0 | P1 | Sonnet | S | open |
 | G2 | Glint missing in hand (owner bug) | root cause (GUI texture/tint persistence, tinted vanilla slot, hand path with Iris, 3D-model foil types), fix with tests, build green, lead in-game check in the instance | - | Opus | S | in review: cause = ImmediatelyFast replaces the main buffer source (hand glint always vanilla); G9 mixin + G5c flush, 369 green; big 8192 atlas makes Scale 1 glints a flat wash; in-game check by the owner pending |
 | T25 | CurseForge upload | owner-provided project id, remote dry run, plan reviewed, upload with the user's uploader (release, 1.21.1 / Fabric / Java 21 / Client, relations fabric-api required + modmenu optional) | T11 | Lead | - | open: owner creates the project from build/curseforge-package, then sends the id |
@@ -72,3 +73,4 @@ Session 12: Sonnet T9b-7 S 1 -> Sonnet ~58.5, Opus ~18 (about 24 % Opus).
 Session 12 (studio): Opus S1 L 2, Sonnet S2 L 2 (running) -> Sonnet ~60.5, Opus ~20 (about 25 % Opus).
 Session 12 (2.0.0): Opus P1 design S 1 (running) -> Sonnet ~60.5, Opus ~21 (about 26 % Opus).
 G2 Opus S 1 (running); P1 design stopped early (~0.5 spent) -> Sonnet ~60.5, Opus ~21.5 (about 26 % Opus).
+G3 Opus S 1 (running; 3 Opus in parallel by owner request) -> Sonnet ~60.5, Opus ~22.5 (about 27 % Opus).
