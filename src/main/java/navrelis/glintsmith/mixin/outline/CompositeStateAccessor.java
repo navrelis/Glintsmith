@@ -7,7 +7,8 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 /**
  * A2: the shards of a composite state that decide whether a render type can be outlined (texture, glint detection,
- * invisible depth-only geometry).
+ * invisible depth-only geometry), and its layering, which the mask copies so the item depth in the mask matches the
+ * item depth in the scene.
  */
 @Mixin(RenderType.CompositeState.class)
 public interface CompositeStateAccessor {
@@ -22,4 +23,7 @@ public interface CompositeStateAccessor {
 
 	@Accessor("writeMaskState")
 	RenderStateShard.WriteMaskStateShard glintsmith$outlineWriteMaskState();
+
+	@Accessor("layeringState")
+	RenderStateShard.LayeringStateShard glintsmith$outlineLayeringState();
 }

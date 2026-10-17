@@ -8,8 +8,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * The two off-screen targets of the outline pipeline, created lazily at the size of the main target:
  * <ul>
- * <li>{@code mask}: RGBA8 colour (style index in red) plus a vanilla float depth texture holding a copy of the
- * scene depth,</li>
+ * <li>{@code mask}: RGBA8 colour (style index in red, the item's own window depth packed into green, blue and
+ * alpha) plus a vanilla float depth texture holding a copy of the scene depth (after the mask draw),</li>
  * <li>{@code edt}: RGBA8 result of the horizontal distance pass.</li>
  * </ul>
  * Both are freed after {@link #IDLE_FRAMES} frames without use. Render thread only.

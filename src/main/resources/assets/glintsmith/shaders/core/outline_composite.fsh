@@ -2,6 +2,8 @@
 
 // Pass 2: finishes the exact Euclidean distance transform vertically, looks up the style of the nearest
 // seed, hides the outline where scene geometry is in front of the item and blends it onto the target.
+// The mask holds every item pixel, visible or hidden, with the item's own depth in G, B, A; DepthSampler is the
+// scene depth. The depth rules are mirrored in OutlineDepth (Java) and tested there.
 
 uniform sampler2D MaskSampler;
 uniform sampler2D EdtSampler;
@@ -11,7 +13,9 @@ uniform int Radius;
 uniform vec4 Region;
 uniform int UseDepth;
 uniform vec2 NearFar;
-uniform float DepthTolerance;
+uniform float DepthTolerance; // front tolerance in blocks (per phase)
+uniform float CoverTolerance; // tolerance in blocks on hidden item pixels
+uniform float SeedEpsilon; // window depth
 uniform vec2 DistanceFade; // (start, end) in blocks; end <= start disables
 
 out vec4 fragColor;
@@ -22,10 +26,20 @@ float linearDepth(float z) {
 	return (2.0 * n * f) / (f + n - (2.0 * z - 1.0) * (f - n));
 }
 
+float unpackDepth(vec3 gba) {
+	ivec3 b = ivec3(gba * 255.0 + 0.5);
+	return float((b.x << 16) | (b.y << 8) | b.z) / 16777215.0;
+}
+
 void main() {
 	ivec2 p = ivec2(gl_FragCoord.xy);
-	if (texelFetch(MaskSampler, p, 0).r > 0.0) {
-		discard; // inside a silhouette: no outline
+	vec4 m = texelFetch(MaskSampler, p, 0);
+	bool onHiddenItem = false;
+	if (m.r > 0.0) {
+		if (UseDepth != 1 || texelFetch(DepthSampler, p, 0).r >= unpackDepth(m.gba) - SeedEpsilon) {
+			discard; // inside the visible silhouette: no outline
+		}
+		onHiddenItem = true; // the item continues behind an occluder here
 	}
 	float best = 1.0e9;
 	float bestId = 0.0;
@@ -72,7 +86,10 @@ void main() {
 	if (UseDepth == 1) {
 		float zp = linearDepth(texelFetch(DepthSampler, p, 0).r);
 		float zs = linearDepth(texelFetch(DepthSampler, seed, 0).r);
-		if (zp < zs - max(DepthTolerance, zs * 0.02)) {
+		// zs is the item's depth: seeds are visible item pixels. On a hidden item pixel the occluder must be clearly
+		// behind the seed, elsewhere it must not be clearly in front of it.
+		float relative = zs * 0.02;
+		if (onHiddenItem ? zp < zs + max(CoverTolerance, relative) : zp < zs - max(DepthTolerance, relative)) {
 			discard; // something is in front of the item here
 		}
 		if (DistanceFade.y > DistanceFade.x) {

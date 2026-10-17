@@ -12,6 +12,8 @@ import java.util.Optional;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import navrelis.glintsmith.mixin.outline.CompositeRenderTypeAccessor;
+import navrelis.glintsmith.mixin.outline.CompositeStateAccessor;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
@@ -81,6 +83,36 @@ class MaskTypesTest {
 		assertSame(mask, MaskTypes.forSource(cutout, true));
 		assertTrue(mask.toString().contains("<="), "depth-tested mask uses LEQUAL");
 		assertTrue(MaskTypes.forSource(cutout, false).toString().contains("always"), "GUI mask has no depth test");
+	}
+
+	@Test
+	void depthTestedMaskKeepsTheItemDepthWithTheSourceLayering() {
+		RenderType cutout = RenderType.entityCutoutNoCull(TEXTURE);
+		RenderType armor = RenderType.armorCutoutNoCull(TEXTURE); // VIEW_OFFSET_Z_LAYERING in vanilla
+		RenderType item = RenderType.itemEntityTranslucentCull(TEXTURE);
+
+		// Depth-tested masks write their own depth (nearest item surface) and never use a polygon offset of their
+		// own: the offset let item pixels just behind the arm pass as seeds.
+		CompositeStateAccessor cutoutMask = stateOf(MaskTypes.forSource(cutout, true));
+		assertSame(RenderStateShard.COLOR_DEPTH_WRITE, cutoutMask.glintsmith$outlineWriteMaskState());
+		assertSame(RenderStateShard.NO_LAYERING, cutoutMask.glintsmith$outlineLayeringState());
+		assertSame(RenderStateShard.NO_LAYERING, stateOf(MaskTypes.forSource(item, true)).glintsmith$outlineLayeringState());
+
+		// The armor's view offset is repeated, so the mask depth equals the armor depth in the scene.
+		CompositeStateAccessor armorMask = stateOf(MaskTypes.forSource(armor, true));
+		assertSame(RenderStateShard.VIEW_OFFSET_Z_LAYERING, armorMask.glintsmith$outlineLayeringState());
+		assertSame(RenderStateShard.COLOR_DEPTH_WRITE, armorMask.glintsmith$outlineWriteMaskState());
+
+		// The flat GUI mask: no depth test, no depth write, no layering.
+		CompositeStateAccessor flatArmor = stateOf(MaskTypes.forSource(armor, false));
+		assertSame(RenderStateShard.COLOR_WRITE, flatArmor.glintsmith$outlineWriteMaskState());
+		assertSame(RenderStateShard.NO_LAYERING, flatArmor.glintsmith$outlineLayeringState());
+	}
+
+	private static CompositeStateAccessor stateOf(RenderType type) {
+		assertNotNull(type);
+		RenderType.CompositeState state = ((CompositeRenderTypeAccessor) (Object) type).glintsmith$outlineState();
+		return (CompositeStateAccessor) (Object) state;
 	}
 
 	@Test

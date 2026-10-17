@@ -27,3 +27,5 @@
 - 2026-10-17 In the HAND phase the phase, not the display context, decides the target: first-person animation mods (Punchy) draw held items with third-person contexts inside renderHandsWithItems.
 - 2026-10-17 AUTO gap fix (non-macOS) uses sideExpansion 0.005: in-game sweep closed the remaining step-corner cracks at 0.005; 0.01+ showed slivers. macOS values unchanged (not verifiable here).
 - 2026-10-17 CUSTOM gap-fix stored default sideExpansion mirrors AUTO non-macOS (0.005): switching AUTO -> CUSTOM must not bring the corner cracks back.
+- 2026-10-17 Optional perf work (5.5) dropped: the no-mod baseline varies ±20 % between identical windows, larger than any measured outline cost.
+- 2026-10-17 Outline mask stores the item's own depth and only visible item pixels seed the outline (hand front tolerance 0.03 blocks): hidden item pixels (blade inside the arm, item leaning on a pillar) drew outlines over the occluder.

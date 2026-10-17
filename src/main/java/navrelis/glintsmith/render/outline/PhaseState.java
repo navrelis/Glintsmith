@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
  */
 final class PhaseState {
 	final OutlinePhase phase;
-	/** Mask types test against the scene depth (world and hand) or not (GUI). */
+	/** Mask types keep the nearest item surface and its depth (world and hand) or have no depth at all (GUI). */
 	final boolean depthTested;
 	final MaskBufferSource maskSource = new MaskBufferSource();
 	final StyleTable styles = new StyleTable();

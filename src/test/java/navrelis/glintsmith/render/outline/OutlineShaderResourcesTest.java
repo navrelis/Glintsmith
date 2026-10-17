@@ -66,9 +66,44 @@ class OutlineShaderResourcesTest {
 		for (JsonElement uniform : json.getAsJsonArray("uniforms")) {
 			names.append(uniform.getAsJsonObject().get("name").getAsString()).append(' ');
 		}
-		assertEquals("Radius Region UseDepth NearFar DepthTolerance DistanceFade ", names.toString());
+		assertEquals("Radius Region UseDepth NearFar DepthTolerance CoverTolerance SeedEpsilon DistanceFade ", names.toString());
 		assertEquals(4, json.getAsJsonArray("samplers").size(), "the compositor saves and restores four texture units");
 		assertEquals(GlState.TEXTURE_UNITS, json.getAsJsonArray("samplers").size());
+	}
+
+	@Test
+	void edtPassSeesTheSceneDepthToSkipHiddenSeeds() throws IOException {
+		JsonObject json = readJson(resolve(OutlineShaders.PREFIX + "outline_edt.json"));
+		StringBuilder names = new StringBuilder();
+		for (JsonElement uniform : json.getAsJsonArray("uniforms")) {
+			names.append(uniform.getAsJsonObject().get("name").getAsString()).append(' ');
+		}
+		assertEquals("Radius Region UseDepth SeedEpsilon ", names.toString());
+		StringBuilder samplers = new StringBuilder();
+		for (JsonElement sampler : json.getAsJsonArray("samplers")) {
+			samplers.append(sampler.getAsJsonObject().get("name").getAsString()).append(' ');
+		}
+		assertEquals("MaskSampler DepthSampler ", samplers.toString());
+		assertTrue(json.getAsJsonArray("samplers").size() <= GlState.TEXTURE_UNITS, "the compositor saves and restores four texture units");
+	}
+
+	@Test
+	void shadersPackAndCompareDepthLikeOutlineDepth() throws IOException {
+		// mask.fsh packs 24 bits, both passes unpack them the same way and apply the same seed rule.
+		String mask = read(resolve("glintsmith_mask.fsh"));
+		String edt = read(resolve("glintsmith_outline_edt.fsh"));
+		String composite = read(resolve("glintsmith_outline_composite.fsh"));
+		assertTrue(mask.contains("* 16777215.0 + 0.5"), "mask packs window depth to 24 bits");
+		assertTrue(mask.contains("16777215u)"), "the far plane is clamped, not wrapped to 0");
+		assertEquals(16777215, OutlineDepth.DEPTH_STEPS);
+		String unpack = "return float((b.x << 16) | (b.y << 8) | b.z) / 16777215.0;";
+		assertTrue(edt.contains(unpack));
+		assertTrue(composite.contains(unpack));
+		assertTrue(edt.contains("< unpackDepth(m.gba) - SeedEpsilon"), "edt drops hidden seeds");
+		assertTrue(composite.contains(">= unpackDepth(m.gba) - SeedEpsilon"), "composite keeps visible pixels inside");
+		assertTrue(composite.contains("zp < zs + max(CoverTolerance, relative) : zp < zs - max(DepthTolerance, relative)"));
+		assertTrue(composite.contains("float relative = zs * 0.02;"));
+		assertEquals(0.02f, OutlineDepth.RELATIVE_TOLERANCE);
 	}
 
 	/** The classpath resource vanilla would load for {@code minecraft:shaders/core/<file>}. */

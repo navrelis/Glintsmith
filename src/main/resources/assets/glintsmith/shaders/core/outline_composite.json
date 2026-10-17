@@ -13,6 +13,8 @@
 		{ "name": "UseDepth", "type": "int", "count": 1, "values": [ 0 ] },
 		{ "name": "NearFar", "type": "float", "count": 2, "values": [ 0.05, 1024.0 ] },
 		{ "name": "DepthTolerance", "type": "float", "count": 1, "values": [ 0.15 ] },
+		{ "name": "CoverTolerance", "type": "float", "count": 1, "values": [ 0.15 ] },
+		{ "name": "SeedEpsilon", "type": "float", "count": 1, "values": [ 0.0000019 ] },
 		{ "name": "DistanceFade", "type": "float", "count": 2, "values": [ 0.0, 0.0 ] }
 	]
 }

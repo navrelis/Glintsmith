@@ -10,9 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Turns the mask of a phase into outlines on the main target: draw the mask into the mask target (with a copy of the
- * scene depth where the phase needs one), run the horizontal distance pass into the EDT target, then the vertical
- * pass that blends the outline onto the main target. All passes are clipped to the bounds of the mask grown by the
+ * Turns the mask of a phase into outlines on the main target: draw the mask into the mask target (every item pixel
+ * with its own depth, then a copy of the scene depth where the phase needs one), run the horizontal distance pass
+ * into the EDT target, then the vertical pass that blends the outline onto the main target. All passes are clipped to the bounds of the mask grown by the
  * search radius. The GL state is saved before and restored after, also on errors, which are rethrown for the
  * caller's failsafe.
  * <p>
@@ -22,13 +22,14 @@ final class OutlineCompositor {
 	private static final Logger LOGGER = LoggerFactory.getLogger("Glintsmith/Outline");
 	/** Near plane of the vanilla world and hand projections. */
 	static final float NEAR_PLANE = 0.05f;
-	/** Minimum depth difference, in blocks, before scene geometry counts as being in front of the item. */
-	static final float DEPTH_TOLERANCE = 0.15f;
 	private static final int GL_INVALID_OPERATION = 0x0502;
 
-	/** How the mask target's depth is prepared before the mask is drawn. */
+	/** How the mask target's depth is prepared around the mask draw. */
 	enum MaskDepth {
-		/** Copy of the main depth: walls and the item itself occlude correctly. */
+		/**
+		 * Cleared to the far plane for the mask draw (item depth, nearest surface wins), then overwritten with a copy
+		 * of the main depth for the passes, which compare both to tell visible from hidden item pixels.
+		 */
 		COPY,
 		/** Cleared to the far plane: no scene depth available (shader packs). */
 		CLEAR,
@@ -205,12 +206,8 @@ final class OutlineCompositor {
 		GlStateManager._colorMask(true, true, true, true);
 		GlStateManager._clearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		int clearBits = clearColor ? GL11.GL_COLOR_BUFFER_BIT : 0;
-		if (depth == MaskDepth.COPY) {
-			if (!copyDepth(mask)) {
-				return false;
-			}
-			mask.bindWrite(false);
-		} else if (depth == MaskDepth.CLEAR) {
+		if (depth == MaskDepth.COPY || depth == MaskDepth.CLEAR) {
+			// The mask records the item's own depth: nearest item surface, not tested against the scene.
 			GlStateManager._depthMask(true);
 			GlStateManager._clearDepth(1.0);
 			clearBits |= GL11.GL_DEPTH_BUFFER_BIT;
@@ -223,6 +220,13 @@ final class OutlineCompositor {
 			GlStateManager._disableDepthTest();
 		}
 		phase.maskSource.endBatch();
+		if (depth == MaskDepth.COPY) {
+			// The item depth now lives in the mask colour; the depth attachment becomes the scene depth.
+			GlStateManager._depthMask(true);
+			if (!copyDepth(mask)) {
+				return false;
+			}
+		}
 		mask.bindWrite(false);
 		return true;
 	}
@@ -278,9 +282,13 @@ final class OutlineCompositor {
 
 		edt.bindWrite(false);
 		GlStateManager._viewport(0, 0, width, height);
+		Integer depthTexture = OutlineTargets.maskDepthTexture();
 		edtShader.setSampler("MaskSampler", mask);
+		edtShader.setSampler("DepthSampler", depthTexture);
 		edtShader.safeGetUniform("Radius").set(radius);
 		edtShader.safeGetUniform("Region").set(x0, y0, x1, y1);
+		edtShader.safeGetUniform("UseDepth").set(useDepth ? 1 : 0);
+		edtShader.safeGetUniform("SeedEpsilon").set(OutlineDepth.SEED_EPSILON);
 		FullscreenQuad.draw(edtShader);
 
 		DynamicTexture styles = STYLE_TEXTURE.upload(phase.styles);
@@ -288,17 +296,26 @@ final class OutlineCompositor {
 		GlStateManager._viewport(0, 0, width, height);
 		compositeShader.setSampler("MaskSampler", mask);
 		compositeShader.setSampler("EdtSampler", edt);
-		compositeShader.setSampler("DepthSampler", OutlineTargets.maskDepthTexture());
+		compositeShader.setSampler("DepthSampler", depthTexture);
 		compositeShader.setSampler("StyleSampler", styles);
 		compositeShader.safeGetUniform("Radius").set(radius);
 		compositeShader.safeGetUniform("Region").set(x0, y0, x1, y1);
 		compositeShader.safeGetUniform("UseDepth").set(useDepth ? 1 : 0);
 		compositeShader.safeGetUniform("NearFar").set(NEAR_PLANE, Minecraft.getInstance().gameRenderer.getDepthFar());
-		compositeShader.safeGetUniform("DepthTolerance").set(DEPTH_TOLERANCE);
+		compositeShader.safeGetUniform("DepthTolerance").set(frontTolerance(phase.phase));
+		compositeShader.safeGetUniform("CoverTolerance").set(OutlineDepth.COVER_TOLERANCE);
+		compositeShader.safeGetUniform("SeedEpsilon").set(OutlineDepth.SEED_EPSILON);
 		compositeShader.safeGetUniform("DistanceFade").set(fadeStart, fadeEnd);
 		GlStateManager._enableBlend();
 		GlStateManager._blendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ZERO, GL11.GL_ONE);
 		FullscreenQuad.draw(compositeShader);
+	}
+
+	/**
+	 * @return how far, in blocks, scene geometry next to an item may be in front of it before it hides the outline
+	 */
+	static float frontTolerance(OutlinePhase phase) {
+		return phase == OutlinePhase.HAND ? OutlineDepth.HAND_TOLERANCE : OutlineDepth.WORLD_TOLERANCE;
 	}
 
 	/**

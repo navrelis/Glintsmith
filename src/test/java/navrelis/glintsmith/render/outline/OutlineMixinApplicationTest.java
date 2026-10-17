@@ -177,6 +177,7 @@ class OutlineMixinApplicationTest {
 		assertAccessorBody(node, "glintsmith$outlineTransparencyState", "transparencyState", null);
 		assertAccessorBody(node, "glintsmith$outlineTexturingState", "texturingState", null);
 		assertAccessorBody(node, "glintsmith$outlineWriteMaskState", "writeMaskState", null);
+		assertAccessorBody(node, "glintsmith$outlineLayeringState", "layeringState", null);
 	}
 
 	@Test

@@ -2,10 +2,13 @@
 	"vertex": "glintsmith_fullscreen",
 	"fragment": "glintsmith_outline_edt",
 	"samplers": [
-		{ "name": "MaskSampler" }
+		{ "name": "MaskSampler" },
+		{ "name": "DepthSampler" }
 	],
 	"uniforms": [
 		{ "name": "Radius", "type": "int", "count": 1, "values": [ 4 ] },
-		{ "name": "Region", "type": "float", "count": 4, "values": [ 0.0, 0.0, 1.0, 1.0 ] }
+		{ "name": "Region", "type": "float", "count": 4, "values": [ 0.0, 0.0, 1.0, 1.0 ] },
+		{ "name": "UseDepth", "type": "int", "count": 1, "values": [ 0 ] },
+		{ "name": "SeedEpsilon", "type": "float", "count": 1, "values": [ 0.0000019 ] }
 	]
 }

@@ -25,6 +25,12 @@ import org.jetbrains.annotations.Nullable;
  * Every source type gets its own mask types (one depth-tested, one flat), never shared with another source type even
  * if the texture is the same. Otherwise two source buffers used at the same time (for example through a
  * {@code VertexMultiConsumer}) would interleave their vertices in one mask buffer and break its primitives.
+ * <p>
+ * The depth-tested type does not test against the scene: it is drawn into a mask depth cleared to the far plane, with
+ * depth writes, so the mask keeps every item pixel (also hidden ones) with the depth of the nearest item surface
+ * (packed into the colour by {@code mask.fsh}). It repeats the source's layering, so that depth equals the item's
+ * depth in the scene and the passes can tell visible from hidden item pixels ({@link OutlineDepth}). The flat type
+ * (GUI) has no depth test and no depth write.
  * Render thread only.
  */
 final class MaskTypes {
@@ -48,19 +54,22 @@ final class MaskTypes {
 	 * What the mask needs to know about one source type.
 	 */
 	static final class Entry {
-		static final Entry NOT_MASKABLE = new Entry(null, null, false);
+		static final Entry NOT_MASKABLE = new Entry(null, null, false, RenderStateShard.NO_LAYERING);
 
 		final ResourceLocation texture;
 		final VertexFormat.Mode mode;
 		/** The source format has no UV0: the mask writes a fixed UV into the white texture. */
 		final boolean defaultUv;
+		/** The source's layering, repeated by the depth-tested mask type (for example the armor's view offset). */
+		final RenderStateShard.LayeringStateShard layering;
 		private RenderType depthTested;
 		private RenderType flat;
 
-		Entry(ResourceLocation texture, VertexFormat.Mode mode, boolean defaultUv) {
+		Entry(ResourceLocation texture, VertexFormat.Mode mode, boolean defaultUv, RenderStateShard.LayeringStateShard layering) {
 			this.texture = texture;
 			this.mode = mode;
 			this.defaultUv = defaultUv;
+			this.layering = layering == null ? RenderStateShard.NO_LAYERING : layering;
 		}
 
 		boolean maskable() {
@@ -77,7 +86,7 @@ final class MaskTypes {
 			}
 			RenderType type = depth ? depthTested : flat;
 			if (type == null) {
-				type = create(texture, mode, depth);
+				type = create(texture, mode, depth, layering);
 				if (depth) {
 					depthTested = type;
 				} else {
@@ -155,7 +164,7 @@ final class MaskTypes {
 		if (chosen == null) {
 			return Entry.NOT_MASKABLE;
 		}
-		return new Entry(chosen, source.mode(), !hasUv);
+		return new Entry(chosen, source.mode(), !hasUv, shards.glintsmith$outlineLayeringState());
 	}
 
 	/**
@@ -209,7 +218,8 @@ final class MaskTypes {
 		return typeString;
 	}
 
-	private static RenderType create(ResourceLocation texture, VertexFormat.Mode mode, boolean depth) {
+	private static RenderType create(ResourceLocation texture, VertexFormat.Mode mode, boolean depth,
+		RenderStateShard.LayeringStateShard layering) {
 		// Binds the texture without touching its filter, unlike TextureStateShard.
 		RenderStateShard.EmptyTextureStateShard textureShard = new RenderStateShard.EmptyTextureStateShard(
 			() -> RenderSystem.setShaderTexture(0, texture), () -> {
@@ -221,8 +231,8 @@ final class MaskTypes {
 				.setTransparencyState(RenderStateShard.NO_TRANSPARENCY)
 				.setCullState(RenderStateShard.NO_CULL)
 				.setDepthTestState(depth ? RenderStateShard.LEQUAL_DEPTH_TEST : RenderStateShard.NO_DEPTH_TEST)
-				.setLayeringState(depth ? RenderStateShard.POLYGON_OFFSET_LAYERING : RenderStateShard.NO_LAYERING)
-				.setWriteMaskState(RenderStateShard.COLOR_WRITE)
+				.setLayeringState(depth ? layering : RenderStateShard.NO_LAYERING)
+				.setWriteMaskState(depth ? RenderStateShard.COLOR_DEPTH_WRITE : RenderStateShard.COLOR_WRITE)
 				.setOutputState(MASK_TARGET)
 				.createCompositeState(false));
 	}
