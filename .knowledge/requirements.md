@@ -24,7 +24,7 @@ Sources studied (reference only, clones live in the session scratchpad, never in
   - Hard dependencies: Fabric Loader and Fabric API only. Own config screen on vanilla widgets, optional Mod Menu entry, keybind, live config reload. Nothing bundled.
   - Stack: Fabric Loom, official Mojang mappings, Java 21, Minecraft 1.21.1 only, client-side only, Fabric Loader 0.19.5, Fabric API 0.116.17+1.21.1 (same as the Nytheria pack).
   - Languages: English and German.
-  - GitHub repo `navrelis/Glintsmith`, default branch `main`, work on `dev`. Commits only as Navrelis (noreply). Lead change: created **private**; owner is asked before it goes public.
+  - GitHub repo `navrelis/Glintsmith`, default branch `main`, work on `dev`. Commits only as Navrelis (noreply). Public repo confirmed by the owner in chat on 2026-10-17.
   - In-game test: lead loads the jar into the Nytheria client with `--add-mod` under the game lock, in a throwaway `PerfTest-*` world, with Sodium and Iris. Owner saves and pack `mods` untouched.
   - No upload; deliver jar plus mod page summary and description.
   - Graphify: build once at the end.

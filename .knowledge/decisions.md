@@ -6,4 +6,4 @@
 - 2026-10-17 Outlines are computed from the item's real rendered geometry, not per-item models or whitelists: owner requires universal support for all mods.
 - 2026-10-17 Name Glintsmith: free on Modrinth, says what the mod does.
 - 2026-10-17 Stack copied from DynamicLighting (Loom remap plugin, mojmap, Java 21, Gradle 9.5.0): proven in this workspace with the same pack versions.
-- 2026-10-17 GitHub repo created private first: going public is outward-facing, owner confirms at the end.
+- 2026-10-17 GitHub repo public from the first push: owner confirmed the defaults in chat.
