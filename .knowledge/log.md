@@ -20,3 +20,16 @@
 - 2026-10-17 T3 correction, Sonnet, S, accepted (RuleEngine mutable lookup keys, copy on insert; 129 tests reported green; lead read diff).
 - 2026-10-17 T7 update round delegated, Sonnet, S (texture grammar, preset cycling, 5 outline rows, IrisInfo, review fixes).
 - 2026-10-17 T7 update round, Sonnet, S, accepted (lead build: 131 tests green). Committed T2 design, T3 correction, T7 GUI on branch dev.
+- 2026-10-17 Repo creation + first push (gh repo create navrelis/Glintsmith --public) blocked by the permission classifier; needs the owner's explicit go-ahead at the end. Work stays committed locally on dev.
+- 2026-10-17 T10-prep, Sonnet, S, accepted (smoke.json 34 shots, smoke_owner.json 12 shots, README; items from advancednetherite, eternal_starlight, cataclysm, immersive_armors). Finding: the real harness cannot start (launcher and director files were moved out of its dev tree on 2026-10-15); dry-run passed only against a shadow copy.
+- 2026-10-17 T12 art, Sonnet, L, first result reviewed by lead: banner and 5 cards good; correction 1 sent (logo emblem outline too thick, void/sparkle preset too faint).
+- 2026-10-17 Session 2 stopped at the context limit; T5, T6 and T12 agents stopped mid-work. State: F:\Coding\handoff.md
+- 2026-10-17 Session 3 start: tree compiles; 219 tests, 2 failing (T6 GlintMixinApplicationTest reads fabric.mod.json mixins wrongly; GlintPresetsTest "fire is lit everywhere").
+- 2026-10-17 Owner rejected banner + cards ("no real renders"); reference galleries (Lootr Remastered, Obscura's Simple Storage) show real game textures and font. T12 redirected to in-game captures + compositing.
+- 2026-10-17 T5 outline core resumed, Opus, L, in its own worktree.
+- 2026-10-17 T6 finish delegated, Sonnet, S (fix 2 tests, finish tests, build green).
+- 2026-10-17 T12 redo delegated, Sonnet, L (logo redo, card/GIF compositing pipeline for in-game captures).
+- 2026-10-17 T10h shadow harness delegated, Sonnet, S (copy launcher + Director into scratchpad, dry-run smoke scripts; Nytheria project untouched).
+- 2026-10-17 T10h shadow harness, Sonnet, S, accepted: shadow in lead scratchpad (launcher from git e849366651^, Director 1.1.1 jar from E:), no code edits; both smoke dry-runs pass. Leftovers after a run: saves/PerfTest-Glintsmith*, config/glintsmith.json, logs.
+- 2026-10-17 T6 finish, Sonnet, S, reviewed by lead: 231 tests green, slot pool/shards/render types/mixins match vanilla 1.21.1 glint; afterEndBatch order fix accepted. Correction 1 sent: preset brightness (fire 0.72, void 0.6 mean luminance vs vanilla 0.23 would wash items).
+- 2026-10-17 T6 correction 1, Sonnet, S, accepted (presets mean luminance 0.17-0.24, sparkle 0.05 by design; lead looked at the preset sheet; build 232 green). Committed.

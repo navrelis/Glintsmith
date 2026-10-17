@@ -10,3 +10,9 @@
 - 2026-10-17 Outline condition ENCHANTED also counts foil items (enchanted golden apple etc.): matches what players see as enchanted.
 - 2026-10-17 Keybinds unbound by default; /glintsmith command and Mod Menu open the screen: avoids key conflicts in modpacks.
 - 2026-10-17 Parallel cap raised to up to 4 Sonnet + 2 Opus: owner allowed more parallel agents; files stay disjoint.
+- 2026-10-17 Gap fix AUTO mode turns itself off when the `modelfix` mod is loaded (the Nytheria pack ships it): two seam fixes on the same models would stack.
+- 2026-10-17 The Nytheria project is not modified by this session. How to run the in-game test with the broken harness is decided at T10 (owner question if needed). After any run, remove `config/glintsmith.json` and `config/glintsmith/` from the pack instance.
+- 2026-10-17 T5 runs in a git worktree `../Glintsmith-t5` (branch `t5-outline`), merged into dev by the lead after review: its partial GL code must not break T6 builds in the main tree.
+- 2026-10-17 T10 harness: shadow copy of the harness in the session scratchpad (launcher files restored from git), Nytheria project untouched.
+- 2026-10-17 Gallery images are real in-game captures of the mod, framed like the Lootr cards; hand-drawn pixel-art cards and banner dropped: owner rejected them as fake and ugly.
+- 2026-10-17 Vanilla font/textures are read from the Minecraft jar at image build time and never committed: same practice as the Obscura preview tools.

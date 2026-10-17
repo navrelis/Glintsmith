@@ -24,7 +24,8 @@
 		]
 	},
 	"mixins": [
-		"glintsmith.mixins.json"
+		"glintsmith.mixins.json",
+		"glintsmith.glint.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.16.0",
