@@ -11,6 +11,7 @@ import navrelis.glintsmith.style.ColorStyle;
 import navrelis.glintsmith.style.Colors;
 import navrelis.glintsmith.style.DurabilityAlert;
 import navrelis.glintsmith.style.GlintCategory;
+import navrelis.glintsmith.style.GlintSettings;
 import navrelis.glintsmith.style.Num;
 import navrelis.glintsmith.style.OutlineSettings;
 import navrelis.glintsmith.style.OutlineTarget;
@@ -35,6 +36,9 @@ public final class GlintsmithConfig {
 	public Map<String, String> enchantmentColors = new LinkedHashMap<>();
 	/** Evaluated in order, later rules override earlier ones. */
 	public List<Rule> rules = defaultRules();
+
+	/** Problems found by the last {@link #sanitize()} (for example an invalid category texture that was reset). Not saved. */
+	private transient List<String> warnings = new ArrayList<>();
 
 	public GlintsmithConfig() {
 	}
@@ -63,6 +67,13 @@ public final class GlintsmithConfig {
 	}
 
 	/**
+	 * @return the problems found by the last {@link #sanitize()}; empty if there were none. Not saved to the file.
+	 */
+	public List<String> warnings() {
+		return warnings == null ? List.of() : warnings;
+	}
+
+	/**
 	 * @return an independent deep copy (sanitised if this one was)
 	 */
 	public GlintsmithConfig copy() {
@@ -77,6 +88,7 @@ public final class GlintsmithConfig {
 	 * @return {@code this}
 	 */
 	public GlintsmithConfig sanitize() {
+		warnings = new ArrayList<>();
 		if (version < 1) {
 			version = 1;
 		}
@@ -87,7 +99,7 @@ public final class GlintsmithConfig {
 		if (glint == null) {
 			glint = new Glint();
 		}
-		glint.sanitize();
+		glint.sanitize(warnings);
 		if (gapFix == null) {
 			gapFix = new GapFix();
 		}
@@ -135,6 +147,14 @@ public final class GlintsmithConfig {
 		/** 0..1. */
 		public float opacity = 1.0f;
 		public boolean disableWithShaders = false;
+		/** Keep first-person outlines while an Iris shader pack is active. */
+		public boolean handWithShaderPack = true;
+		/** The renderer multiplies the thickness by framebufferHeight / 1080. */
+		public boolean scaleWithResolution = true;
+		/** Distance fade of world outlines in blocks, 0..256; 0 and 0 = off. */
+		public float fadeStart = 0.0f;
+		/** See {@link #fadeStart}; if non-zero it is always greater than fadeStart. */
+		public float fadeEnd = 0.0f;
 
 		public Outline() {
 		}
@@ -153,6 +173,14 @@ public final class GlintsmithConfig {
 			thickness = Num.clamp(thickness, OutlineSettings.MIN_THICKNESS, OutlineSettings.MAX_THICKNESS, 2.0f);
 			softness = Num.clamp(softness, 0.0f, 1.0f, 0.0f);
 			opacity = Num.clamp(opacity, 0.0f, 1.0f, 1.0f);
+			fadeStart = Num.clamp(fadeStart, 0.0f, 256.0f, 0.0f);
+			fadeEnd = Num.clamp(fadeEnd, 0.0f, 256.0f, 0.0f);
+			if (fadeEnd != 0.0f && fadeEnd <= fadeStart) {
+				if (fadeStart >= 256.0f) {
+					fadeStart = 255.0f;
+				}
+				fadeEnd = fadeStart + 1.0f;
+			}
 		}
 	}
 
@@ -166,12 +194,14 @@ public final class GlintsmithConfig {
 		public boolean dropped = true;
 		public boolean itemFrame = true;
 		public boolean gui = false;
+		/** Other display contexts such as head or none, for example items worn on the head. */
+		public boolean other = false;
 
 		public Targets() {
 		}
 
 		/**
-		 * @return whether outlines may be drawn in this target; {@link OutlineTarget#OTHER} is always allowed
+		 * @return whether outlines may be drawn in this target; {@link OutlineTarget#OTHER} follows {@code other}
 		 */
 		public boolean allows(OutlineTarget target) {
 			return switch (target) {
@@ -181,7 +211,7 @@ public final class GlintsmithConfig {
 				case DROPPED -> dropped;
 				case ITEM_FRAME -> itemFrame;
 				case GUI -> gui;
-				case OTHER -> true;
+				case OTHER -> other;
 			};
 		}
 	}
@@ -212,7 +242,7 @@ public final class GlintsmithConfig {
 			};
 		}
 
-		void sanitize() {
+		void sanitize(List<String> warnings) {
 			if (item == null) {
 				item = new GlintCategorySettings();
 			}
@@ -225,10 +255,10 @@ public final class GlintsmithConfig {
 			if (gui == null) {
 				gui = new GlintCategorySettings();
 			}
-			item.sanitize();
-			armor.sanitize();
-			entity.sanitize();
-			gui.sanitize();
+			item.sanitize(warnings, "glint.item");
+			armor.sanitize(warnings, "glint.armor");
+			entity.sanitize(warnings, "glint.entity");
+			gui.sanitize(warnings, "glint.gui");
 		}
 	}
 
@@ -238,7 +268,7 @@ public final class GlintsmithConfig {
 	public static final class GlintCategorySettings {
 		/** {@code false} hides the glint of this layer. */
 		public boolean enabled = true;
-		/** Preset id, resource location or {@code config:<file>.png}; null for the vanilla texture. */
+		/** Texture spec, see {@link GlintSettings#validateTexture(String)}; null for the vanilla texture. */
 		public String texture = null;
 		/** Null for no tint. */
 		public ColorStyle tint = null;
@@ -254,8 +284,13 @@ public final class GlintsmithConfig {
 		public GlintCategorySettings() {
 		}
 
-		void sanitize() {
+		void sanitize(List<String> warnings, String path) {
 			if (texture != null && texture.isBlank()) {
+				texture = null;
+			}
+			String problem = GlintSettings.validateTexture(texture);
+			if (problem != null) {
+				warnings.add(path + ".texture: " + problem + "; reset to vanilla.");
 				texture = null;
 			}
 			if (tint != null) {

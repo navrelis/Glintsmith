@@ -5,7 +5,7 @@ package navrelis.glintsmith.style;
  *
  * @param color the compiled colour animation
  * @param colorStyle the style it was compiled from
- * @param thickness screen pixels, 0.5..8
+ * @param thickness screen pixels, 0.5..16
  * @param softness 0..1
  * @param opacity 0..1, multiplied onto the colour alpha
  */

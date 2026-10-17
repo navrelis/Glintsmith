@@ -2,11 +2,11 @@ package navrelis.glintsmith.style;
 
 /**
  * Outline overrides of a rule. Every field is optional: {@code null} means "inherit".
- * Ranges: thickness 0.5..8 screen pixels, softness 0..1, opacity 0..1.
+ * Ranges: thickness 0.5..16 screen pixels, softness 0..1, opacity 0..1.
  */
 public final class OutlineSettings {
 	public static final float MIN_THICKNESS = 0.5f;
-	public static final float MAX_THICKNESS = 8.0f;
+	public static final float MAX_THICKNESS = 16.0f;
 
 	public Boolean enabled;
 	public ColorStyle color;

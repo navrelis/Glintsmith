@@ -105,6 +105,9 @@ public final class Rule {
 		problem = compileInto(items, itemList, "item", problem);
 		problem = compileInto(excludeItems, excludeList, "excluded item", problem);
 		problem = compileInto(enchantments, enchantmentList, "enchantment", problem);
+		if (problem == null && glint != null) {
+			problem = GlintSettings.validateTexture(glint.texture);
+		}
 		itemPatterns = itemList;
 		excludePatterns = excludeList;
 		enchantmentPatterns = enchantmentList;

@@ -133,7 +133,7 @@ class RuleMatcherTest {
 		c.rules.add(r);
 		// bypass sanitize on purpose: RuleMatcher itself must be safe
 		OutlineLook look = RuleMatcher.resolve(sword(true), HAND, GlintCategory.ITEM, c).outline();
-		assertEquals(8.0f, look.thickness());
+		assertEquals(16.0f, look.thickness());
 		assertEquals(0.0f, look.opacity());
 	}
 
@@ -271,14 +271,14 @@ class RuleMatcherTest {
 		GlintsmithConfig c = config();
 		c.glint.armor.speed = 2.0f;
 		c.glint.armor.tint = ColorStyle.of("#00FF00");
-		c.glint.item.texture = "glintsmith:rainbow";
+		c.glint.item.texture = "preset:rainbow";
 		GlintLook armor = RuleMatcher.resolve(sword(true), OutlineTarget.ARMOR, GlintCategory.ARMOR, c.sanitize()).glint();
 		assertNotNull(armor);
 		assertEquals(2.0f, armor.speed());
 		assertNull(armor.texture());
 		assertEquals(0xFF00FF00, armor.tint().evaluate(0, null));
 		GlintLook item = resolve(sword(true), c).glint();
-		assertEquals("glintsmith:rainbow", item.texture());
+		assertEquals("preset:rainbow", item.texture());
 		assertEquals(1.0f, item.speed());
 		assertNull(item.tint());
 		assertNull(RuleMatcher.resolve(sword(true), OutlineTarget.GUI, GlintCategory.GUI, c).glint());
@@ -292,14 +292,14 @@ class RuleMatcherTest {
 		Rule r = rule("sword glint", "minecraft:diamond_sword");
 		r.glint = new GlintSettings();
 		r.glint.scale = 0.5f;
-		r.glint.texture = "config:fire.png";
+		r.glint.texture = "file:fire.png";
 		r.glint.rotation = -45.0f;
 		c.rules.add(r);
 		GlintLook look = resolve(sword(true), c).glint();
 		assertEquals(3.0f, look.speed());
 		assertEquals(0.5f, look.scale());
 		assertEquals(-45.0f, look.rotation());
-		assertEquals("config:fire.png", look.texture());
+		assertEquals("file:fire.png", look.texture());
 		assertTrue(look.enabled());
 
 		// another item keeps the category defaults
@@ -312,7 +312,7 @@ class RuleMatcherTest {
 	@Test
 	void glintCanBeHiddenAndTextureResetToVanilla() {
 		GlintsmithConfig c = config();
-		c.glint.item.texture = "glintsmith:rainbow";
+		c.glint.item.texture = "preset:rainbow";
 		Rule hide = rule("hide on swords", "#minecraft:swords");
 		hide.glint = new GlintSettings();
 		hide.glint.enabled = false;
@@ -325,6 +325,30 @@ class RuleMatcherTest {
 		assertFalse(hidden.enabled());
 		ItemFacts book = new ItemFacts("minecraft:enchanted_book", Set.of(), Set.of("minecraft:mending"), Set.of(), true, true);
 		assertNull(resolve(book, c).glint());
+	}
+
+	@Test
+	void defaultTextureResetsAnEarlierRulesTexture() {
+		GlintsmithConfig c = config();
+		Rule first = rule("fire", "minecraft:diamond_sword");
+		first.glint = new GlintSettings();
+		first.glint.texture = "preset:fire";
+		first.glint.speed = 2.0f;
+		Rule second = rule("back to default", "minecraft:diamond_sword");
+		second.glint = new GlintSettings();
+		second.glint.texture = GlintSettings.DEFAULT_TEXTURE;
+		c.rules.add(first);
+		assertEquals("preset:fire", resolve(sword(true), c).glint().texture());
+		c.rules.add(second);
+		assertNull(resolve(sword(true), c).glint().texture());
+	}
+
+	@Test
+	void defaultTextureOfACategoryIsVanilla() {
+		GlintsmithConfig c = config();
+		c.glint.item.texture = "default";
+		c.glint.item.speed = 2.0f;
+		assertNull(resolve(sword(true), c).glint().texture());
 	}
 
 	@Test

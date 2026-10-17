@@ -50,8 +50,14 @@ class ConfigTest {
 		assertTrue(c.outline.targets.dropped);
 		assertTrue(c.outline.targets.itemFrame);
 		assertFalse(c.outline.targets.gui);
+		assertFalse(c.outline.targets.other);
 		assertFalse(c.outline.onlyLocalPlayer);
 		assertFalse(c.outline.disableWithShaders);
+		assertTrue(c.outline.handWithShaderPack);
+		assertTrue(c.outline.scaleWithResolution);
+		assertEquals(0.0f, c.outline.fadeStart);
+		assertEquals(0.0f, c.outline.fadeEnd);
+		assertTrue(c.warnings().isEmpty());
 		assertEquals(ColorMode.STATIC, c.outline.color.mode);
 		assertEquals(List.of("#D088FC"), c.outline.color.colors);
 		assertEquals(2.0f, c.outline.thickness);
@@ -86,11 +92,168 @@ class ConfigTest {
 		GlintsmithConfig.Targets t = new GlintsmithConfig.Targets();
 		assertTrue(t.allows(OutlineTarget.FIRST_PERSON));
 		assertFalse(t.allows(OutlineTarget.GUI));
-		assertTrue(t.allows(OutlineTarget.OTHER));
+		assertFalse(t.allows(OutlineTarget.OTHER));
 		t.gui = true;
 		t.dropped = false;
+		t.other = true;
 		assertTrue(t.allows(OutlineTarget.GUI));
 		assertFalse(t.allows(OutlineTarget.DROPPED));
+		assertTrue(t.allows(OutlineTarget.OTHER));
+	}
+
+	@Test
+	void outlineThicknessIsClampedToSixteen() {
+		GlintsmithConfig c = new GlintsmithConfig();
+		c.outline.thickness = 16.5f;
+		c.sanitize();
+		assertEquals(16.0f, c.outline.thickness);
+		c.outline.thickness = 16.0f;
+		c.sanitize();
+		assertEquals(16.0f, c.outline.thickness);
+		c.outline.thickness = 12.0f;
+		c.sanitize();
+		assertEquals(12.0f, c.outline.thickness);
+	}
+
+	@Test
+	void fadeRangeIsClamped() {
+		GlintsmithConfig c = new GlintsmithConfig();
+		c.outline.fadeStart = -5.0f;
+		c.outline.fadeEnd = 1000.0f;
+		c.sanitize();
+		assertEquals(0.0f, c.outline.fadeStart);
+		assertEquals(256.0f, c.outline.fadeEnd);
+
+		c.outline.fadeStart = Float.NaN;
+		c.outline.fadeEnd = Float.NaN;
+		c.sanitize();
+		assertEquals(0.0f, c.outline.fadeStart);
+		assertEquals(0.0f, c.outline.fadeEnd);
+
+		c.outline.fadeStart = 300.0f;
+		c.outline.fadeEnd = 20.0f;
+		c.sanitize();
+		assertEquals(255.0f, c.outline.fadeStart);
+		assertEquals(256.0f, c.outline.fadeEnd);
+	}
+
+	@Test
+	void fadeEndIsRepairedToBeGreaterThanFadeStart() {
+		GlintsmithConfig c = new GlintsmithConfig();
+		c.outline.fadeStart = 10.0f;
+		c.outline.fadeEnd = 5.0f;
+		c.sanitize();
+		assertEquals(10.0f, c.outline.fadeStart);
+		assertEquals(11.0f, c.outline.fadeEnd);
+
+		c.outline.fadeStart = 10.0f;
+		c.outline.fadeEnd = 10.0f;
+		c.sanitize();
+		assertEquals(10.0f, c.outline.fadeStart);
+		assertEquals(11.0f, c.outline.fadeEnd);
+
+		c.outline.fadeStart = 256.0f;
+		c.outline.fadeEnd = 256.0f;
+		c.sanitize();
+		assertEquals(255.0f, c.outline.fadeStart);
+		assertEquals(256.0f, c.outline.fadeEnd);
+
+		c.outline.fadeStart = 20.0f;
+		c.outline.fadeEnd = 40.0f;
+		c.sanitize();
+		assertEquals(20.0f, c.outline.fadeStart);
+		assertEquals(40.0f, c.outline.fadeEnd);
+
+		// 0 / 0 stays off
+		c.outline.fadeStart = 0.0f;
+		c.outline.fadeEnd = 0.0f;
+		c.sanitize();
+		assertEquals(0.0f, c.outline.fadeStart);
+		assertEquals(0.0f, c.outline.fadeEnd);
+
+		// fadeEnd 0 means off whatever fadeStart is
+		c.outline.fadeStart = 30.0f;
+		c.outline.fadeEnd = 0.0f;
+		c.sanitize();
+		assertEquals(30.0f, c.outline.fadeStart);
+		assertEquals(0.0f, c.outline.fadeEnd);
+	}
+
+	@Test
+	void categoryWithInvalidTextureIsResetWithOneWarning() {
+		GlintsmithConfig c = new GlintsmithConfig();
+		c.glint.armor.texture = "preset:nope";
+		c.glint.item.texture = "preset:fire";
+		c.glint.gui.texture = "file:glow.png";
+		c.sanitize();
+		assertNull(c.glint.armor.texture);
+		assertEquals("preset:fire", c.glint.item.texture);
+		assertEquals("file:glow.png", c.glint.gui.texture);
+		assertEquals(1, c.warnings().size());
+		assertTrue(c.warnings().get(0).contains("glint.armor.texture"), c.warnings().get(0));
+
+		// a later sanitize starts over
+		c.sanitize();
+		assertTrue(c.warnings().isEmpty());
+	}
+
+	@Test
+	void blankCategoryTextureBecomesNullWithoutWarning() {
+		GlintsmithConfig c = new GlintsmithConfig();
+		c.glint.entity.texture = "   ";
+		c.sanitize();
+		assertNull(c.glint.entity.texture);
+		assertTrue(c.warnings().isEmpty());
+	}
+
+	@Test
+	void warningsAreNeverNullAndNeverSerialised() {
+		GlintsmithConfig parsed = ConfigManager.fromJson("{\"glint\": {\"armor\": {\"texture\": \"file:../x.png\"}}}");
+		assertNotNull(parsed.warnings(), "before sanitize");
+		parsed.sanitize();
+		assertEquals(1, parsed.warnings().size());
+		assertNull(parsed.glint.armor.texture);
+		assertFalse(ConfigManager.toJson(parsed).contains("warnings"));
+
+		GlintsmithConfig copy = parsed.copy();
+		assertNotNull(copy.warnings());
+		assertTrue(copy.warnings().isEmpty(), "the copy is already repaired");
+		assertFalse(ConfigManager.toJson(copy).contains("warnings"));
+	}
+
+	@Test
+	void loadLogsAndExposesWarnings() throws IOException {
+		Files.writeString(file(), "{\"glint\": {\"gui\": {\"texture\": \"bogus\"}}}");
+		ConfigManager m = ConfigManager.forPath(file());
+		GlintsmithConfig c = m.load();
+		assertNull(c.glint.gui.texture);
+		assertEquals(1, m.warnings().size());
+		assertTrue(m.warnings().get(0).contains("glint.gui.texture"));
+		assertNull(m.lastError());
+	}
+
+	@Test
+	void ruleWithInvalidGlintTextureIsFlaggedButKept() {
+		GlintsmithConfig c = new GlintsmithConfig();
+		Rule bad = new Rule();
+		bad.items.add("minecraft:stick");
+		bad.glint = new GlintSettings();
+		bad.glint.texture = "file:../secret.png";
+		Rule good = new Rule();
+		good.items.add("minecraft:stick");
+		good.glint = new GlintSettings();
+		good.glint.texture = "preset:aurora";
+		c.rules.add(bad);
+		c.rules.add(good);
+		c.sanitize();
+		assertEquals(4, c.rules.size());
+		assertNotNull(bad.error);
+		assertEquals("file:../secret.png", bad.glint.texture);
+		assertNull(good.error);
+
+		bad.glint.texture = "file:secret.png";
+		c.sanitize();
+		assertNull(bad.error);
 	}
 
 	@Test
@@ -103,6 +266,7 @@ class ConfigTest {
 		// transient state must not leak into the file
 		assertFalse(json.contains("error"));
 		assertFalse(json.contains("itemPatterns"));
+		assertFalse(json.contains("warnings"));
 		// nulls (inherit) are omitted
 		assertFalse(json.contains("null"));
 	}
@@ -112,7 +276,7 @@ class ConfigTest {
 		GlintsmithConfig c = new GlintsmithConfig();
 		c.outline.condition = OutlineCondition.ALL;
 		c.outline.color = ColorStyle.rainbow(2.5f);
-		c.glint.armor.texture = "config:fire.png";
+		c.glint.armor.texture = "file:fire.png";
 		c.glint.armor.tint = ColorStyle.of("#FF0000");
 		c.gapFix.mode = GapFixMode.CUSTOM;
 		c.enchantmentColors.put("mymod:zap", "#112233");
@@ -170,7 +334,7 @@ class ConfigTest {
 		c.durabilityAlert.color = "nope";
 		c.sanitize();
 
-		assertEquals(8.0f, c.outline.thickness);
+		assertEquals(16.0f, c.outline.thickness);
 		assertEquals(0.0f, c.outline.softness);
 		assertEquals(1.0f, c.outline.opacity);
 		assertEquals(10.0f, c.glint.item.speed);
@@ -244,7 +408,7 @@ class ConfigTest {
 		assertNotNull(bad.error);
 		assertTrue(bad.error.contains("not a pattern!"));
 		assertEquals(List.of("not a pattern!"), bad.items);
-		assertEquals(8.0f, bad.outline.thickness);
+		assertEquals(16.0f, bad.outline.thickness);
 		// a later sanitize clears the error once fixed
 		bad.items.clear();
 		bad.excludeItems.clear();
@@ -292,7 +456,7 @@ class ConfigTest {
 		Files.writeString(file(), "{\"outline\": {\"thickness\": 999, \"color\": {\"colors\": [\"zzz\"]}}}");
 		ConfigManager m = ConfigManager.forPath(file());
 		GlintsmithConfig c = m.load();
-		assertEquals(8.0f, c.outline.thickness);
+		assertEquals(16.0f, c.outline.thickness);
 		assertEquals(List.of("#D088FC"), c.outline.color.colors);
 		assertNull(m.lastError());
 	}
@@ -345,13 +509,13 @@ class ConfigTest {
 		edited.outline.thickness = 100.0f;
 		assertTrue(m.save(edited));
 		assertEquals(1, seen.size());
-		assertEquals(8.0f, seen.get(0).outline.thickness);
+		assertEquals(16.0f, seen.get(0).outline.thickness);
 		assertSame(seen.get(0), m.get());
 		assertNotSame(edited, m.get());
 		assertEquals(100.0f, edited.outline.thickness, "the caller's object is not modified");
 
 		ConfigManager reread = ConfigManager.forPath(file());
-		assertEquals(8.0f, reread.load().outline.thickness);
+		assertEquals(16.0f, reread.load().outline.thickness);
 	}
 
 	@Test

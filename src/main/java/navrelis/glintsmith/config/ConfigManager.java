@@ -109,6 +109,14 @@ public final class ConfigManager {
 	}
 
 	/**
+	 * @return problems the last load or save repaired in the current config, such as an invalid category texture
+	 *         that was reset; empty if none
+	 */
+	public List<String> warnings() {
+		return current.warnings();
+	}
+
+	/**
 	 * @return the message of the last failed load or save, or null if the last one worked
 	 */
 	public String lastError() {
@@ -150,6 +158,9 @@ public final class ConfigManager {
 			String text = Files.readString(file, StandardCharsets.UTF_8);
 			GlintsmithConfig parsed = parse(text);
 			parsed.sanitize();
+			for (String warning : parsed.warnings()) {
+				LOGGER.warn("Config {}: {}", FILE_NAME, warning);
+			}
 			current = parsed;
 			lastError = null;
 		} catch (IOException | JsonParseException | IllegalStateException | IllegalArgumentException e) {

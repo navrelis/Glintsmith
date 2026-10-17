@@ -1,10 +1,11 @@
 package navrelis.glintsmith.style;
 
 /**
- * A fully resolved glint (category defaults with rule overrides applied).
+ * A fully resolved glint. Every value is already merged: the category defaults overlaid by all matching rules
+ * in order, including {@code rotation}; the renderer must not apply further defaults or merging.
  *
  * @param enabled {@code false} hides the glint
- * @param texture preset id, resource location or {@code config:<file>.png}; null for the vanilla texture
+ * @param texture a texture spec as in {@link GlintSettings#validateTexture(String)}; null for the vanilla texture
  * @param tint compiled tint, or null for none
  * @param tintStyle the style the tint was compiled from, or null
  * @param speed 0..10, 1 = vanilla

@@ -79,7 +79,7 @@ public final class RuleMatcher {
 		if (glintActive) {
 			GlintsmithConfig.GlintCategorySettings base = glintGlobal.forCategory(category);
 			glintEnabled = base.enabled;
-			texture = base.texture;
+			texture = GlintSettings.isVanillaTexture(base.texture) ? null : base.texture;
 			tint = base.tint;
 			speed = base.speed;
 			scale = base.scale;
@@ -115,7 +115,7 @@ public final class RuleMatcher {
 					glintEnabled = g.enabled;
 				}
 				if (g.texture != null) {
-					texture = GlintSettings.VANILLA_TEXTURE.equals(g.texture) ? null : g.texture;
+					texture = GlintSettings.isVanillaTexture(g.texture) ? null : g.texture;
 				}
 				if (g.tint != null) {
 					tint = g.tint;
