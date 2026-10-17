@@ -333,7 +333,9 @@ RenderType.create("glintsmith_outline_mask", DefaultVertexFormat.POSITION_TEX_CO
   pixels and stray 1-px rings. The flat GUI mask stays double-sided (in orthographic GUI space back faces
   only fill pinholes inside the icon). If the cull state cannot be read, the masks fall back to
   double-sided drawing (`NO_CULL`). The cull state is read through `CompositeStateAccessor`
-  (`outlineCullState`) by `MaskTypes.cullOf`. **[in-game check pending: stray dots]**
+  (`outlineCullState`) by `MaskTypes.cullOf`. Verified in game (T24, Iris 1.8.14-beta.1 installed,
+  shaders off and on): no stray 1-px rings around GUI items in the inventory captures, and the dashed
+  line inside the GUI sword under the Iris capture is gone.
 * **Flat type** (GUI). `NO_DEPTH_TEST`, no layering, `COLOR_WRITE`, `NO_CULL` (double-sided).
 * The mask vertex shader uses the exact vanilla expression `ProjMat * ModelViewMat * vec4(Position, 1.0)`,
   the same invariance that vanilla glint relies on for its EQUAL depth test. The seed rule in 3.3
@@ -1177,6 +1179,16 @@ void clearTexturing() {
 
 The vanilla accessibility sliders "Glint Speed" and "Glint Strength" stay respected as multipliers.
 Rotation is in degrees (vanilla = 10).
+
+Known limit: preset glints in packs with a very large block atlas. Item glints are textured through the
+item's own UVs on the block atlas, like vanilla. In a pack whose block atlas is very large (for example
+8192 x 4096 px), each item covers only a tiny part of the atlas, so at the default Scale 1.00 an item
+shows only a few texels of a preset's pattern and the preset looks like a flat colour wash instead of its
+bands or sparkles. Vanilla's own glint has the same atlas dependence; it is less visible there because
+the vanilla texture is smooth. Workaround: lower the glint Scale (smaller values make the pattern denser;
+the matrix scale is `baseScale / scale`). About 0.13 for held and dropped items and about 0.2 for armor
+worked in such a pack (the gallery captures use item 0.13, armor and entity 0.22, the sparkle preset 0.1).
+Armor textures are not on the block atlas, so armor is affected far less.
 
 Slot acquire (`GlintSlotPool.acquire(kind, scratch)`), on the render thread:
 

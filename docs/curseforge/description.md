@@ -92,6 +92,7 @@ Client side only. Install it on your client; it does nothing on a server.
 - First-person animation mods like Punchy keep the hand outline and the first-person glint rules (checked with Punchy 2.8f, main hand and offhand).
 - A mod that replaces the vanilla glint render types itself can win over Glintsmith's glint, or the other way round. Use one of them.
 - Items that never go through the game's normal item rendering (`ItemRenderer.render`) are not outlined. Mods that only batch the drawing of GUI items, like ImmediatelyFast, are not affected.
+- Glint presets in packs with a very large block atlas (for example 8192 x 4096 px): item glints are textured through the item's own UVs on the block atlas, like vanilla, so an item shows only a few texels of a preset at Scale 1.00 and the preset can look like a flat colour wash. Lower the glint Scale (about 0.13 for held and dropped items, about 0.2 for armor worked in such a pack). Armor textures are not on the block atlas, so armor is affected far less.
 - Model Gap Fix (`modelfix`) can stay installed. Glintsmith's automatic mode stays off while it is present. In custom mode the settings stack on top of it, and precise spans are inactive. This is covered by unit tests; it was not tested in game for 1.0.0.
 
 ## Performance

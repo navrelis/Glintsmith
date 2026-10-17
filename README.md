@@ -45,6 +45,12 @@ reloaded while the game runs.
 - The glint keeps following the game's own Glint Speed and Glint Strength sliders; the mod's values are multiplied onto them.
 - A master switch turns the whole feature off and leaves the vanilla glint untouched.
 
+Known limit: item glints are textured through the item's own UVs on the block atlas, like vanilla. In packs with a very
+large block atlas (for example 8192 x 4096 px) an item covers only a tiny part of the atlas, so at Scale 1.00 a preset
+can look like a flat colour wash instead of its bands or sparkles. Lower the glint Scale to fix it (about 0.13 for held
+and dropped items and about 0.2 for armor worked in such a pack). Armor textures are not on the block atlas, so armor
+is affected far less.
+
 ### Model gap fix
 
 - Closes the hairline gaps between the faces of flat generated item models (Mojang bug MC-73186). It is a clean-room

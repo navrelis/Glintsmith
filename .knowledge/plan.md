@@ -37,8 +37,10 @@ Status: open / in progress / in review / done. Size S = short (1 unit), L = long
 | T9b-4 | Docs final (part 1) | resolve PENDING T21 markers + DESIGN in-game-pending markers with the verified result; T24 note; Fabulous tested; regenerate preview + --check; CHANGELOG lines for C1/T24 | T21,T24,T23 | Sonnet | S | part 1 done (session 10, Sonnet + 1 correction: rewrap, plain grep); part 2 (stray-dots result, jar SHA) after T12 |
 | T16 | In-game script prep | held.json (first-person check) + gallery/showcase configs enable targets.armor where armor is shown; README expectations; dry-runs pass | - | Sonnet | S | done (session 6; .dev is git-ignored, SHOTLIST committed) |
 | T15 | Armor outline default off (owner) | targets.armor = false, tests | - | Sonnet | S | done (6645192); docs in T9 final |
-| G1 | World glint presets under Iris | Iris FullyBufferedMultiBufferSource hook + substituteBuffered, slot lifetime safe, shader-pack rule unchanged, tests, DESIGN; build green; in-game re-capture shows preset colours on armor/frames | investigation | Opus | S | in review: code accepted (lead read diff, build 366 green); in-game re-capture running |
+| G1 | World glint presets under Iris | Iris FullyBufferedMultiBufferSource hook + substituteBuffered, slot lifetime safe, shader-pack rule unchanged, tests, DESIGN; build green; in-game re-capture shows preset colours on armor/frames | investigation | Opus | S | in review: code committed 2109d84 (366 green); in-game re-capture queued (session 11: waits until the owner's own client exits) |
 | R1 | Capture rig fixes | room A panels re-summoned for outline_vanilla/gap_*, universal_wall FOV 30 close-up, glint shot scale/strength | T22 | Sonnet | S | done (panels, universal_wall close-up, glint scale/strength) |
+| T12r | Art docs + GIF settings | art/README rewrap, SHOTLIST reflects R1 (universal_wall close-up, panels, glint scale), cards.json GIF 1440x810/down 2/16 per caption/4 fps, gif.py defaults | R1 | Sonnet | S | in progress (session 11) |
+| T9b-5 | Docs: stray dots verified, big-atlas limitation | DESIGN stray-dots marker -> verified; big-atlas glint tip in README/description/DESIGN; scale tooltips en/de; preview --check 0; build green | T24 | Sonnet | S | done (session 11, Sonnet + 1 correction: German "Modpacks") |
 
 Parallel: T2 (Opus) with T3 + T4 (Sonnet) after T1. T5 (Opus) with T6/T7 (Sonnet), files disjoint.
 
@@ -53,3 +55,5 @@ Session 6: T13 Opus S 1, T14 Opus L 2, T9a Sonnet S 1, T16 Sonnet S 1, T17 sweep
 Session 7: T17b Sonnet S 1 (+corr), T9b-1 Sonnet S 1, T19 Opus S 1, T20 Opus S 1 → Sonnet ~36, Opus ~14 (about 28 % Opus).
 Session 8: Opus T21 S 1; Sonnet T22 S 1, T9b-2 S 1, T12p S 1, T23 S 1 (all running) -> total Sonnet ~42, Opus ~15 (about 26 % Opus).
 Session 9: Opus T24 S 1; Sonnet T22 finish ~0.5, T12p finish ~0.5, T23 S 1, T9b-4a S 1, A1 S 1, T12a S 1, C1 S 1, T22 corr ~0.5, T9b-4 S 1 (running) -> Sonnet ~49.5, Opus ~16 (about 25 % Opus).
+Session 10: Sonnet T9b-4 part 1 S 1, T12s S 1, R1 S 2; Opus glint investigation S 1, G1 S 1 (override) -> Sonnet ~53.5, Opus ~18 (about 25 % Opus).
+Session 11: Sonnet T12r S 1, T9b-5 S 1 (running) -> Sonnet ~55.5, Opus ~18 (about 24 % Opus).
