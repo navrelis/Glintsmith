@@ -7,6 +7,7 @@ import navrelis.glintsmith.config.ConfigManager;
 import navrelis.glintsmith.config.GlintsmithConfig;
 import navrelis.glintsmith.mixin.glint.BufferSourceAccessor;
 import navrelis.glintsmith.mixin.glint.RenderBuffersAccessor;
+import navrelis.glintsmith.render.outline.compat.IrisCompat;
 import navrelis.glintsmith.style.GlintCategory;
 import navrelis.glintsmith.style.GlintLook;
 import navrelis.glintsmith.style.ResolvedStyle;
@@ -32,6 +33,9 @@ import org.jetbrains.annotations.Nullable;
  * "slot" render types ({@link GlintSlotPool}) whose texture, texture matrix, tint and strength are read at draw time.
  * Slots are registered as fixed buffers of the main source, flushed right after the vanilla glint, and released when
  * their batch has been drawn.
+ * <p>
+ * With Iris installed, the world pass requests its glint from Iris's fully buffered source instead of the main one;
+ * {@link #substituteBuffered} (G7) swaps the types there, with pinned slots that live until the next frame.
  */
 public final class GlintSystem {
 	private static final ResourceLocation RELOAD_ID = ResourceLocation.fromNamespaceAndPath(Glintsmith.MOD_ID, "glint_textures");
@@ -46,6 +50,11 @@ public final class GlintSystem {
 	private static boolean started;
 	private static long frame;
 	private static double timeSeconds;
+	/**
+	 * A shader pack was in use at the start of this frame (G7 stays off then). True until G6 has run once: the safe
+	 * side, so G7 never runs under a pack if G6 is missing.
+	 */
+	private static boolean shaderPack = true;
 
 	private GlintSystem() {
 	}
@@ -86,11 +95,67 @@ public final class GlintSystem {
 			if (kind == null || !RenderSystem.isOnRenderThread()) {
 				return requested;
 			}
-			return pick(s, kind, requested);
+			return pick(s, kind, requested, false);
 		} catch (Throwable t) {
 			GlintFailsafe.trip("substitute", t);
 			return requested;
 		}
+	}
+
+	/**
+	 * G7: the render type to use instead of {@code requested} when it is requested from Iris's
+	 * {@code FullyBufferedMultiBufferSource}. Iris installs that source as {@code RenderBuffers.bufferSource()} for the
+	 * whole of {@code LevelRenderer.renderLevel} whenever Iris is installed, shaders on or off, and its
+	 * {@code getBuffer} never reaches the vanilla {@code BufferSource.getBuffer} (G5a). Without this hook every glint
+	 * drawn in the world (armor, held items of entities, item frames, dropped items) keeps the vanilla look.
+	 * <p>
+	 * Why the {@code source == main} rule of {@link #substitute} (DESIGN 5.2, point 2) is not needed here: that rule
+	 * exists because a vanilla {@code BufferSource} holds non-fixed types in one shared builder and flushes it whenever
+	 * another non-fixed type is requested, which would draw our glint before its base geometry or close a builder that
+	 * is still written. Iris's source keeps a separate segment per render type for the whole level pass, its
+	 * {@code endBatch(RenderType)} does nothing, and it draws only in {@code endBatch()} / {@code endBatchWithType},
+	 * ordered by transparency class: our slot types reuse the vanilla {@code GLINT_TRANSPARENCY} shard, so Iris
+	 * classifies them as {@code DECAL} like the vanilla glint and draws them after the {@code OPAQUE},
+	 * {@code OPAQUE_DECAL} and {@code GENERAL_TRANSPARENT} base layers, exactly where it draws the vanilla glint.
+	 * <p>
+	 * Slot lifetime: Iris draws through {@code RenderType.draw(MeshData)}, so G5c never frees these slots. They are
+	 * acquired {@linkplain GlintSlot#pinned pinned}: no G5c of the main source can free them either, so their params
+	 * cannot be handed to another look before Iris has drawn them. Iris flushes inside {@code renderLevel}, in the same
+	 * frame; G6 frees and unpins them at the next frame start. Slots are not registered in the main source here (Iris
+	 * keeps its own buffers); G5b skips unregistered slots.
+	 * <p>
+	 * Under an active shader pack this hook stays out of the way (the vanilla look, as before), because the slot types
+	 * would then go through Iris's entity wrapping and the pack's glint program; that path is untested.
+	 *
+	 * @return {@code requested} unless it is a vanilla glint type that has a custom look
+	 */
+	public static RenderType substituteBuffered(RenderType requested) {
+		try {
+			GlintRuntimeSettings s = settings;
+			if (!bufferedSwapAllowed(s.anyCustom(), main != null, shaderPack, GlintFailsafe.tripped())) {
+				return requested;
+			}
+			GlintKind kind = GlintKind.of(requested);
+			if (kind == null || !RenderSystem.isOnRenderThread()) {
+				return requested;
+			}
+			return pick(s, kind, requested, true);
+		} catch (Throwable t) {
+			GlintFailsafe.trip("substituteBuffered", t);
+			return requested;
+		}
+	}
+
+	/**
+	 * Pure decision of G7 before the render type is looked at.
+	 *
+	 * @param anyCustom  whether any category or rule has a non-vanilla look
+	 * @param started    whether the client has started (main source captured, textures created)
+	 * @param shaderPack whether a shader pack was in use at the start of this frame
+	 * @param tripped    whether the glint failsafe has tripped
+	 */
+	static boolean bufferedSwapAllowed(boolean anyCustom, boolean started, boolean shaderPack, boolean tripped) {
+		return anyCustom && started && !shaderPack && !tripped;
 	}
 
 	/**
@@ -137,6 +202,8 @@ public final class GlintSystem {
 			}
 			frame++;
 			timeSeconds = Util.getMillis() / 1000.0;
+			// False without Iris; true on any Iris API error (the safe side: G7 off).
+			shaderPack = IrisCompat.queryShaderPack();
 			POOL.releaseStale(frame);
 		} catch (Throwable t) {
 			GlintFailsafe.trip("onFrameBegin", t);
@@ -145,7 +212,11 @@ public final class GlintSystem {
 
 	// ---------------------------------------------------------------- resolution
 
-	private static RenderType pick(GlintRuntimeSettings s, GlintKind kind, RenderType requested) {
+	/**
+	 * @param buffered true for Iris's fully buffered source (G7): the slot is pinned and not registered in the main
+	 *                 source; false for the main source (G5a): the slot is registered as a fixed buffer of main
+	 */
+	private static RenderType pick(GlintRuntimeSettings s, GlintKind kind, RenderType requested, boolean buffered) {
 		GlintContext.Frame f = GlintContext.top();
 		GlintCategory category = GlintCategories.decide(kind, f);
 
@@ -164,7 +235,9 @@ public final class GlintSystem {
 		}
 
 		if (!look.enabled()) {
-			return ensureRegistered(POOL.acquireOff(kind, frame));
+			// The off type has no params to protect (fixed texture, no colour or depth writes), so it is never pinned.
+			GlintSlot<RenderType> off = POOL.acquireOff(kind, frame);
+			return buffered ? off.type : ensureRegistered(off);
 		}
 		boolean tinted = look.tint() != null;
 		int tint = tinted ? RuleEngine.glintTint(stack, look, timeSeconds) | 0xFF000000 : GlintParams.NO_TINT;
@@ -173,11 +246,11 @@ public final class GlintSystem {
 		if (SCRATCH.isVanilla(kind)) {
 			return requested;
 		}
-		GlintSlot<RenderType> slot = POOL.acquire(kind, SCRATCH, frame);
+		GlintSlot<RenderType> slot = POOL.acquire(kind, SCRATCH, frame, buffered);
 		if (slot == null) {
 			return requested;
 		}
-		return ensureRegistered(slot);
+		return buffered ? slot.type : ensureRegistered(slot);
 	}
 
 	@Nullable

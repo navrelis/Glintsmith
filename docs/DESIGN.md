@@ -957,11 +957,11 @@ All mixins live in package `navrelis.glintsmith.mixin` (sub-packages `outline`, 
 | G5a | `glint.BufferSourceGlintMixin` | `MultiBufferSource$BufferSource` | `getBuffer(Lnet/minecraft/client/renderer/RenderType;)Lcom/mojang/blaze3d/vertex/VertexConsumer;` | `@ModifyVariable(at = @At("HEAD"), argsOnly = true)` | Substitute vanilla glint types with slot or off types (main source only) | Vanilla glint everywhere; the feature is effectively off |
 | G5b | same | same | `endBatch(Lnet/minecraft/client/renderer/RenderType;)V` TAIL | `@Inject` | When `this == main && type == vanilla entityGlintDirect`, flush every registered slot and off type | Slot glints are flushed by the later `endBatch()`. In non-Fabulous mode that is after water, so items seen through water lose their glint. |
 | G5c | same | same | `endBatch(Lnet/minecraft/client/renderer/RenderType;Lcom/mojang/blaze3d/vertex/BufferBuilder;)V` (private) TAIL | `@Inject` | `GlintSystem.onBatchDrawn(type)` releases the slot | Slots are released only at frame start, so at most 32 distinct looks per kind per frame |
-| G6 | `glint.GameRendererGlintMixin` | `GameRenderer` | `render(Lnet/minecraft/client/DeltaTracker;Z)V` HEAD | `@Inject` | `GlintSystem.onFrameBegin()` | Frame counter is not advanced, so stale slots are never auto-released; `onBatchDrawn` still releases them |
+| G6 | `glint.GameRendererGlintMixin` | `GameRenderer` | `render(Lnet/minecraft/client/DeltaTracker;Z)V` HEAD | `@Inject` | `GlintSystem.onFrameBegin()` | Frame counter is not advanced, so stale slots are never auto-released; `onBatchDrawn` still releases them, and G7 stays off (its shader-pack flag starts as "pack in use" and is only refreshed here), so with Iris the world keeps the vanilla glint |
 | GA1 | `glint.BufferSourceAccessor` | `MultiBufferSource$BufferSource` | field `fixedBuffers` | `@Accessor` | Register slot types as fixed buffers | — |
 | GA2 | `glint.RenderBuffersAccessor` | `net.minecraft.client.renderer.RenderBuffers` | field `bufferSource` | `@Accessor` | Get the vanilla main source without going through Iris's `bufferSource()` replacement | — |
 | G8 | `glint.ItemInHandRendererGlintMixin` | `net.minecraft.client.renderer.ItemInHandRenderer` | `renderHandsWithItems(...)` (same descriptor as O2b) | `@WrapMethod`, `require = 0` | `GlintContext.beginHands()`; `endHands()` in `finally`. Held items drawn inside count as FIRST_PERSON for rules, also with a THIRD_PERSON hand context (first-person animation mods). Independent of the outline hook O2b. | Items drawn by a first-person animation mod use the THIRD_PERSON rules; vanilla hands are unaffected |
-| G7 (optional, phase 2) | `compat.IrisFullyBufferedGlintMixin` | `@Pseudo @Mixin(targets = "net.irisshaders.batchedentityrendering.impl.FullyBufferedMultiBufferSource")` | `getBuffer(Lnet/minecraft/client/renderer/RenderType;)Lcom/mojang/blaze3d/vertex/VertexConsumer;` **[UNVERIFIED runtime name; javap of the Iris jar shows the method literally named `getBuffer`]** | `@ModifyVariable(HEAD, argsOnly)` | Glint looks in world and hand while a shader pack is on | Vanilla glint in world and hand under a shader pack (GUI still customised) |
+| G7 | `glint.compat.IrisFullyBufferedGlintMixin` | `@Pseudo @Mixin(targets = "net.irisshaders.batchedentityrendering.impl.FullyBufferedMultiBufferSource", remap = false)` | `getBuffer` by bare name. Verified in the shipped Iris 1.8.14-beta.1 jar: `public class_4588 getBuffer(class_1921)`, the only `getBuffer` of the class; vanilla does not obfuscate `MultiBufferSource.getBuffer` (no intermediary entry), so the name is the same in dev and production while the descriptor is not. | `@ModifyVariable(HEAD, argsOnly, require = 0, remap = false)` | `GlintSystem.substituteBuffered`: the G5a swap for Iris's world buffer source, with pinned slots (5.2, point 6). Off while a shader pack is in use. **[in-game check pending: Iris world glint]** | With Iris installed (shaders on or off), world glints (armor, entity-held items, item frames, dropped items, armor stands) keep the vanilla look; hand and GUI unaffected |
 
 Fabric events for T6: `ClientLifecycleEvents.CLIENT_STARTED` (capture the main source, generate the
 presets) and the reload listener `glintsmith:glint_textures`.
@@ -1020,6 +1020,17 @@ presets) and the reload listener `glintsmith:glint_textures`.
   input colour, and `TextureMat` into `iris_TextureMat`. So reusing vanilla's shader shard and
   `GLINT_TRANSPARENCY` keeps our types working under Iris. Tint and strength reach the pack's
   `gbuffers_armor_glint`; whether the pack multiplies by it is pack-dependent **[UNVERIFIED per pack]**.
+* **Iris world buffer source (verified in the Iris 1.8.14-beta.1 bytecode).** Iris's
+  `batchedentityrendering.mixin.MixinLevelRenderer` calls `beginLevelRendering()` at HEAD of
+  `LevelRenderer.renderLevel` and `endLevelRendering()` at its RETURN, **unconditionally: also with
+  shaders off.** While that counter is non-zero, `MixinRenderBuffers` makes `RenderBuffers.bufferSource()`
+  return Iris's `FullyBufferedMultiBufferSource` (and `outlineBufferSource()` / `crumblingBufferSource()`
+  wrappers around it). Its `getBuffer` override buffers per render type in its own segments and never
+  calls the vanilla `BufferSource.getBuffer`, so G5a never sees world glints. Its `endBatch(RenderType)`
+  is empty; it draws only in `endBatch()` / `endBatchWithType` (inside `renderLevel`), through
+  `RenderType.draw(MeshData)`, ordered by transparency class (`OPAQUE`, `OPAQUE_DECAL`,
+  `GENERAL_TRANSPARENT`, `DECAL`, ...), so G5b and G5c never run for it either. The hand and the GUI
+  render outside `renderLevel` (shaders off) and keep using the vanilla main source. G7 covers the world.
 
 ### 5.2 Strategy
 
@@ -1038,6 +1049,18 @@ presets) and the reload listener `glintsmith:glint_textures`.
    ordering relative to water.
 5. **Release a slot when its batch is drawn** (G5c). Also release all slots whose `frame` is stale at
    frame start (G6) as a safety net.
+6. **Iris's fully buffered world source is the one exception to point 2** (G7, `substituteBuffered`).
+   The early-flush hazard does not exist there: it keeps one segment per render type for the whole
+   level pass and draws only at its own flush, our slot types are classified `DECAL` like the vanilla
+   glint (same `GLINT_TRANSPARENCY` instance) and so drawn after the base layers. Same checks as G5a
+   (custom looks, known kind, render thread, failsafe, main source captured) minus `source == main`,
+   plus "no shader pack in use this frame" (queried once per frame in G6). Slot lifetime: Iris never
+   passes G5c, so the slot is acquired **pinned**. `release` leaves a pinned slot in use (a main-source
+   draw of a shared look cannot free it), so its params cannot be handed to another look before Iris
+   draws it later in the same `renderLevel`; G6 frees and unpins it at the next frame start. The slot
+   is not registered in `main` (Iris keeps its own buffers); G5b skips unregistered slots. Plain
+   vanilla `BufferSource` instances other than main still get the vanilla glint.
+   **[in-game check pending: Iris world glint]**
 
 ### 5.3 Categories, context and resolution
 
@@ -1269,8 +1292,12 @@ specs. Generation cost at start-up is **[UNVERIFIED, not measured]**.
    That does not crash, and the next config or reload event re-resolves the slot.
 4. Config changes mid-frame: the settings snapshot is swapped atomically (volatile field). Slots
    already assigned keep their params until drawn.
-5. Iris shader pack on: substitution still runs on the main source (GUI). The world and hand use
-   Iris's `FullyBufferedMultiBufferSource`, so the vanilla look applies there unless G7 is enabled.
+5. Iris installed: the world always uses Iris's `FullyBufferedMultiBufferSource` (shaders on or off),
+   which G7 handles (5.2, point 6). With shaders off, hand and GUI use the main source (G5a). Shader
+   pack on: substitution still runs on the main source (GUI); the hand is drawn inside `renderLevel`
+   by Iris's `HandRenderer` through its own `FullyBufferedMultiBufferSource` instance (also a G7
+   target), and G7 is a no-op under a pack, so world and hand keep the vanilla look
+   (unchanged behaviour; enabling G7 under a pack is a separate, untested step).
 6. A category is disabled: return the kind's off type. It is registered fixed like slots. The colour
    and depth masks are off, so the geometry is drawn but invisible. Optional optimisation, not
    required: also `@ModifyVariable` the `boolean` foil parameter of
@@ -1289,8 +1316,8 @@ specs. Generation cost at start-up is **[UNVERIFIED, not measured]**.
 | Vanilla (Fast/Fancy) | Full | Full | Full | Full |
 | Fabulous | Full. Composite goes into main before the transparency chain; translucent layers combine over it correctly. `glintTranslucent` / `entityGlint` slots keep `ITEM_ENTITY_TARGET`. Outlines tested in game without a shader pack (held items, item frames, dropped items, occlusion, stained glass from the front and side, water, rain, GUI on and off). | Full | Full | Full |
 | Sodium 0.8.13 | Full. Sodium replaces terrain only. Its item fast path (`ItemRendererMixin`) and `putBulkData` intrinsics fall back to vanilla code for our tee because it is not a `BufferBuilder` or `VertexBufferWriter`. Sodium logs **one** WARN per class (`VertexConsumerTracker`: "does not support optimized vertex writing code paths"). FRAPI models render through the `MultiBufferSource` we pass. | Full | Full | Full |
-| Iris installed, shaders off | Full (Iris batching and hand pathway inactive) | Full | Full | Full |
-| Iris, shader pack on | **Off** (log once per pack activation, at INFO). Main depth is not the scene depth and entities go to Iris gbuffers. The shadow pass is skipped too (phase closed, plus an explicit `isRenderingShadowPass()` check). | **Best effort, default on, option to disable.** The mask is flushed at TAIL of `renderHandsWithItems` with Iris's hand matrices; the composite happens after Iris's final pass at `GameRenderer.renderLevel` RETURN. The arm hides the outline through hand occluders: under a pack the hand buffer source is wrapped in an `OccluderBufferSource` that records every depth-writing render type of the hand pass (arm, sleeve, held items, maps) as depth-only geometry (`DEPTH_WRITE`, `LEQUAL`, the source's layering and cutout), drawn into the mask depth after the item masks; the composite runs with `UseDepth=1` and linearises depth from the hand projection terms (`DepthProj`; Iris scales the hand projection by 1/8 in z), see 3.3. Known limits: with both Iris hand passes an arm from pass 1 can cover an item from pass 2; hand geometry drawn outside the passed buffer source does not occlude. Packs that move or distort the hand (DOF, hand sway) may misalign it. Verified in game (Iris 1.8.14-beta.1 + Complementary Unbound): the arm hides the outline, the visible blade is fully outlined. | Full | GUI full. World and hand use the vanilla look unless G7 is on; with G7 our slots go through Iris's glint program (texture and matrix honoured; tint and strength pack-dependent). |
+| Iris installed, shaders off | Full (Iris hand pathway inactive) | Full | Full | Full. Iris's batching is active even without a pack: the world draws through its `FullyBufferedMultiBufferSource`, which G7 covers (5.2, point 6); hand and GUI through the main source (G5a). **[in-game check pending: Iris world glint]** |
+| Iris, shader pack on | **Off** (log once per pack activation, at INFO). Main depth is not the scene depth and entities go to Iris gbuffers. The shadow pass is skipped too (phase closed, plus an explicit `isRenderingShadowPass()` check). | **Best effort, default on, option to disable.** The mask is flushed at TAIL of `renderHandsWithItems` with Iris's hand matrices; the composite happens after Iris's final pass at `GameRenderer.renderLevel` RETURN. The arm hides the outline through hand occluders: under a pack the hand buffer source is wrapped in an `OccluderBufferSource` that records every depth-writing render type of the hand pass (arm, sleeve, held items, maps) as depth-only geometry (`DEPTH_WRITE`, `LEQUAL`, the source's layering and cutout), drawn into the mask depth after the item masks; the composite runs with `UseDepth=1` and linearises depth from the hand projection terms (`DepthProj`; Iris scales the hand projection by 1/8 in z), see 3.3. Known limits: with both Iris hand passes an arm from pass 1 can cover an item from pass 2; hand geometry drawn outside the passed buffer source does not occlude. Packs that move or distort the hand (DOF, hand sway) may misalign it. Verified in game (Iris 1.8.14-beta.1 + Complementary Unbound): the arm hides the outline, the visible blade is fully outlined. | Full | GUI full. World and hand use the vanilla look: G7 is a no-op while a shader pack is in use. Allowing it there would send our slots through Iris's glint program (texture and matrix honoured; tint and strength pack-dependent), not done yet (9, point 4). |
 | First-person animation mods (Punchy 2.8f) | n/a | Full for items drawn through `ItemRenderer.render` inside `renderHandsWithItems`: THIRD_PERSON hand contexts there count as FIRST_PERSON. Not outlined: items Punchy draws without `ItemRenderer.render` (bedrock-geometry items, chests, boats). Verified in game: first-person outlines and glint rules on Punchy-held items drawn through `ItemRenderer.render` (main hand and offhand). | n/a | Full: the hand pass marker (G8) applies first-person rules to the same items |
 | First-person mode of player-animation-lib / Better Combat | The held item is drawn in the world pass as THIRD_PERSON and is outlined as a third-person item; none under a shader pack | Not applicable (the item is not drawn in the HAND phase) | n/a | THIRD_PERSON rules |
 | Other glint mods | Unaffected | Unaffected | Unaffected | If they replace the `RenderType.glint()` getters, our G5a never sees vanilla types and their look wins. If they also hook `BufferSource.getBuffer`, the last modifier wins. Document as incompatible-by-design. |
@@ -1525,10 +1552,15 @@ T6 data flow, step by step:
 4. G5b `afterEndBatch`: `if (source == main && type == GlintKind.ENTITY_GLINT_DIRECT.vanilla) pool.flushAll(main)`.
    `flushAll` calls `main.endBatch(t)` for every registered slot and off type.
 5. G5c `onBatchDrawn` → `pool.release(type)`.
-6. G6 `onFrameBegin` → `frame++`; `timeSeconds = Util.getMillis() / 1000.0`; `pool.releaseStale(frame - 1)`.
-7. Every public entry point catches Throwable → `GlintFailsafe.trip` → vanilla behaviour.
+6. G6 `onFrameBegin` → `frame++`; `timeSeconds = Util.getMillis() / 1000.0`;
+   `shaderPack = IrisCompat.queryShaderPack()`; `pool.releaseStale(frame)` (frees and unpins).
+7. G7 `substituteBuffered(requested)` (Iris's world source): fast exit unless
+   `bufferedSwapAllowed(anyCustom, main captured, !shaderPack, !tripped)` and a known kind on the render
+   thread; then the same resolution as G5a step 2, with `pool.acquire(..., pin = true)` and without
+   registering the slot in `main`.
+8. Every public entry point catches Throwable → `GlintFailsafe.trip` → vanilla behaviour.
 
-Mixins (T6): G1–G6, GA1, GA2 (G7 optional). Resources (T6): none. Presets are generated at run time;
+Mixins (T6): G1–G8, GA1, GA2. Resources (T6): none. Presets are generated at run time;
 the user folder `<configDir>/glintsmith/glints/` is created if missing.
 
 ### 8.3 T8: exact wiring
@@ -1553,7 +1585,7 @@ the user folder `<configDir>/glintsmith/glints/` is created if missing.
    glint.ItemRendererGlintMixin, glint.HumanoidArmorLayerGlintMixin, glint.ElytraLayerGlintMixin,
    glint.BlockEntityWithoutLevelRendererGlintMixin, glint.BufferSourceGlintMixin, glint.GameRendererGlintMixin,
    glint.ItemInHandRendererGlintMixin, glint.BufferSourceAccessor, glint.RenderBuffersAccessor
-   (+ compat.IrisFullyBufferedGlintMixin only once G7 is implemented)
+   glint.compat.IrisFullyBufferedGlintMixin (G7; @Pseudo, so it is skipped without Iris)
    ```
 3. No access widener and no `build.gradle` change are needed. Fabric API's transitive access wideners
    cover the render-state classes, and the accessors cover the rest.
@@ -1584,10 +1616,14 @@ the user folder `<configDir>/glintsmith/glints/` is created if missing.
    mask from Iris's depth texture or an Iris API that 1.21.1 does not have.
    *Recommendation:* accept for v1. Revisit with Iris's depth texture via its internals only if users
    ask; this would be fragile.
-4. **Glint customisation in world and hand under shader packs** needs G7 (`@Pseudo` into an Iris impl
-   class).
-   *Recommendation:* implement G7 as phase 2, guarded by an `IMixinConfigPlugin` that applies it only
-   when `iris` is loaded and its version starts with `1.8.`.
+4. **Glint customisation in world and hand under shader packs.** G7 (`@Pseudo` into Iris's
+   `FullyBufferedMultiBufferSource`) is implemented, because Iris uses that source for the world even
+   with shaders off (5.1). It is a no-op while a shader pack is in use, so the pack behaviour is
+   unchanged. No `IMixinConfigPlugin` version guard: `@Pseudo` and `require = 0` make it inert without
+   Iris or without the method, and the hook only relies on "one `getBuffer(RenderType)`, drawn later in
+   the same frame", which the pinned slots tolerate.
+   *Recommendation:* after the in-game check of the shaders-off world glint, try lifting the shader-pack
+   gate (test armor, entity-held items, item frames and the first-person hand with Complementary).
 5. **The mask cannot see geometry drawn outside `MultiBufferSource`** (direct Tesselator draws in some
    mod BEWLRs).
    *Recommendation:* accept and document. GL-level interception would be far worse.
@@ -1694,8 +1730,8 @@ Glint:
     water.
 22. 40 different glint looks on screen (creative inventory full of tinted books): no flicker, no
     wrong looks; at most a debug log line about slot overflow in the world.
-23. Iris shaders on: GUI glint customised; world and hand vanilla glint (unless G7); no visual
-    breakage, no errors.
+23. Iris shaders on: GUI glint customised; world and hand vanilla glint (G7 is a no-op under a pack);
+    no visual breakage, no errors.
 24. Resource reload with a pack that replaces `enchanted_glint_item.png`: the neutral variant is
     rebuilt from the new texture.
 25. Punchy 2.8f installed: an enchanted sword in the main hand has a first-person outline and the
@@ -1703,6 +1739,13 @@ Glint:
     Items Punchy draws without `ItemRenderer.render` have no outline (expected).
 26. Gap fix, AUTO on Windows or Linux: the 1 px step-corner cracks of a generated item (for example a
     dropped diamond sword) are closed and no jagged slivers show along the step edges.
+27. Iris 1.8.14 installed, shaders **off** (G7), with custom presets and a tint per category: enchanted
+    armor on yourself in F5 and on an armor stand, an enchanted sword held by a zombie or another player,
+    an item frame with an enchanted pickaxe, a dropped enchanted book. All show the custom look (not the
+    vanilla purple), the glint sits on the item (no glint drawn before or beside its base), and 40+
+    different looks in the world fall back to vanilla only past 32 per kind (debug log). Switch a pack on
+    and off again in game: world glint turns vanilla under the pack and custom again without it.
+    **[in-game check pending: Iris world glint]**
 
 ---
 

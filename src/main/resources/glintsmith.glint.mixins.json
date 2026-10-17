@@ -12,7 +12,8 @@
 		"glint.GameRendererGlintMixin",
 		"glint.ItemInHandRendererGlintMixin",
 		"glint.BufferSourceAccessor",
-		"glint.RenderBuffersAccessor"
+		"glint.RenderBuffersAccessor",
+		"glint.compat.IrisFullyBufferedGlintMixin"
 	],
 	"injectors": {
 		"defaultRequire": 0

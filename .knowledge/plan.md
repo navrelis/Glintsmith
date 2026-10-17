@@ -37,6 +37,8 @@ Status: open / in progress / in review / done. Size S = short (1 unit), L = long
 | T9b-4 | Docs final (part 1) | resolve PENDING T21 markers + DESIGN in-game-pending markers with the verified result; T24 note; Fabulous tested; regenerate preview + --check; CHANGELOG lines for C1/T24 | T21,T24,T23 | Sonnet | S | part 1 done (session 10, Sonnet + 1 correction: rewrap, plain grep); part 2 (stray-dots result, jar SHA) after T12 |
 | T16 | In-game script prep | held.json (first-person check) + gallery/showcase configs enable targets.armor where armor is shown; README expectations; dry-runs pass | - | Sonnet | S | done (session 6; .dev is git-ignored, SHOTLIST committed) |
 | T15 | Armor outline default off (owner) | targets.armor = false, tests | - | Sonnet | S | done (6645192); docs in T9 final |
+| G1 | World glint presets under Iris | Iris FullyBufferedMultiBufferSource hook + substituteBuffered, slot lifetime safe, shader-pack rule unchanged, tests, DESIGN; build green; in-game re-capture shows preset colours on armor/frames | investigation | Opus | S | in review: code accepted (lead read diff, build 366 green); in-game re-capture running |
+| R1 | Capture rig fixes | room A panels re-summoned for outline_vanilla/gap_*, universal_wall FOV 30 close-up, glint shot scale/strength | T22 | Sonnet | S | done (panels, universal_wall close-up, glint scale/strength) |
 
 Parallel: T2 (Opus) with T3 + T4 (Sonnet) after T1. T5 (Opus) with T6/T7 (Sonnet), files disjoint.
 

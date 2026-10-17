@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +40,21 @@ class GlintSystemTest {
 			assertNull(GlintSystem.substitute(other, null));
 		}
 		assertFalse(GlintFailsafe.tripped());
+	}
+
+	@Test
+	void bufferedSubstituteLeavesTheRequestedTypeAloneWhileEverythingIsVanilla() {
+		assertNull(GlintSystem.substituteBuffered(null));
+		assertFalse(GlintFailsafe.tripped());
+	}
+
+	@Test
+	void bufferedSwapNeedsCustomLooksAStartedClientNoShaderPackAndNoTrip() {
+		assertTrue(GlintSystem.bufferedSwapAllowed(true, true, false, false));
+		assertFalse(GlintSystem.bufferedSwapAllowed(false, true, false, false), "all vanilla");
+		assertFalse(GlintSystem.bufferedSwapAllowed(true, false, false, false), "main source not captured yet");
+		assertFalse(GlintSystem.bufferedSwapAllowed(true, true, true, false), "shader pack: world glint stays vanilla");
+		assertFalse(GlintSystem.bufferedSwapAllowed(true, true, false, true), "failsafe tripped");
 	}
 
 	@Test

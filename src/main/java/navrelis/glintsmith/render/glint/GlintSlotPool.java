@@ -51,11 +51,22 @@ final class GlintSlotPool<T> {
 	 * </ol>
 	 */
 	GlintSlot<T> acquire(GlintKind kind, GlintParams params, long frame) {
+		return acquire(kind, params, frame, false);
+	}
+
+	/**
+	 * Like {@link #acquire(GlintKind, GlintParams, long)}; with {@code pin} the slot is also {@linkplain GlintSlot#pinned
+	 * pinned}: {@link #release} leaves it alone, so it keeps its params for the rest of the frame. Used for buffer
+	 * sources that draw later without passing G5c (Iris). A shared slot stays pinned once any caller pinned it.
+	 */
+	GlintSlot<T> acquire(GlintKind kind, GlintParams params, long frame, boolean pin) {
 		GlintSlot<T>[] list = slots(kind);
 		GlintSlot<T> free = null;
 		for (int i = 0; i < list.length; i++) {
 			GlintSlot<T> s = list[i];
 			if (s.inUse && s.params.sameAs(params)) {
+				// A stale pin (an earlier frame) is dropped here: that frame's buffered geometry has been drawn.
+				s.pinned = (s.pinned && s.frame == frame) || pin;
 				s.frame = frame;
 				return s;
 			}
@@ -74,6 +85,7 @@ final class GlintSlotPool<T> {
 		}
 		free.params.copyFrom(params);
 		free.inUse = true;
+		free.pinned = pin;
 		free.frame = frame;
 		return free;
 	}
@@ -90,7 +102,8 @@ final class GlintSlotPool<T> {
 	}
 
 	/**
-	 * Frees the slot of a render type whose batch was drawn.
+	 * Frees the slot of a render type whose batch was drawn. A {@linkplain GlintSlot#pinned pinned} slot stays in use:
+	 * another source may still hold undrawn geometry of it, which reads the params at its own draw.
 	 *
 	 * @return true if the type belongs to this pool
 	 */
@@ -99,18 +112,21 @@ final class GlintSlotPool<T> {
 		if (s == null) {
 			return false;
 		}
-		s.inUse = false;
+		if (!s.pinned) {
+			s.inUse = false;
+		}
 		return true;
 	}
 
 	/**
-	 * Frees every slot that was acquired in an earlier frame than {@code currentFrame}.
+	 * Frees (and unpins) every slot that was acquired in an earlier frame than {@code currentFrame}.
 	 */
 	void releaseStale(long currentFrame) {
 		for (int i = 0; i < allCount; i++) {
 			GlintSlot<T> s = all[i];
 			if (s.inUse && s.frame != currentFrame) {
 				s.inUse = false;
+				s.pinned = false;
 			}
 		}
 	}

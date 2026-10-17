@@ -221,6 +221,77 @@ class GlintSlotPoolTest {
 		}
 	}
 
+	// ---- pinned slots (G7: Iris draws them later, without G5c)
+
+	@Test
+	void pinnedSlotSurvivesAReleaseAndKeepsItsParamsForTheFrame() {
+		GlintSlot<FakeType> buffered = pool.acquire(GlintKind.ARMOR_ENTITY_GLINT, look(2.0f), 4, true);
+		assertTrue(buffered.pinned);
+		// The main source draws the same type (shared look) before Iris has flushed: G5c must not free it.
+		assertTrue(pool.release(buffered.type));
+		assertTrue(buffered.inUse);
+		// Another look in the same frame gets another slot; the pinned params stay intact.
+		GlintSlot<FakeType> other = pool.acquire(GlintKind.ARMOR_ENTITY_GLINT, look(3.0f), 4);
+		assertNotSame(buffered, other);
+		assertEquals(2.0f, buffered.params.speed);
+	}
+
+	@Test
+	void sharingAPinnedSlotKeepsItPinned() {
+		GlintSlot<FakeType> buffered = pool.acquire(GlintKind.ENTITY_GLINT, look(2.0f), 4, true);
+		GlintSlot<FakeType> main = pool.acquire(GlintKind.ENTITY_GLINT, look(2.0f), 4);
+		assertSame(buffered, main);
+		assertTrue(main.pinned);
+		pool.release(main.type);
+		assertTrue(main.inUse);
+	}
+
+	@Test
+	void sharingAnUnpinnedSlotFromABufferedSourcePinsIt() {
+		GlintSlot<FakeType> main = pool.acquire(GlintKind.GLINT, look(2.0f), 4);
+		GlintSlot<FakeType> buffered = pool.acquire(GlintKind.GLINT, look(2.0f), 4, true);
+		assertSame(main, buffered);
+		assertTrue(buffered.pinned);
+	}
+
+	@Test
+	void frameStartUnpinsAndFreesPinnedSlots() {
+		GlintSlot<FakeType> buffered = pool.acquire(GlintKind.GLINT, look(2.0f), 4, true);
+		pool.releaseStale(5);
+		assertFalse(buffered.inUse);
+		assertFalse(buffered.pinned);
+		GlintSlot<FakeType> reused = pool.acquire(GlintKind.GLINT, look(7.0f), 5);
+		assertSame(buffered, reused, "the first free slot is reused in the next frame");
+		assertFalse(reused.pinned);
+		assertEquals(7.0f, reused.params.speed);
+		assertTrue(pool.release(reused.type));
+		assertFalse(reused.inUse, "an unpinned slot is freed by G5c again");
+	}
+
+	@Test
+	void stalePinIsDroppedWhenTheSlotIsTakenWithoutFrameStart() {
+		// G6 did not run: the pinned slot of frame 4 is stale in frame 5 and may be taken for any look.
+		GlintSlot<FakeType> buffered = pool.acquire(GlintKind.GLINT, look(2.0f), 4, true);
+		GlintSlot<FakeType> sameLook = pool.acquire(GlintKind.GLINT, look(2.0f), 5);
+		assertSame(buffered, sameLook);
+		assertFalse(sameLook.pinned);
+		GlintSlot<FakeType> otherFrame = pool.acquire(GlintKind.GLINT_TRANSLUCENT, look(2.0f), 6, true);
+		GlintSlot<FakeType> newLook = pool.acquire(GlintKind.GLINT_TRANSLUCENT, look(8.0f), 7);
+		assertSame(otherFrame, newLook);
+		assertFalse(newLook.pinned);
+		assertEquals(8.0f, newLook.params.speed);
+	}
+
+	@Test
+	void pinnedSlotsCountTowardsTheFrameLimit() {
+		for (int i = 0; i < GlintSlotPool.SLOTS_PER_KIND; i++) {
+			assertNotNull(pool.acquire(GlintKind.ARMOR_ENTITY_GLINT, look(1.5f + i), 9, true));
+		}
+		assertNull(pool.acquire(GlintKind.ARMOR_ENTITY_GLINT, look(99.0f), 9), "the caller keeps the vanilla type");
+		pool.releaseStale(10);
+		assertNotNull(pool.acquire(GlintKind.ARMOR_ENTITY_GLINT, look(99.0f), 10));
+	}
+
 	@Test
 	void iterationCoversEverySlotAndLookupUsesIdentity() {
 		pool.acquire(GlintKind.GLINT, look(2.0f), 1);

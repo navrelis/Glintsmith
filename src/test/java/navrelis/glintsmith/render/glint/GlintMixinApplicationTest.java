@@ -58,7 +58,10 @@ class GlintMixinApplicationTest {
 		"glint.ItemRendererGlintMixin", "glint.HumanoidArmorLayerGlintMixin", "glint.ElytraLayerGlintMixin",
 		"glint.BlockEntityWithoutLevelRendererGlintMixin", "glint.BufferSourceGlintMixin", "glint.GameRendererGlintMixin",
 		"glint.ItemInHandRendererGlintMixin",
-		"glint.BufferSourceAccessor", "glint.RenderBuffersAccessor"));
+		"glint.BufferSourceAccessor", "glint.RenderBuffersAccessor",
+		"glint.compat.IrisFullyBufferedGlintMixin"));
+
+	private static final String IRIS_MIXIN = "/navrelis/glintsmith/mixin/glint/compat/IrisFullyBufferedGlintMixin.class";
 
 	/** The transformed bytecode of a class. */
 	private static ClassNode transformed(String name) throws Exception {
@@ -244,7 +247,49 @@ class GlintMixinApplicationTest {
 				}
 			}
 		}
-		assertEquals(9, injectors, "expected G1 to G4 and G8 (WrapMethod), G5a (ModifyVariable), G5b, G5c and G6 (Inject)");
+		assertEquals(10, injectors,
+			"expected G1 to G4 and G8 (WrapMethod), G5a and G7 (ModifyVariable), G5b, G5c and G6 (Inject)");
+	}
+
+	/**
+	 * Iris is not on the test class path, so G7 cannot be applied here; its annotations are checked instead. They must
+	 * work both in the named dev environment and in intermediary at run time: Iris's class name is never remapped, and
+	 * {@code getBuffer} keeps its name in every namespace (vanilla does not obfuscate it), but the descriptor differs.
+	 * So: {@code @Pseudo}, no remapping, and a bare method name without a descriptor.
+	 */
+	@Test
+	void irisFullyBufferedMixinTargetsGetBufferByBareNameWithoutRemapping() throws IOException {
+		ClassNode node = new ClassNode();
+		try (InputStream in = GlintMixinApplicationTest.class.getResourceAsStream(IRIS_MIXIN)) {
+			assertNotNull(in, "missing " + IRIS_MIXIN);
+			new ClassReader(in).accept(node, 0);
+		}
+		List<AnnotationNode> classAnnotations = new ArrayList<>();
+		if (node.visibleAnnotations != null) {
+			classAnnotations.addAll(node.visibleAnnotations);
+		}
+		if (node.invisibleAnnotations != null) {
+			classAnnotations.addAll(node.invisibleAnnotations);
+		}
+		assertTrue(classAnnotations.stream().anyMatch(a -> a.desc.equals("Lorg/spongepowered/asm/mixin/Pseudo;")), "@Pseudo missing");
+		AnnotationNode mixin = classAnnotations.stream().filter(a -> a.desc.equals("Lorg/spongepowered/asm/mixin/Mixin;"))
+			.findFirst().orElse(null);
+		assertNotNull(mixin, "@Mixin missing");
+		assertEquals(List.of("net.irisshaders.batchedentityrendering.impl.FullyBufferedMultiBufferSource"), annotationValue(mixin, "targets"));
+		assertEquals(Boolean.FALSE, annotationValue(mixin, "remap"));
+
+		MethodNode handler = node.methods.stream().filter(m -> m.name.equals("glintsmith$swapGlint")).findFirst().orElse(null);
+		assertNotNull(handler, "handler missing");
+		assertEquals("(Lnet/minecraft/client/renderer/RenderType;)Lnet/minecraft/client/renderer/RenderType;", handler.desc);
+		AnnotationNode modify = handler.visibleAnnotations == null ? null : handler.visibleAnnotations.stream()
+			.filter(a -> a.desc.endsWith("/ModifyVariable;")).findFirst().orElse(null);
+		if (modify == null && handler.invisibleAnnotations != null) {
+			modify = handler.invisibleAnnotations.stream().filter(a -> a.desc.endsWith("/ModifyVariable;")).findFirst().orElse(null);
+		}
+		assertNotNull(modify, "@ModifyVariable missing");
+		assertEquals(List.of("getBuffer"), annotationValue(modify, "method"), "bare name: a descriptor would not match in production");
+		assertEquals(Boolean.TRUE, annotationValue(modify, "argsOnly"));
+		assertEquals(Boolean.FALSE, annotationValue(modify, "remap"));
 	}
 
 	/** True if the annotation, or any annotation nested in it (such as the {@code @At}), sets {@code key}. */

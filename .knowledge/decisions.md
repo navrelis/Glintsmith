@@ -36,3 +36,4 @@
 - 2026-10-17 .knowledge stays tracked (lead rule); before a public push the lead scrubs local paths from its current text; history paths (local drive) are a question for the owner.
 - 2026-10-17 Fabulous is switched by a wrapper editing options.txt graphicsMode (Director cannot); run with shaders off; the chain calls it without --cleanup (quarantine instead of deletes).
 - 2026-10-17 Capture backdrop = full-bright text_display background panel (no directional face shade) behind each subject, not a block wall (max ~0.8 shade = grey); still a real in-game render.
+- 2026-10-17 Precision override: G1 (world glint under Iris) goes to Opus; Iris compat hook in a third-party buffer source with slot lifetime questions, a subtle error would ship a broken headline feature. Gallery glint shots use larger glint scale (atlas footprint) instead of changing preset defaults for now.

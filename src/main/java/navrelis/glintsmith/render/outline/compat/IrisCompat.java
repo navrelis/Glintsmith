@@ -5,7 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Optional Iris integration of the outline renderer. Iris is a compile-only dependency: its API is only touched from
+ * Optional Iris integration of the outline renderer (the glint system also reads {@link #queryShaderPack()} once per
+ * frame to keep G7 off under a shader pack). Iris is a compile-only dependency: its API is only touched from
  * {@link Api}, which is loaded only when the {@code iris} mod is present, so nothing breaks without it.
  * <p>
  * Any error from the Iris API counts as "a shader pack is in use" (the safe side: world outlines off) and is logged

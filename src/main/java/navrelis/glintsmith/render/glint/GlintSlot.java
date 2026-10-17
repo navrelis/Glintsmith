@@ -15,6 +15,12 @@ final class GlintSlot<T> {
 	boolean inUse;
 	/** Added to the main source's fixed buffers. */
 	boolean registered;
+	/**
+	 * Holds geometry in a buffer source that draws it later without passing G5c (Iris's
+	 * {@code FullyBufferedMultiBufferSource}, G7). A pinned slot is not freed by {@link GlintSlotPool#release}, so its
+	 * params cannot be handed to another look before that source has drawn it; it is freed at the next frame start.
+	 */
+	boolean pinned;
 	/** Frame of the last acquire. */
 	long frame;
 
