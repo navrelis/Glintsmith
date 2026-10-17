@@ -244,7 +244,7 @@ has to be roughly right, the lead moves the crop in `cards.json` after looking a
 
 | File | Scene, camera, mode | Config | Notes |
 | --- | --- | --- | --- |
-| `universal_wall.png` | Room A, two rows of five frames. Y 102 (vanilla) X 4..8: `diamond_sword`, `bow`, `trident`, `shield`, `elytra`. Y 103 (modded) X 4..8: `cataclysm:black_steel_targe`, `eternal_starlight:glistering_morning_star`, `advancednetherite:netherite_diamond_ingot`, `immersive_armors:warrior_helmet`, `immersive_armors:warrior_chestplate`. Spectator, **FOV 30** (a close-up, so it stands in front of the room A panels, which cover the north wall and the floor in front of it), `tp 6.5 101.38 8.11 180 0`, d 7.06. The grid is centred and about 1200 px wide in the capture (62 % of 1920). The generator keeps every other item frame out of the view, also with the measured scale: the outline sword frame at x 13 and the corner column at x 1 .. 2 must not show | BASE + `T(3)` | the grid is about 1200 x 442 px (253 px per block); the card crop in `cards.json` (920 x 300 centred, from the old FOV 70 version) is narrower than that and has to be widened after looking at the capture |
+| `universal_wall.png` | Room A, two rows of five frames. Y 102 (vanilla) X 4..8: `diamond_sword`, `bow`, `trident`, `shield`, `elytra`. Y 103 (modded) X 4..8: `cataclysm:black_steel_targe`, `eternal_starlight:glistering_morning_star`, `advancednetherite:netherite_diamond_ingot`, `immersive_armors:warrior_helmet`, `immersive_armors:warrior_chestplate`. Spectator, **FOV 30** (a close-up, so it stands in front of the room A panels, which cover the north wall and the floor in front of it), `tp 6.5 101.38 8.11 180 0`, d 7.06. The grid is centred and about 1200 px wide in the capture (62 % of 1920). The generator keeps every other item frame out of the view, also with the measured scale: the outline sword frame at x 13 and the corner column at x 1 .. 2 must not show | BASE + `T(3)` | the grid is about 1200 x 442 px (253 px per block); the measured grid is 1230 x 453 px (x 331 .. 1560, y 304 .. 756); the card crop in `cards.json` is `[198,270,1495,520]` (the grid plus a margin, an area-filtered 1.625 : 1 downscale to 920 x 320); the top row is the modded items, the bottom row the vanilla ones |
 
 ### Hero shots (7)
 
@@ -260,13 +260,13 @@ measured in screen pixels.
 
 | File | In frame | Scene, camera | Config |
 | --- | --- | --- | --- |
-| `hero_sword_rainbow.png` | the netherite sword, centred, diagonal across the picture | sword frame as above | BASE + `GL("rainbow")` + `T(8)` + `RAINBOW()`. Used for the banner picture (the middle 1080 x 1080, shown at 180 x 180) and as the first look of `logo_animated.gif` |
+| `hero_sword_rainbow.png` | the netherite sword, centred, diagonal across the picture | sword frame as above | BASE + `GL("rainbow")` + `T(8)` + `RAINBOW()`. Used for the banner picture (crop `[520,98,880,880]`, shown at 180 x 180) and as the first look of `logo_animated.gif` |
 | `hero_sword_void.png` | the same sword, same camera, same framing as `hero_sword_rainbow` (no camera move between the shots) | same | BASE + `GL("void")` + `T(8)` + `OUT("ENCHANTMENT", [], 1)`. Second look of `logo_animated.gif` |
 | `hero_sword_fire.png` | the same sword, same camera, same framing | same | BASE + `GL("fire")` + `T(10)` + `OUT("PULSE", ["#FF8A1F"], 1)`, shot at the bright phase of the pulse (take five shots 0.4 s apart). Third look of `logo_animated.gif` |
 | `logo_sword.png` | **the logo**: the sword exactly centred on the picture centre, blade diagonal about 68 percent of the height. The centred 1080 x 1080 square must hold the whole sword and read on its own at 128 px and 32 px, so keep the silhouette simple and nothing else in frame (square framing) | same frame and camera as the three above | BASE + `GL("aurora")` + `T(8)` + `OUT("GRADIENT", ["#1FC77A", "#3D6BFF", "#A050F0"], 1)`. The icon is the area-filtered square crop of this picture. If one of the three shots above is already exactly centred and strong, it may be saved a second time as `logo_sword.png` |
-| `hero_armor.png` | the armor stand's netherite helmet and chestplate, head and chest centred, white behind, about 720 px from helmet top to chestplate bottom (67 percent). The card crops the middle 1480 x 800 | room H: the stand at (12.5, 100, 79.2) facing north (`Rotation:[180f,0f]`, otherwise the summon of section 1) in front of the south wall panel. Spectator, `tp 12.5 99.705 75.7 0 0` (the camera looks south), d 3.50 | BASE + `GL("rainbow")` + `T(6)` + `RAINBOW()` + `ARMOR_ON` |
+| `hero_armor.png` | the armor stand's netherite helmet and chestplate, head and chest centred, white behind, about 720 px from helmet top to chestplate bottom (67 percent). The card crops `[585,100,750,800]` (head to the top of the leggings; the stand continues below the picture) | room H: the stand at (12.5, 100, 79.2) facing north (`Rotation:[180f,0f]`, otherwise the summon of section 1) in front of the south wall panel. Spectator, `tp 12.5 99.705 75.7 0 0` (the camera looks south), d 3.50 | BASE + `GL("rainbow")` + `T(6)` + `RAINBOW()` + `ARMOR_ON` |
 | `hero_lineup.png` | six enchanted items in a row, evenly spaced (315 px apart), vertically centred, each about 148 px high (14 percent); the row is about 1722 px wide and fits the middle 200 px of the height (the banner strip) | six invisible frames at Y 102, X 2..7 on the north wall of room H (frame blocks at `z = 65`): `diamond_sword[ench]`, `bow[ench]`, `shield[ench]`, `cataclysm:black_steel_targe[glint]`, `eternal_starlight:glistering_morning_star[glint]`, `immersive_armors:warrior_chestplate[glint]`. Spectator, `tp 5.0 100.88 71.45 180 0`, d 6.40 | BASE + `GL("aurora")` + `T(5)` + `RAINBOW()` |
-| `hero_firstperson.png` | first person, the netherite sword in the right hand, blade pointing up and left across the picture, whole blade in frame, hand at the lower right, the white wall behind. The card crops the full width at 1920 x 1038 | room H, **creative, hand visible**, F1, **FOV 70** (the hand is drawn with a fixed FOV of 70, so the option is put back to 70 first). `/item replace entity @s weapon.mainhand with minecraft:netherite_sword[ench]`, `tp 12.5 100 74.7 0 10` (about 5.3 blocks from the south wall, the camera looks south at the south wall panel). The generator also takes spares at FOV 30 and 40 (`x_hero_firstperson_fov30`, `_fov40`) | BASE + `GL("rainbow")` + `T(3)` + `RAINBOW()` |
+| `hero_firstperson.png` | first person, the netherite sword in the right hand, blade pointing up and left across the picture, whole blade in frame, hand at the lower right, the white wall behind. The card crops `[98,0,1822,1080]` (the sword is cut by the right edge of the capture itself) | room H, **creative, hand visible**, F1, **FOV 70** (the hand is drawn with a fixed FOV of 70, so the option is put back to 70 first). `/item replace entity @s weapon.mainhand with minecraft:netherite_sword[ench]`, `tp 12.5 100 74.7 0 10` (about 5.3 blocks from the south wall, the camera looks south at the south wall panel). The generator also takes spares at FOV 30 and 40 (`x_hero_firstperson_fov30`, `_fov40`) | BASE + `GL("rainbow")` + `T(3)` + `RAINBOW()` |
 
 Frames and stand summons are the ones of section 1, moved into room H as the table says.
 
@@ -274,7 +274,7 @@ Frames and stand summons are the ones of section 1, moved into room H as the tab
 
 Scene: room B stand (section 1) with the room B glint panels behind it, spectator, FOV 30, `tp 18.5 99.58 44.25 180 0`, d 5.75, the camera looks at the netherite chestplate (about 245 px high).
 Config for all nine: BASE + `NOOUT`, plus the glint patch below (`GL(p)` carries the scale and strength of section 2, so the pattern is
-visible on the chestplate; `glint_vanilla` keeps the vanilla glint). Crop 176 x 160 centred (the chestplate fills it).
+visible on the chestplate; `glint_vanilla` keeps the vanilla glint). The whole stand (about 660 px high, 410 px wide) is cropped per capture to 1012 x 920 and area-filtered to 176 x 160, stand centred, its top 42 px below the cell top (room for the label), the floor seam left as rendered.
 
 | File | Glint patch |
 | --- | --- |
@@ -292,7 +292,7 @@ visible on the chestplate; `glint_vanilla` keeps the vanilla glint). Crop 176 x 
 
 Scene: room A with the room A panels behind the wall, one frame at X 13, Y 102 holding `minecraft:netherite_sword` with sharpness 5,
 unbreaking 3, mending 1. Spectator, FOV 30, `tp 13.5 100.88 10.59 180 0`, d 9.54, the frame centred on the screen (the sword is about
-95 px high, the 0.75 block frame 160 px). Crop 176 x 160 centred. Glint is vanilla (`glint.enabled = false`) everywhere here.
+95 px high, the 0.75 block frame 160 px). Crop 176 x 160 native, centred on the item frame (the frame is about 144 px square and sits at a slightly different place in every shot; the other frames at the left edge x < 100 are out of the crop). Glint is vanilla (`glint.enabled = false`) everywhere here.
 `outline_vanilla` is shot later than the others, together with the gap-fix pair (see there), with the room A panels summoned again.
 Outline-only changes:
 
@@ -311,13 +311,13 @@ Outline-only changes:
 
 ### Targets (3, plus `outline_static.png` above; first person and armor are hero shots)
 
-BASE + `T(3)` for all of them (the GUI one is BASE + `GUION` with the default thickness 2). All three are wide shots at FOV 70 in the quartz room B with no panel. Crop 296 x 160. The first person and armor cells of this card are the hero shots `hero_firstperson.png` and `hero_armor.png`.
+BASE + `T(3)` for all of them (the GUI one is BASE + `GUION` with the default thickness 2). All three are wide shots at FOV 70 in the quartz room B with no panel. The card is a layout of five cells plus the inventory at native size (see `cards.json`). The first person and armor cells of this card are the hero shots `hero_firstperson.png` and `hero_armor.png`.
 
 | File | Scene, camera, mode | Notes |
 | --- | --- | --- |
-| `target_third_person.png` | Room B, creative, sword in hand, F1. `tp 12.0 100 40.5 0 0`, then F5 twice (front view, the player faces the camera) | crop around the sword hand; default crop `[812,420,296,160]` is a guess |
+| `target_third_person.png` | Room B, creative, sword in hand, F1. `tp 12.0 100 40.5 0 0`, then F5 twice (front view, the player faces the camera) | crop around the sword hand; card crop `[665,466,675,400]` (player and sword, the white block at the left and the second mob at the right are out) |
 | `target_dropped.png` | Room B slab floor: `/fill 4 100 40 9 100 45 minecraft:smooth_quartz_slab[type=bottom]`, then two floating items: `/summon minecraft:item 6.15 100.62 42.5 {Item:{id:"minecraft:diamond_sword",count:1,components:{...}},NoGravity:1b,Age:-32768,PickupDelay:32767,Motion:[0.0,0.0,0.0]}` and `/summon minecraft:item 6.85 100.62 42.5 {Item:{id:"minecraft:netherite_chestplate",...},...}`. Spectator, `tp 6.5 100.48 39.0 0 20` | both items fit in the crop; items bob, take the shot with both clearly outlined |
-| `target_gui.png` | Survival, standard inventory open (E), GUI scale 2, recipe book closed, Night Vision off (`/effect clear @s minecraft:night_vision`, the inventory would list it). Fill the hotbar and the first inventory row with enchanted items (below). Config adds `GUION` | the card uses `crop [c,500,592,320]` halved: main inventory and hotbar visible with outlines |
+| `target_gui.png` | Survival, standard inventory open (E), GUI scale 2, recipe book closed, Night Vision off (`/effect clear @s minecraft:night_vision`, the inventory would list it). Fill the hotbar and the first inventory row with enchanted items (below). Config adds `GUION` | the card uses `[784,374,352,332]`: exactly the inventory panel, native size (no down or up scaling, the GUI pixels stay crisp; the recipe book button above and the overlay text are out) |
 
 Inventory content (`/item replace entity @s hotbar.0 with ...`, `inventory.0` is the first row of the main inventory):
 hotbar 0..8 = `diamond_sword[ench]`, `netherite_pickaxe[ench]`, `bow[ench]`, `trident[ench]`, `shield[ench]`, `elytra[ench]`,
@@ -341,7 +341,7 @@ looking straight at the item (yaw 131.2).
 
 | File | Scene, camera | Notes |
 | --- | --- | --- |
-| `gap_sword_off.png` / `gap_sword_on.png` | `minecraft:diamond_sword[ench]` in the frame at (16, 102, 1); `tp 17.478 100.88 1.906 131.2 0` | macro: the sword is about 700 px high. Crop 452 x 150 centred on the diagonal of the blade |
+| `gap_sword_off.png` / `gap_sword_on.png` | `minecraft:diamond_sword[ench]` in the frame at (16, 102, 1); `tp 17.478 100.88 1.906 131.2 0` | macro: the sword is about 700 px high. Card crop 864 x 1080 (full height, centred on the frame), box-downscaled by 4 to 216 x 270; the frame is bigger than the capture, so it is cut by the picture edge top and bottom, and the stick at x < 25 is out |
 | `gap_modded_off.png` / `gap_modded_on.png` | `advancednetherite:netherite_diamond_ingot[glint]` in the frame at (20, 102, 1); `tp 21.478 100.88 1.906 131.2 0` | same framing, the ingot is about 700 px high |
 
 If the seam is not visible, try other angles (yaw 110..150, 5 degree steps, move the camera along the same line), FOV 20, or `mipmapLevels 0`, and items with many
@@ -351,7 +351,7 @@ above; tell the lead so the card text stays true.
 ### Rules and config screens (4)
 
 All four: GUI scale 2, FOV 70, open with `/glintsmith`, F1 not needed. Spectator in room A at `tp 21 100 8 -90 0`, looking at the plain east wall so the world
-behind the screen is the white quartz wall (no panel; the screen darkens the world behind it). The builder halves these (crop 904 x 600 → 452 x 300) so the whole screen should sit inside the
+behind the screen is the white quartz wall (no panel; the screen darkens the world behind it). The builder halves these (crops 904 wide, 540 to 630 high, see `cards.json`) so the whole screen should sit inside the
 middle 904 x 600 of the capture; if the screen is larger, tell the lead.
 
 | File | Screen | Config |
@@ -382,10 +382,10 @@ All four are wide shots at FOV 70 in the quartz room B with **no backdrop panel*
 
 | File | Setup | Camera | Crop |
 | --- | --- | --- | --- |
-| `shaders_sodium.png` | Sodium on, Iris with **no** pack | room B stand, spectator, `tp 18.5 99.73 42.1 180 0` (d 3.60, the stand is about 423 px high) | 452 x 170 centred |
-| `shaders_iris_world.png` | the same with the shader pack active | same camera | 452 x 170 centred |
-| `shaders_iris_hand.png` | shader pack active, creative, first person, F1, `/item replace entity @s weapon.mainhand with minecraft:netherite_sword[ench]` (FOV 70 as in the rig) | `tp 12.0 100 41.0 180 12` | 452 x 170 centred; adjust to the sword |
-| `shaders_iris_gui.png` | shader pack active, survival, inventory open with the same items as `target_gui.png`, GUI scale 2 | none | `[c,480,904,340]` halved |
+| `shaders_sodium.png` | Sodium on, Iris with **no** pack | room B stand, spectator, `tp 18.5 99.73 42.1 180 0` (d 3.60, the stand is about 423 px high) | `[530,381,756,448]` area-filtered to 270 x 160 (the stand, the pillar at x 1290 is out) |
+| `shaders_iris_world.png` | the same with the shader pack active | same camera | `[530,381,756,448]` area-filtered to 270 x 160 (the stand, the pillar at x 1290 is out) |
+| `shaders_iris_hand.png` | shader pack active, creative, first person, F1, `/item replace entity @s weapon.mainhand with minecraft:netherite_sword[ench]` (FOV 70 as in the rig) | `tp 12.0 100 41.0 180 12` | `[1160,145,760,935]` area-filtered to 270 x 332 (the whole sword; the capture cuts it at the right edge) |
+| `shaders_iris_gui.png` | shader pack active, survival, inventory open with the same items as `target_gui.png`, GUI scale 2 | none | `[784,374,352,332]` native size, as `target_gui.png` |
 
 ## 4. Showcase GIF (112 frames)
 
@@ -394,7 +394,7 @@ every other capture, on the same white / cream, bright setup as every other shot
 Per look the generator shoots a burst of **50 screenshots** back to back (about 4.4 s at 89 ms per screenshot; 3.75 s are needed) and keeps the 16 frames that lie 0.25 s apart.
 
 * Scene: room B stand at (12.5, 100, 38.5) with the room B showcase panels behind it (wall panel at z 34.05, floor panel), spectator, F1, **FOV 30**, `tp 12.5 99.367 44.19 180 0` (d 5.69).
-  The whole stand is about 700 px high (65 percent) and centred. The builder crops `[c,c,1440,810]` (the middle 75 percent), scales it by `down: 2` to 720 x 405, adds a 36 px caption bar (720 x 441) and keeps every `step`-th frame
+  The whole stand is about 700 px high (65 percent) and centred. The builder crops `[236,125,1440,810]` (75 percent, centred on the measured stand: x 730 .. 1182, y 171 .. 889 over all frames), scales it by `down: 2` to 720 x 405, adds a 36 px caption bar (720 x 441) and keeps every `step`-th frame
   (with 16 frames at 4 fps `step` is 1: every frame, 0.25 s each). It raises the step by itself if the file would pass 8 MB.
 * For each look: write the profile, wait 0.5 s for the reload, then shoot the burst and keep 16 frames. Profiles are BASE plus (for every look except Vanilla also `ARMOR_ON`, so the stand's armor is outlined):
 
@@ -410,7 +410,7 @@ Per look the generator shoots a burst of **50 screenshots** back to back (about 
 
 Looks 3 to 7 use the tuned preset glint (`GL(p)`, section 2); looks 1 and 2 keep the vanilla glint. The stills are cuts only (no
 interpolation), 16 per look at a fixed 0.25 s interval. The `showcase.gif` entry of `cards.json` must match: `frames_per_caption` 16,
-`source_fps` 4, `step` 1, `crop` `["c","c",1440,810]`, `down` 2 (the GIF builder derives the frame delay, 25 cs, from them).
+`source_fps` 4, `step` 1, `crop` `[236,125,1440,810]`, `down` 2 (the GIF builder derives the frame delay, 25 cs, from them).
 
 ## 5. Checklist
 

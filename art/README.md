@@ -157,7 +157,7 @@ font read from the Minecraft 1.21.1 client jar at build time.
 The `gifs` entry takes `frames_dir`, `crop`, `down`, `scale`, `step` (keep every n-th frame), `source_fps`, `max_step`, `max_mb`, the
 `caption_bar` (`height`, `scale`, `color`) and the `captions` (one per look, each lasting `frames_per_caption` source frames).
 The showcase clip is 7 looks x 16 frames = 112 frames, 0.25 s apart: `frames_per_caption` 16, `source_fps` 4, `step` 1 (every
-frame, 25 cs each), `crop` `["c","c",1440,810]` with `down` 2, so the 1920 x 1080 capture becomes a 720 x 405 picture under a
+frame, 25 cs each), `crop` `[236,125,1440,810]` with `down` 2, so the 1920 x 1080 capture becomes a 720 x 405 picture under a
 36 px caption bar. The in-game script shoots a burst of 50 screenshots per look and keeps the 16 frames that lie 0.25 s apart.
 
 ## Verify

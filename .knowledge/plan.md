@@ -18,7 +18,7 @@ Status: open / in progress / in review / done. Size S = short (1 unit), L = long
 | T10g | Gallery capture script | `.dev/ingame/gallery.json` (+ showcase frames) from `art/gallery/SHOTLIST.md`, dry-run passes in the shadow harness | T12 shot list | Sonnet | S | done (session 4; run via run_ingame.py) |
 | T10p | In-game test scripts | `.dev/ingame/` smoke.json, smoke_owner.json, README; dry-run passes | - | Sonnet | S | done (dry-run green against a shadow harness copy; real harness broken) |
 | T10 | In-game test | Nytheria client with `--add-mod`, Sodium + Iris, screenshots of all features (also used as showcase images) | T8 | Lead | - | in progress: smoke3 + baseline done (session 7); owner run done session 8 (no crash, world outlines off + 1 INFO line, GUI on/off, hotbar OK; found T21); gallery/gallery_iris/showcase running |
-| T11 | Final acceptance | Full build/tests, Graphify, report, push | T10 | Lead | - | open |
+| T11 | Final acceptance | Full build/tests, Graphify, report, push | T10 | Lead | - | in progress (session 12) |
 | T13 | Gap fix fins | Root cause + failing test + fix in GapFix; held items normal in game with AUTO | T10 | Opus | S | done (session 6; in game: no fins with AUTO) |
 | T14 | Hand outline missing | Root cause + fix in worktree Glintsmith-hand (branch fix-hand-outline); first-person outlines visible in game | T10 | Opus | L | merged b9bc988 (cause: Punchy draws held items with THIRD_PERSON context; HAND phase now maps hand contexts to FIRST_PERSON); verified in game (held run) |
 | T17 | Gap corner cracks | in-game sweep of sideExpansion (gapsweep.json), pick the smallest value that closes step-corner cracks, set it as AUTO default + tests | T13 | Sonnet | S | sweep done (0.005 chosen); T17b done (session 7, 327 green; in-game check in T10 smoke) |
@@ -41,7 +41,9 @@ Status: open / in progress / in review / done. Size S = short (1 unit), L = long
 | R1 | Capture rig fixes | room A panels re-summoned for outline_vanilla/gap_*, universal_wall FOV 30 close-up, glint shot scale/strength | T22 | Sonnet | S | done (panels, universal_wall close-up, glint scale/strength) |
 | T12r | Art docs + GIF settings | art/README rewrap, SHOTLIST reflects R1 (universal_wall close-up, panels, glint scale), cards.json GIF 1440x810/down 2/16 per caption/4 fps, gif.py defaults | R1 | Sonnet | S | done (session 11, Sonnet + 1 correction: universal wall panel sentence); universal_wall card crop widened in T12 |
 | T9b-5 | Docs: stray dots verified, big-atlas limitation | DESIGN stray-dots marker -> verified; big-atlas glint tip in README/description/DESIGN; scale tooltips en/de; preview --check 0; build green | T24 | Sonnet | S | done (session 11, Sonnet + 1 correction: German "Modpacks") |
-| T12f | Final gallery | crops for the new captures (GUI inventory, universal wall, outline/gap edges, lineup, logo near take), build --strict, logo, verify, preview --check, gradle build | re-capture | Sonnet | S | in progress (session 11) |
+| T12f | Final gallery | crops for the new captures (GUI inventory, universal wall, outline/gap edges, lineup, logo near take), build --strict, logo, verify, preview --check, gradle build | re-capture | Sonnet | S | done (session 12: both correction points were applied before the handoff; lead rebuilt: build --strict, logo --strict, verify, preview --check, gradle 366 green; looked at card_outline_styles + card_shaders) |
+| T9b-7 | Checklist: jar SHA-256 + ticks | upload-checklist SHA row = final jar hash, gallery/preview rows ticked, preview --check 0 | T12f | Sonnet | S | in progress (session 12) |
+| T25 | CurseForge upload | owner-provided project id, remote dry run, plan reviewed, upload with the user's uploader | T11 | Lead | - | open (needs the project id) |
 | T9b-6 | Docs: Iris world glint verified | 4 DESIGN markers -> verified; README/description/CHANGELOG state world glint with Iris (shaders off); preview --check | G1 check | Sonnet | S | done (session 11) |
 
 Parallel: T2 (Opus) with T3 + T4 (Sonnet) after T1. T5 (Opus) with T6/T7 (Sonnet), files disjoint.
@@ -59,3 +61,4 @@ Session 8: Opus T21 S 1; Sonnet T22 S 1, T9b-2 S 1, T12p S 1, T23 S 1 (all runni
 Session 9: Opus T24 S 1; Sonnet T22 finish ~0.5, T12p finish ~0.5, T23 S 1, T9b-4a S 1, A1 S 1, T12a S 1, C1 S 1, T22 corr ~0.5, T9b-4 S 1 (running) -> Sonnet ~49.5, Opus ~16 (about 25 % Opus).
 Session 10: Sonnet T9b-4 part 1 S 1, T12s S 1, R1 S 2; Opus glint investigation S 1, G1 S 1 (override) -> Sonnet ~53.5, Opus ~18 (about 25 % Opus).
 Session 11: Sonnet T12r S 1, T9b-5 S 1, T12f S 1, T9b-6 S 1 (running) -> Sonnet ~57.5, Opus ~18 (about 24 % Opus).
+Session 12: Sonnet T9b-7 S 1 -> Sonnet ~58.5, Opus ~18 (about 24 % Opus).
