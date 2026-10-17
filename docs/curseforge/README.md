@@ -21,7 +21,7 @@ The image names are the `out` fields of `art/gallery/cards.json`. They are compo
 | `showcase.gif` | The looks cycling: outline colours, glint presets, rules |
 | `card_universal.png` | Vanilla items and items of four mods, all outlined |
 | `card_outline_styles.png` | The five colour modes, three thicknesses and a soft glow |
-| `card_targets.png` | The places an outline is drawn: hand, armor, dropped items, frames, GUI |
+| `card_targets.png` | The places an outline is drawn: hand, dropped items, frames, plus the optional worn armor and GUI targets (off by default) |
 | `card_glint_presets.png` | The vanilla glint, neutral and the seven generated presets on the same item |
 | `card_gap_fix.png` | A vanilla and a modded item, each with the fix off and on |
 | `card_rules.png` | The Rules tab and the rule editor |

@@ -10,7 +10,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import org.spongepowered.asm.mixin.Mixin;
 
 /**
- * G7: marks the first-person hand pass, so that held items drawn inside it (also those that first-person animation
+ * G8: marks the first-person hand pass, so that held items drawn inside it (also those that first-person animation
  * mods draw with a third-person display context) are classified as first person. Kept apart from the outline hook on
  * purpose: the glint must not depend on outlines being enabled.
  */

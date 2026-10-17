@@ -23,6 +23,8 @@ Status: open / in progress / in review / done. Size S = short (1 unit), L = long
 | T14 | Hand outline missing | Root cause + fix in worktree Glintsmith-hand (branch fix-hand-outline); first-person outlines visible in game | T10 | Opus | L | merged b9bc988 (cause: Punchy draws held items with THIRD_PERSON context; HAND phase now maps hand contexts to FIRST_PERSON); verified in game (held run) |
 | T17 | Gap corner cracks | in-game sweep of sideExpansion (gapsweep.json), pick the smallest value that closes step-corner cracks, set it as AUTO default + tests | T13 | Sonnet | S | sweep done (0.005 chosen); T17b done (session 7, 327 green; in-game check in T10 smoke) |
 | T18 | Glint hand-pass target | glint classifies hand-context renders inside renderHandsWithItems as first person (Punchy), independent of outlines; tests; build green | T14 | Sonnet | S | done (in-game glint rule check in T10 rerun) |
+| T19 | Outline bleeds over the first-person arm | root cause + fix: outline fragments (dashes) drawn over the arm where the held item goes behind it (Punchy, smoke2 010_fp_sword); occlusion behaviour kept; build green; verified in game | T14 | Opus | S | in progress (session 7) |
+| T20 | HUD hotbar erased with GUI outlines on | root cause + fix in worktree Glintsmith-hud (branch fix-hud-outline): hotbar sprite/items/count drawn and outlined with targets.gui on; screens unaffected; build green; verified in game | - | Opus | S | in progress (session 7) |
 | T16 | In-game script prep | held.json (first-person check) + gallery/showcase configs enable targets.armor where armor is shown; README expectations; dry-runs pass | - | Sonnet | S | done (session 6; .dev is git-ignored, SHOTLIST committed) |
 | T15 | Armor outline default off (owner) | targets.armor = false, tests | - | Sonnet | S | done (6645192); docs in T9 final |
 
@@ -36,3 +38,4 @@ Session 3: T5 resume Opus L 2, T6 finish Sonnet S 1, T12 redo Sonnet L 2, T10h S
 Session 4: T5 finish Opus L 2, T10g Sonnet S 1, T12b Sonnet S 1 → Sonnet ~27, Opus ~9 (about 25 % Opus) incl. T9 draft S 1; + merge fix + T8 S 1 → Sonnet ~28, Opus ~9 (about 24 %).
 Session 5: modelfix fix Sonnet S 1, armor default Sonnet S 1 (+ small); T13/T14 Opus stopped at start (not spent) → Sonnet ~30, Opus ~9 (about 23 % Opus).
 Session 6: T13 Opus S 1, T14 Opus L 2, T9a Sonnet S 1, T16 Sonnet S 1, T17 sweep script S 1 (+corr), T18 S 1 → Sonnet ~34, Opus ~12 (about 26 % Opus).
+Session 7: T17b Sonnet S 1 (+corr), T9b-1 Sonnet S 1, T19 Opus S 1, T20 Opus S 1 → Sonnet ~36, Opus ~14 (about 28 % Opus).

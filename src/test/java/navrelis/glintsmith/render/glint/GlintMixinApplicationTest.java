@@ -244,7 +244,7 @@ class GlintMixinApplicationTest {
 				}
 			}
 		}
-		assertEquals(9, injectors, "expected G1 to G4 and G7 (WrapMethod), G5a (ModifyVariable), G5b, G5c and G6 (Inject)");
+		assertEquals(9, injectors, "expected G1 to G4 and G8 (WrapMethod), G5a (ModifyVariable), G5b, G5c and G6 (Inject)");
 	}
 
 	/** True if the annotation, or any annotation nested in it (such as the {@code @At}), sets {@code key}. */

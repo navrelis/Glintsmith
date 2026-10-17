@@ -132,7 +132,7 @@
       426
      ],
      "width": 920,
-     "text": "Outlines and glints are drawn on whatever the game renders: flat sprites, 3D models, shields, tridents, armor and items from other mods. Nothing to set up per item."
+     "text": "Outlines and glints are drawn on whatever the game renders: flat sprites, 3D models, shields, tridents and items from other mods; worn armor can be outlined too. Nothing to set up per item."
     },
     {
      "type": "rule",
@@ -706,7 +706,7 @@
       466
      ],
      "width": 920,
-     "text": "Hands, other players and mobs, worn armor, dropped items, item frames and your inventory: every place an item is drawn has its own switch."
+     "text": "Hands, other players and mobs, dropped items, item frames, worn armor and your inventory: every place an item is drawn has its own switch."
     },
     {
      "type": "text",
@@ -715,7 +715,7 @@
       518
      ],
      "width": 920,
-     "text": "The inventory is off by default because it can get busy.",
+     "text": "Worn armor (shown here with its target switched on) and the inventory are off by default because they can get busy.",
      "color": "dim"
     }
    ]
