@@ -1,0 +1,21 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "navrelis.glintsmith.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"outline.BufferSourceOutlineMixin",
+		"outline.CompositeRenderTypeAccessor",
+		"outline.CompositeStateAccessor",
+		"outline.ElytraLayerOutlineMixin",
+		"outline.EmptyTextureStateShardAccessor",
+		"outline.GameRendererOutlineMixin",
+		"outline.GuiGraphicsOutlineMixin",
+		"outline.HumanoidArmorLayerOutlineMixin",
+		"outline.ItemInHandRendererOutlineMixin",
+		"outline.ItemRendererOutlineMixin"
+	],
+	"injectors": {
+		"defaultRequire": 0
+	}
+}
