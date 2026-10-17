@@ -19,8 +19,10 @@ Status: open / in progress / in review / done. Size S = short (1 unit), L = long
 | T10p | In-game test scripts | `.dev/ingame/` smoke.json, smoke_owner.json, README; dry-run passes | - | Sonnet | S | done (dry-run green against a shadow harness copy; real harness broken) |
 | T10 | In-game test | Nytheria client with `--add-mod`, Sodium + Iris, screenshots of all features (also used as showcase images) | T8 | Lead | - | in progress (session 5: modelfix crash fixed a43f7e7, modelfix removed from pack; smoke run OK except: fins on held generated items (gap fix) and no first-person hand outline; both with Opus) |
 | T11 | Final acceptance | Full build/tests, Graphify, report, push | T10 | Lead | - | open |
-| T13 | Gap fix fins | Root cause + failing test + fix in GapFix; held items normal in game with AUTO | T10 | Opus | S | done in code (session 6; in-game check pending) |
-| T14 | Hand outline missing | Root cause + fix in worktree Glintsmith-hand (branch fix-hand-outline); first-person outlines visible in game | T10 | Opus | L | in progress (session 6, worktree) |
+| T13 | Gap fix fins | Root cause + failing test + fix in GapFix; held items normal in game with AUTO | T10 | Opus | S | done (session 6; in game: no fins with AUTO) |
+| T14 | Hand outline missing | Root cause + fix in worktree Glintsmith-hand (branch fix-hand-outline); first-person outlines visible in game | T10 | Opus | L | merged b9bc988 (cause: Punchy draws held items with THIRD_PERSON context; HAND phase now maps hand contexts to FIRST_PERSON); verified in game (held run) |
+| T17 | Gap corner cracks | in-game sweep of sideExpansion (gapsweep.json), pick the smallest value that closes step-corner cracks, set it as AUTO default + tests | T13 | Sonnet | S | in progress (sweep script) |
+| T18 | Glint hand-pass target | glint classifies hand-context renders inside renderHandsWithItems as first person (Punchy), independent of outlines; tests; build green | T14 | Sonnet | S | in progress |
 | T16 | In-game script prep | held.json (first-person check) + gallery/showcase configs enable targets.armor where armor is shown; README expectations; dry-runs pass | - | Sonnet | S | done (session 6; .dev is git-ignored, SHOTLIST committed) |
 | T15 | Armor outline default off (owner) | targets.armor = false, tests | - | Sonnet | S | done (6645192); docs in T9 final |
 
@@ -33,4 +35,4 @@ Total before session 3: Sonnet ~17, Opus ~5 (about 23 % Opus).
 Session 3: T5 resume Opus L 2, T6 finish Sonnet S 1, T12 redo Sonnet L 2, T10h Sonnet S 1, T6 corr S 1, T10g S 1, T12 follow-up S 1 → Sonnet ~24, Opus ~7 (about 23 % Opus). Next: T8 S, T10g S, T9 S (Sonnet).
 Session 4: T5 finish Opus L 2, T10g Sonnet S 1, T12b Sonnet S 1 → Sonnet ~27, Opus ~9 (about 25 % Opus) incl. T9 draft S 1; + merge fix + T8 S 1 → Sonnet ~28, Opus ~9 (about 24 %).
 Session 5: modelfix fix Sonnet S 1, armor default Sonnet S 1 (+ small); T13/T14 Opus stopped at start (not spent) → Sonnet ~30, Opus ~9 (about 23 % Opus).
-Session 6: T13 Opus S 1, T14 Opus L 2, T9a Sonnet S 1, T16 Sonnet S 1 → Sonnet ~32, Opus ~12 (about 27 % Opus).
+Session 6: T13 Opus S 1, T14 Opus L 2, T9a Sonnet S 1, T16 Sonnet S 1, T17 sweep script S 1 (+corr), T18 S 1 → Sonnet ~34, Opus ~12 (about 26 % Opus).
