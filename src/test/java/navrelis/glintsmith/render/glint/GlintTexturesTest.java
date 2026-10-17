@@ -36,7 +36,7 @@ class GlintTexturesTest {
 		for (String spec : BASE.subList(1, BASE.size())) {
 			presets.add(spec.substring("preset:".length()));
 		}
-		assertEquals(GlintSettings.PRESETS, presets, "must follow the T3 preset list and order");
+		assertEquals(GlintSettings.PRESETS, presets, "must follow the preset list and order");
 		for (String spec : BASE) {
 			assertEquals(null, GlintSettings.validateTexture(spec), spec + " must be a valid spec");
 		}

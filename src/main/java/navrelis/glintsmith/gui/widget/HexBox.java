@@ -46,10 +46,6 @@ public class HexBox extends EditBox {
 		}
 	}
 
-	public boolean isValidText() {
-		return valid;
-	}
-
 	@Override
 	public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		super.renderWidget(graphics, mouseX, mouseY, partialTick);

@@ -43,10 +43,6 @@ final class GlintNoise {
 		return a + t * (b - a);
 	}
 
-	static float clamp01(float v) {
-		return v < 0.0f ? 0.0f : Math.min(v, 1.0f);
-	}
-
 	/**
 	 * Value noise in [0, 1) with {@code px} by {@code py} lattice cells across one tile.
 	 */

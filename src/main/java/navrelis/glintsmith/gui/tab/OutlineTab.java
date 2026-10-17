@@ -3,11 +3,11 @@ package navrelis.glintsmith.gui.tab;
 import navrelis.glintsmith.config.GlintsmithConfig;
 import navrelis.glintsmith.config.OutlineCondition;
 import navrelis.glintsmith.gui.ColorPickerScreen;
-import navrelis.glintsmith.gui.IrisInfo;
 import navrelis.glintsmith.gui.SettingRows;
 import navrelis.glintsmith.gui.Ui;
 import navrelis.glintsmith.gui.widget.ColorSwatch;
 import navrelis.glintsmith.gui.widget.HexBox;
+import navrelis.glintsmith.render.outline.OutlineSystem;
 import navrelis.glintsmith.style.Colors;
 import navrelis.glintsmith.style.DurabilityAlert;
 import navrelis.glintsmith.style.OutlineSettings;
@@ -20,7 +20,7 @@ import net.minecraft.client.gui.components.Button;
  */
 public final class OutlineTab extends ConfigTab {
 	/** Upper end of the distance fade sliders, in blocks. */
-	private static final float FADE_MAX = 64.0f;
+	private static final float FADE_MAX = 256.0f;
 	private static final int COLOR_PICK_WIDTH = 182;
 	private static final int COLOR_BOX_WIDTH = 100;
 
@@ -33,7 +33,7 @@ public final class OutlineTab extends ConfigTab {
 		GlintsmithConfig.Outline outline = config.outline;
 		GlintsmithConfig.Targets targets = outline.targets;
 
-		if (IrisInfo.shaderPackActive()) {
+		if (OutlineSystem.shaderPackActive()) {
 			list.addHelp(Ui.t("glintsmith.outline.iris_active").withStyle(ChatFormatting.YELLOW));
 		}
 		list.addHeading(Ui.t("glintsmith.outline.heading"));

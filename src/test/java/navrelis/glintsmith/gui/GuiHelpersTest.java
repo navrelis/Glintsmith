@@ -38,9 +38,10 @@ class GuiHelpersTest {
 		assertFalse(TextureNames.isValid("file:../fire.png"));
 		assertFalse(TextureNames.isValid("file:sub/fire.png"));
 		assertFalse(TextureNames.isValid("file:"));
-		// "config:fire.png" is no special form any more; it parses as the resource location config:fire.png
-		assertTrue(TextureNames.isValid("config:fire.png"));
-		assertTrue(TextureNames.isValid("glintsmith:rainbow"));
+		// a resource location needs a folder in its path; "config:fire.png" is no special form and is rejected
+		assertFalse(TextureNames.isValid("config:fire.png"));
+		assertFalse(TextureNames.isValid("glintsmith:rainbow"));
+		assertTrue(TextureNames.isValid("mymod:textures/glint/x.png"));
 		assertTrue(TextureNames.isValid("minecraft:textures/misc/enchanted_glint_item.png"));
 		assertFalse(TextureNames.isValid("Glint"));
 		assertFalse(TextureNames.isValid("rainbow"));

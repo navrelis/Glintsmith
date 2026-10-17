@@ -47,12 +47,6 @@ public class FloatSlider extends AbstractSliderButton {
 		return (float) Mth.clamp(real, min, max);
 	}
 
-	/** Moves the handle without notifying the setter. */
-	public void setFloat(float newValue) {
-		this.value = toNormalized(newValue, min, max);
-		updateMessage();
-	}
-
 	@Override
 	protected void updateMessage() {
 		setMessage(label.apply(floatValue()));

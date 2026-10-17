@@ -25,7 +25,7 @@ public final class GlintSettings {
 	public static final String FILE_PREFIX = "file:";
 
 	private static final java.util.regex.Pattern FILE_NAME = java.util.regex.Pattern.compile("[a-z0-9_.-]+\\.png");
-	private static final java.util.regex.Pattern RESOURCE = java.util.regex.Pattern.compile("[a-z0-9_.-]+:[a-z0-9_./-]+");
+	private static final java.util.regex.Pattern RESOURCE = java.util.regex.Pattern.compile("[a-z0-9_.-]+:[a-z0-9_.-]+(?:/[a-z0-9_.-]+)+");
 
 	/**
 	 * Checks a texture spec. The grammar, shared by config, rules, UI and renderer:
@@ -35,7 +35,8 @@ public final class GlintSettings {
 	 * <li>{@code file:<name>.png}: a PNG in {@code config/glintsmith/glints/}; the name is a plain file name,
 	 * {@code [a-z0-9_.-]+}, no slashes and no {@code ..}.</li>
 	 * <li>anything else must be a resource location {@code namespace:path} of a texture in a resource pack,
-	 * for example {@code mymod:textures/misc/glint.png}.</li>
+	 * for example {@code mymod:textures/misc/glint.png}. The path needs at least one folder, so {@code mymod:glint.png}
+	 * is rejected.</li>
 	 * </ul>
 	 *
 	 * @return null if valid, otherwise a short English error message
@@ -58,7 +59,7 @@ public final class GlintSettings {
 		if (RESOURCE.matcher(spec).matches() && !spec.contains("..") && spec.indexOf(':') == spec.lastIndexOf(':')) {
 			return null;
 		}
-		return "Invalid glint texture '" + spec + "' (expected vanilla, preset:<name>, file:<name>.png or namespace:path)";
+		return "Invalid glint texture '" + spec + "' (expected vanilla, preset:<name>, file:<name>.png or namespace:folder/path.png)";
 	}
 
 	/**

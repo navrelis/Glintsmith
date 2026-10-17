@@ -33,7 +33,7 @@ import org.jetbrains.annotations.Nullable;
  * Glint texture specs to {@link ResourceLocation}s, and the textures behind them. Render thread only (except
  * {@link #presetSpecs()}).
  * <p>
- * Grammar (T3's, see {@link GlintSettings#validateTexture}): {@code null}, {@code vanilla} and {@code default} are the
+ * Grammar (see {@link GlintSettings#validateTexture}): {@code null}, {@code vanilla} and {@code default} are the
  * vanilla texture (the neutral grey variant if a tint is set); {@code preset:<name>} is a generated preset;
  * {@code file:<name>.png} is a PNG in {@code config/glintsmith/glints}; anything else is a resource pack texture.
  * An invalid or unavailable spec logs one warning and falls back to the vanilla texture.

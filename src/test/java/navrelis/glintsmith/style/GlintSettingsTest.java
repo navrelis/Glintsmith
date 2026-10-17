@@ -59,8 +59,16 @@ class GlintSettingsTest {
 	@Test
 	void otherSpecsMustBeResourceLocations() {
 		valid("minecraft:textures/misc/enchanted_glint_item.png");
-		valid("mymod:glint");
+		valid("mymod:textures/glint/x.png");
+		valid("my_mod.2:a-b/c.d/e_f.png");
 		invalid("a:b:c");
+		invalid("config:foo.png");
+		invalid("mymod:glint");
+		invalid("minecraft:");
+		invalid("minecraft:/");
+		invalid("minecraft:textures//x.png");
+		invalid("minecraft:textures/");
+		invalid("minecraft:/textures/x.png");
 		invalid("");
 		invalid("   ");
 		invalid("no_namespace");
