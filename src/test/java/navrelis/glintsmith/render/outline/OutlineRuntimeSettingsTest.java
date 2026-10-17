@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import navrelis.glintsmith.config.GlintsmithConfig;
 import navrelis.glintsmith.style.OutlineTarget;
+import net.minecraft.world.item.ItemDisplayContext;
 import org.junit.jupiter.api.Test;
 
 class OutlineRuntimeSettingsTest {
@@ -113,6 +114,25 @@ class OutlineRuntimeSettingsTest {
 		OutlineRuntimeSettings everyone = OutlineRuntimeSettings.from(config);
 		assertTrue(everyone.accepts(OutlinePhase.WORLD, OutlineTarget.THIRD_PERSON, false));
 		assertTrue(everyone.accepts(OutlinePhase.WORLD, OutlineTarget.ARMOR, false));
+	}
+
+	@Test
+	void aThirdPersonContextInTheHandPhaseFollowsTheFirstPersonSwitch() {
+		// Punchy-style render: held item drawn inside renderHandsWithItems with THIRD_PERSON_RIGHT_HAND.
+		OutlineTarget target = OutlineContexts.forPhase(OutlinePhase.HAND, ItemDisplayContext.THIRD_PERSON_RIGHT_HAND);
+		GlintsmithConfig config = config();
+		config.outline.targets.thirdPerson = false;
+		config.outline.onlyLocalPlayer = true;
+		OutlineRuntimeSettings s = OutlineRuntimeSettings.from(config);
+		assertTrue(s.handPhaseAllowed(false));
+		assertTrue(s.accepts(OutlinePhase.HAND, target, true));
+		assertTrue(s.accepts(OutlinePhase.HAND, target, false), "the first-person view is never holder-restricted");
+
+		config.outline.targets.thirdPerson = true;
+		config.outline.targets.firstPerson = false;
+		OutlineRuntimeSettings noFirstPerson = OutlineRuntimeSettings.from(config);
+		assertFalse(noFirstPerson.handPhaseAllowed(false));
+		assertFalse(noFirstPerson.accepts(OutlinePhase.HAND, target, true));
 	}
 
 	@Test

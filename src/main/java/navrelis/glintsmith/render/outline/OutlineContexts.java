@@ -33,6 +33,11 @@ public final class OutlineContexts {
 	/**
 	 * The target of an item rendered while this phase is open, or null if the phase never outlines it.
 	 * In the world every context that does not belong there (first person, GUI) counts as OTHER.
+	 * <p>
+	 * In the HAND phase the phase decides, not the context: everything drawn inside {@code renderHandsWithItems} is
+	 * the local player's first-person view. First-person animation mods (for example Punchy) draw the held item
+	 * through {@code ItemInHandRenderer.renderItem} with a THIRD_PERSON context, because they attach it to a
+	 * player-model arm; those renders count as FIRST_PERSON. Other contexts (debug pivots, GUI) stay out.
 	 */
 	public static OutlineTarget forPhase(OutlinePhase phase, ItemDisplayContext context) {
 		if (phase == null) {
@@ -41,7 +46,8 @@ public final class OutlineContexts {
 		OutlineTarget target = targetOf(context);
 		return switch (phase) {
 			case WORLD -> target == OutlineTarget.FIRST_PERSON || target == OutlineTarget.GUI ? OutlineTarget.OTHER : target;
-			case HAND -> target == OutlineTarget.FIRST_PERSON ? target : null;
+			case HAND -> target == OutlineTarget.FIRST_PERSON || target == OutlineTarget.THIRD_PERSON
+				? OutlineTarget.FIRST_PERSON : null;
 			case GUI -> target == OutlineTarget.GUI ? target : null;
 			case NONE -> null;
 		};

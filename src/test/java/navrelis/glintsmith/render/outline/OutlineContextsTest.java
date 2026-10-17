@@ -41,12 +41,40 @@ class OutlineContextsTest {
 	@Test
 	void handAndGuiPhasesOnlyTakeTheirOwnContexts() {
 		assertEquals(OutlineTarget.FIRST_PERSON, OutlineContexts.forPhase(OutlinePhase.HAND, ItemDisplayContext.FIRST_PERSON_RIGHT_HAND));
-		assertNull(OutlineContexts.forPhase(OutlinePhase.HAND, ItemDisplayContext.THIRD_PERSON_RIGHT_HAND));
 		assertNull(OutlineContexts.forPhase(OutlinePhase.HAND, ItemDisplayContext.GUI));
 		assertEquals(OutlineTarget.GUI, OutlineContexts.forPhase(OutlinePhase.GUI, ItemDisplayContext.GUI));
 		assertNull(OutlineContexts.forPhase(OutlinePhase.GUI, ItemDisplayContext.GROUND));
 		assertNull(OutlineContexts.forPhase(OutlinePhase.NONE, ItemDisplayContext.GUI));
 		assertNull(OutlineContexts.forPhase(null, ItemDisplayContext.GUI));
+	}
+
+	@Test
+	void everyHeldItemInTheHandPhaseIsFirstPerson() {
+		// First-person animation mods (Punchy) draw the held item with the third-person transforms of their arm model.
+		for (ItemDisplayContext context : new ItemDisplayContext[] {ItemDisplayContext.FIRST_PERSON_LEFT_HAND,
+			ItemDisplayContext.FIRST_PERSON_RIGHT_HAND, ItemDisplayContext.THIRD_PERSON_LEFT_HAND,
+			ItemDisplayContext.THIRD_PERSON_RIGHT_HAND}) {
+			assertEquals(OutlineTarget.FIRST_PERSON, OutlineContexts.forPhase(OutlinePhase.HAND, context), context.name());
+		}
+	}
+
+	@Test
+	void theHandPhaseIgnoresContextsThatAreNotHeldItems() {
+		for (ItemDisplayContext context : new ItemDisplayContext[] {ItemDisplayContext.GUI, ItemDisplayContext.GROUND,
+			ItemDisplayContext.FIXED, ItemDisplayContext.HEAD, ItemDisplayContext.NONE}) {
+			assertNull(OutlineContexts.forPhase(OutlinePhase.HAND, context), context.name());
+		}
+		assertNull(OutlineContexts.forPhase(OutlinePhase.HAND, null));
+	}
+
+	@Test
+	void everyTargetTheHandPhaseProducesIsAcceptedByIt() {
+		for (ItemDisplayContext context : ItemDisplayContext.values()) {
+			OutlineTarget target = OutlineContexts.forPhase(OutlinePhase.HAND, context);
+			if (target != null) {
+				assertTrue(OutlineContexts.phaseAccepts(OutlinePhase.HAND, target), context.name());
+			}
+		}
 	}
 
 	@Test
