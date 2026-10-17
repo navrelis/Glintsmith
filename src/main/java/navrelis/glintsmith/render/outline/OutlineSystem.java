@@ -3,8 +3,10 @@ package navrelis.glintsmith.render.outline;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.systems.RenderSystem;
 import navrelis.glintsmith.config.ConfigManager;
 import navrelis.glintsmith.render.outline.compat.IrisCompat;
 import navrelis.glintsmith.style.OutlineLook;
@@ -29,6 +31,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.opengl.GL11;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -169,12 +172,53 @@ public final class OutlineSystem {
 	public static void endItem(MultiBufferSource returnedByBegin) {
 		if (returnedByBegin instanceof TeeBufferSource tee) {
 			try {
-				if (tee.exitNested()) {
-					return;
-				}
-				TEES.release(tee);
+				finishItem(tee, TEES, OutlineSystem::drawPendingGui);
 			} catch (Throwable t) {
 				OutlineFailsafe.trip("outline item release", t);
+			}
+		}
+	}
+
+	/**
+	 * Releases the tee of a finished item render. A GUI item that left geometry in the mask is drawn right away, at
+	 * the point where vanilla {@code GuiGraphics.renderItem} flushes it (still with the item's lighting).
+	 * <p>
+	 * Why: HUD batching (ImmediatelyFast) suppresses that flush and keeps the item, together with everything drawn
+	 * before it (hotbar sprite, earlier slots, stack counts), in a batch that is drawn at the end of the HUD layer or
+	 * as soon as anything issues a draw call. The GUI composite issues draw calls with the mask target bound and a
+	 * scissor box set, so that batch would be drawn into the mask and lost. Drawing it here puts it on the target
+	 * the GUI draws to, in order, before the outline; non-outlined items keep batching. Without a batching mod
+	 * vanilla flushes the same buffers a moment later anyway, so this only moves the same draw a little earlier.
+	 *
+	 * @param drawPendingGui draws everything the given buffer source holds
+	 */
+	static void finishItem(TeeBufferSource tee, TeePool pool, Consumer<MultiBufferSource> drawPendingGui) {
+		if (tee.exitNested()) {
+			return;
+		}
+		PhaseState phase = tee.phase();
+		MultiBufferSource delegate = tee.delegate();
+		pool.release(tee);
+		if (phase != null && phase.phase == OutlinePhase.GUI && phase.hasGeometry && !OutlineFailsafe.tripped()) {
+			drawPendingGui.accept(delegate);
+		}
+	}
+
+	/**
+	 * What {@code GuiGraphics.flush()} does (depth test off while drawing), except that the depth test is left as
+	 * it was: a batching mod relies on it, and vanilla's own flush follows right after.
+	 */
+	private static void drawPendingGui(MultiBufferSource source) {
+		if (!(source instanceof MultiBufferSource.BufferSource buffers)) {
+			return;
+		}
+		boolean depthTest = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
+		RenderSystem.disableDepthTest();
+		try {
+			buffers.endBatch();
+		} finally {
+			if (depthTest) {
+				RenderSystem.enableDepthTest();
 			}
 		}
 	}
@@ -330,7 +374,8 @@ public final class OutlineSystem {
 	}
 
 	/**
-	 * Closes the GUI phase and composites the item's outline (the item was already flushed by vanilla).
+	 * Closes the GUI phase and composites the item's outline (the item was already drawn: by vanilla's flush, or
+	 * under HUD batching by {@link #finishItem}).
 	 */
 	public static void endGuiItem() {
 		if (guiDepth > 0) {
