@@ -12,8 +12,8 @@ Paths are relative to the repository root.
 | [x] | The gap fix, glint and outline wiring is in the build, so every setting does something. Done. | `.knowledge/plan.md` |
 | [x] | The in-game test is done, and no open-claim comment is left in `README.md`, `CHANGELOG.md` and `docs/curseforge/description.md`: every one has been checked and the text corrected. The grep `grep -rn "VERIFY IN GAME\|PENDING" README.md CHANGELOG.md docs/curseforge/description.md` finds nothing. | |
 | [x] | `fabric.mod.json` is checked: it says `"minecraft": "1.21.1"` exactly (so it does not match 1.21.2 or later) and `"fabricloader": ">=0.16.0"`; the mod was built and run with 0.19.5. | `src/main/resources/fabric.mod.json` |
-| [ ] | The gallery images are built from real captures: `py -B art/gallery/build.py --strict` passes and `py -B art/verify.py` is clean. | `art/README.md` |
-| [ ] | `py -B docs/curseforge/preview.py --check` passes. | |
+| [x] | The gallery images are built from real captures: `py -B art/gallery/build.py --strict` passes and `py -B art/verify.py` is clean. Done. | `art/README.md` |
+| [x] | `py -B docs/curseforge/preview.py --check` passes. Done. | |
 | [ ] | The repository is public (the owner's step), because the description and `fabric.mod.json` link to `https://github.com/navrelis/Glintsmith`. | |
 | [ ] | The comparison table has been read again against the live pages of the projects it names (versions and features change). Sources and date are under the table. | `description.md` |
 | [ ] | Licence check of the jar: `LICENSE` (as `LICENSE_glintsmith`) is inside, no file of the studied projects is in the source tree. | `.knowledge/decisions.md` |
@@ -23,7 +23,7 @@ Paths are relative to the repository root.
 | Field | Value |
 |---|---|
 | File to upload | `build/libs/glintsmith-1.0.0.jar` (not the `-sources` jar and not a `-dev` jar if one is in the folder) |
-| SHA-256 of the checked build | fill in after the final build |
+| SHA-256 of the checked build | `168d49fbfccb75151a15617b7b56f13778fbeb15db8bcbff784c10e3a9de74b5` (`build/libs/glintsmith-1.0.0.jar`, commit 2b902ff, 366 tests green) |
 | Display name | `Glintsmith 1.0.0` |
 | Version | 1.0.0 |
 | Release type | owner decides: Release, or Beta for the first public build |
