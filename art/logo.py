@@ -4,7 +4,9 @@
     py -B art/logo.py [--captures DIR] [--out DIR] [--strict] [--no-gif]
 
 Input: art/captures/logo_sword.png, a 1920 x 1080 screenshot of an enchanted sword with the mod's glint and outline on a
-black backdrop, subject centred (SHOTLIST.md, "Hero shots").  A square is cut from it (the `logo` section of
+white backdrop, subject centred (SHOTLIST.md, "Hero shots").  The logo, the icon and the animated logo are on that
+white backdrop (the light theme of the page; the backdrop is the capture's own, nothing is recoloured, tinted or
+composited here).  A square is cut from it (the `logo` section of
 gallery/cards.json: crop centre and size, by default the centred square of the full height) and resized with the area
 filter (exact box average, see lib.Canvas.area) to
 

@@ -13,7 +13,7 @@ and --strict turns it into a failure.  The showcase GIF is built by gif.py (this
 --no-gif is given).
 
 The vanilla font is read from the Minecraft 1.21.1 client jar at run time (GLINTSMITH_MC_JAR, else the Loom cache);
-neither the jar nor the font is stored in the repository.  The card look (framed violet slate card, heading with
+neither the jar nor the font is stored in the repository.  The card look (framed cream-white card, heading with
 a rule, recessed picture bay, text in the game font at a whole scale) is adapted from the MIT licensed showcase
 scripts of Lootr Remastered (same author).  Output is byte-identical from run to run.  Standard library only.
 """
@@ -32,12 +32,13 @@ from lib import Canvas   # noqa: E402
 
 MARGIN, RULE_Y = 40, 88
 
+# label style -> (tab colour, text colour); the text must keep 4.5:1 against the cream label box (lib.PANEL; ratios are in art/README.md)
 LABEL_STYLES = {
     "accent": (lib.ACCENT, lib.TEXT),
-    "good": (lib.GOOD, lib.TEAL[4]),
-    "bad": (lib.BAD, lib.rgb("ffd0d4")),
+    "good": (lib.GOOD, lib.GOOD),
+    "bad": (lib.BAD, lib.BAD),
     "dim": (lib.GREY, lib.TEXT_DIM),
-    "gold": (lib.BORDER, lib.BRASS[5]),
+    "gold": (lib.BORDER, lib.GOLD_TEXT),
 }
 
 
@@ -58,9 +59,10 @@ def el_capture(c, el, ctx):
         pic = Canvas(w, h, lib.PANEL_DARK)
         pic.blit(common.cut_el(img, el), 0, 0)
     c.blit(pic, x, y)
-    edge = el.get("edge", 3)
+    # a thin darker edge (2 px: dark brass, then soft tan) so that a white in-game backdrop does not melt into the cream card
+    edge = el.get("edge", 2)
     if el.get("frame", True) and edge:
-        for i, col in enumerate((lib.BORDER_DARK, lib.BORDER, lib.BORDER_DARK)[:edge]):
+        for i, col in enumerate((lib.BORDER_DARK, lib.RIM, lib.BORDER_DARK)[:edge]):
             c.frame(x + i, y + i, w - 2 * i, h - 2 * i, col)
     if el.get("label"):
         label(c, {"at": None, "text": el["label"], "style": el.get("label_style", "accent")},
@@ -129,13 +131,13 @@ def el_panel(c, el, ctx):
     x, y = el["at"]
     w, h = el["size"]
     fill = {"dark": lib.PANEL_DARK, "mid": lib.PANEL_MID, "slate": lib.PANEL}[el.get("fill", "dark")]
-    c.blit(lib.panel(w, h, fill, lib.colour(el.get("border", "#754b1d")), el.get("edge", 2), el.get("ornaments", False)), x, y)
+    c.blit(lib.panel(w, h, fill, lib.colour(el.get("border", lib.BORDER_DARK)), el.get("edge", 2), el.get("ornaments", False)), x, y)
 
 
 def el_heading(c, el, ctx):
     x, y = el["at"]
     size = el["size"]
-    col, shade = lib.colour(el.get("color", lib.BRASS[4])), lib.colour(el.get("shade", lib.BRASS[1]))
+    col, shade = lib.colour(el.get("color", lib.TITLE)), lib.colour(el.get("shade", lib.BORDER))
     if el.get("shadow", 0):
         d = el["shadow"] * size
         lib.font_text(c, x + d, y + d, el["text"], lib.RIM, size, shadow=False)
@@ -174,7 +176,7 @@ def build_card(spec, captures, report):
     if title:
         size = spec.get("title_size") or (5 if lib.text_width(title, 5) + 5 <= w - 2 * MARGIN else 4)
         c.blit(lib.heading(title, size), MARGIN, 34 + (45 - 9 * size) // 2)
-        c.rect(MARGIN, RULE_Y, w - 2 * MARGIN, 2, lib.PANEL_MID)
+        c.rect(MARGIN, RULE_Y, w - 2 * MARGIN, 2, lib.RIM)
         c.rect(MARGIN, RULE_Y, 200, 2, lib.BORDER)
     ctx = Ctx(spec["out"], captures, report)
     for el in spec.get("elements", []):

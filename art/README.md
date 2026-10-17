@@ -5,11 +5,16 @@ Everything that makes the CurseForge page images and the mod icon.
 **No pixel art, no drawn art, anywhere.** Every picture is a real in-game render: a screenshot of Minecraft with Glintsmith
 running. The only things set by code are layout: the card frame and panels, and text in the game's own font.
 
+**Light theme.** The page is cream and white: cards are cream-white panels with dark ink text, a violet accent and a thin darker
+edge round every capture, and the in-game captures are shot on a **white backdrop** (see `gallery/SHOTLIST.md`). The edge (2 px, dark
+brass then soft tan, `lib.BORDER_DARK` / `lib.RIM`) keeps a white picture from melting into the cream card. Every colour comes from the
+palette in `lib.py`; nothing in the builders is hard-coded (see "Theme" below).
+
 * **The gallery** (`docs/curseforge/img/banner.png`, `card_*.png`, `showcase.gif`) is composed from in-game captures: cropped,
   scaled (by whole factors, or with the area filter) and set into framed cards. A picture slot whose capture is missing shows a
   grey "capture missing" placeholder.
 * **The logo, the mod icon and `logo_animated.gif`** are cut from captures too: the logo and the icon from `logo_sword.png`
-  (an enchanted sword with a custom glint and outline on a black backdrop), the animated logo from the hero shots of three
+  (an enchanted sword with a custom glint and outline on a white backdrop), the animated logo from the hero shots of three
   glint presets. The banner is the `hero_sword_rainbow` render plus a strip from `hero_lineup`.
 
 Python 3 standard library only (`py -B ...` on this machine; `python` is not on the PATH). PNG is written with `zlib` + `struct`,
@@ -77,6 +82,36 @@ look at `DIR2` / `DIR3` to check crops, scales, labels and spacing. The grid lab
 pixels a crop picks. These files are only ever written to a folder you name (use a temp folder); they carry the text in a PNG
 chunk and `verify.py` fails if one ends up in `art/captures/`.
 
+## Theme
+
+The palette lives in `lib.py` (section 2); `cards.json` only names colours (`text`, `dim`, `accent`, `gold`, `good`, `bad`) or stays
+with the defaults. Contrast is the WCAG ratio (`lib.contrast`); every text pair is at least 4.5:1, none relies on the 3:1 allowance
+for large text.
+
+| Role | Name | Hex |
+| --- | --- | --- |
+| Outer page, GIF caption bar | `PAGE` | `#F6F1E6` |
+| Card panel | `PANEL` | `#FBF8F1` |
+| Chips, raised strips | `PANEL_MID` | `#EDE5D2` |
+| Strips, bays, picture backing | `PANEL_DARK` | `#E1D9C6` |
+| Soft shadow, picture edge (inner) | `RIM` | `#CBBFA5` |
+| Frame, picture edge (outer), borders | `BORDER` soft gold / `BORDER_DARK` dark brass | `#D8AD38` / `#754B1D` |
+| Body text | `TEXT` (= `INK`) | `#2A2433` |
+| Secondary text | `TEXT_DIM` | `#5E5448` |
+| Card titles / gold labels | `TITLE` / `GOLD_TEXT` | `#5A3A12` / `#7A5210` |
+| Accent (chips, bullets, rules) | `ACCENT` | `#7A3FD6` |
+| After / before labels | `GOOD` / `BAD` | `#14744A` / `#B0303C` |
+
+| Text on background | Ratio |
+| --- | --- |
+| `TEXT` on `PANEL` / on the darkest dither speck / on `PANEL_DARK` / on `PANEL_MID` / on `PAGE` | 14.2 / 12.5 / 10.7 / 12.0 / 13.3 |
+| `TEXT_DIM` on `PANEL` / on the darkest dither speck / on `PANEL_DARK` | 7.0 / 6.2 / 5.3 |
+| `INK` on `BORDER` (brass chip) | 7.1 |
+| `GOOD` / `BAD` / `GOLD_TEXT` / `ACCENT` on `PANEL` | 5.5 / 5.9 / 6.5 / 5.6 |
+| `TITLE` on `PANEL` (large heading) | 9.7 |
+
+The in-game text inside a capture is the game's own and is not part of this table.
+
 ## The gallery pipeline
 
 | File | What it does |
@@ -84,7 +119,7 @@ chunk and `verify.py` fails if one ends up in `art/captures/`.
 | `gallery/cards.json` | Manifest of every gallery image: output name, size, title, and a list of elements (captures with crop / resampling / position / label, text, bullets, chips, panels, ...), the `logo` section (logo capture, square crop, animated logo) and the GIF entry. |
 | `gallery/build.py` | Reads the manifest and the captures, writes the PNGs. |
 | `gallery/gif.py` | Builds `showcase.gif` from `art/captures/showcase/NNNN.png`: crop, optional whole-number scale, every n-th frame, caption bar in the game font, one global palette with delta frames, loops forever, below 8 MB (raises the step by itself if needed). |
-| `gallery/synth.py` | Synthetic test captures (see above). |
+| `gallery/synth.py` | Synthetic test captures (see above): light, white / cream-ish backdrops like the real ones. |
 | `gallery/common.py` | Manifest and capture loading, crop / scale / area-resample helpers, the missing-capture report. |
 | `gallery/SHOTLIST.md` | Every capture: rig, world, scene, camera, config values, file name, including the seven hero shots. |
 | `lib.py` | RGBA canvas (fill, frame, crop, nearest-neighbour scale, box and area downscale, alpha blit, PNG in and out), the vanilla font, word wrap, the card frame, chips, labels, bays, placeholder. |

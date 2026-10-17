@@ -49,7 +49,7 @@ def caption_for(spec, n):
 
 
 def bar(width, height, text, scale, colour):
-    b = Canvas(width, height, lib.RIM)
+    b = Canvas(width, height, lib.PAGE)
     b.hline(0, 0, width, lib.BORDER_DARK)
     b.hline(0, 1, width, lib.BORDER)
     if text:

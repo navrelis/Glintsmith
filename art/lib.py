@@ -1,7 +1,7 @@
 """Glintsmith art library: canvas, vanilla font, card furniture.  Python 3 standard library only.
 
     1. Sources   the Minecraft 1.21.1 client jar (read at run time; nothing of it is stored in the repository)
-    2. Palette   violet slate panel, brass frame, enchant-purple accent
+    2. Palette   cream-white panel, brass frame, dark ink text, enchant-violet accent (a light theme)
     3. Canvas    RGBA canvas: fill, frame, crop, integer scale, box and area downscale, alpha blit, PNG in / out
     4. Text      the vanilla bitmap font (font/ascii.png from the jar), width, word wrap, paragraphs
     5. Furniture card frame, panel, chip, heading, label, bay, placeholder
@@ -88,29 +88,46 @@ def mix(a, b, t):
 
 
 BRASS = [rgb(h) for h in ("46291a", "754b1d", "ab7d25", "d8ad38", "f3d975", "fff5c2")]
-VIOLET = [rgb(h) for h in ("2a1a55", "4b2d93", "7a4bd6", "b27dff", "dcc0ff", "f5eaff")]   # enchant purple ramp
+VIOLET = [rgb(h) for h in ("2a1a55", "4b2d93", "7a3fd6", "b27dff", "dcc0ff", "f5eaff")]   # enchant purple ramp
 TEAL = [rgb(h) for h in ("0a3340", "0e6f76", "1cbfab", "6df1d4", "e3fff4")]
-INK = rgb("0c0914")
 
-PANEL = rgb("1a1331")            # card background: deep violet slate
-PANEL_MID = rgb("2c214f")        # lit bevel: chips, raised strips
-PANEL_DARK = rgb("100b20")       # shaded bevel: recessed strips, bays
-RIM = rgb("07050d")              # near black: drop shadows, label boxes
-BORDER = BRASS[3]                # card frame
-BORDER_DARK = BRASS[1]
+PAGE = rgb("f6f1e6")             # outer page / caption bar: cream
+PANEL = rgb("fbf8f1")            # card panel: lighter cream white (a white in-game backdrop sits on it inside a thin dark edge)
+PANEL_MID = rgb("ede5d2")        # raised strips, chips: a little darker cream
+PANEL_DARK = rgb("e1d9c6")       # recessed strips, bays, the backing of a picture: warm light grey-beige
+RIM = rgb("cbbfa5")              # soft warm shadow: drop shadows, the inner shadow line of the card, bay edges
+BORDER = BRASS[3]                # card frame: soft gold
+BORDER_DARK = BRASS[1]           # dark brass: the thin darker edge round pictures, chip and label borders
 BORDER_LIGHT = BRASS[4]
-TEXT = rgb("efe9ff")             # body text: pale lavender
-TEXT_DIM = rgb("aaa0c8")         # captions, secondary text
-ACCENT = VIOLET[3]               # chips, bullets, rules
-ACCENT_LIGHT = VIOLET[4]
+INK = rgb("2a2433")              # dark ink
+TEXT = INK                       # body text
+TEXT_DIM = rgb("5e5448")         # captions, secondary text: mid grey-brown
+TITLE = rgb("5a3a12")            # card titles: dark brass (the heading's shade is the soft gold)
+GOLD_TEXT = rgb("7a5210")        # text in the gold label style
+ACCENT = VIOLET[2]               # chips, bullets, rules: saturated violet that reads on cream
+ACCENT_LIGHT = VIOLET[3]
 ACCENT_DARK = VIOLET[1]
-GOOD = TEAL[3]                   # "after" / on
-BAD = rgb("e0707a")              # "before" / vanilla problem
+GOOD = rgb("14744a")             # "after" / on: deep green
+BAD = rgb("b0303c")              # "before" / vanilla problem: deep red
 GREY = rgb("8a8794")
-MISSING_A, MISSING_B = rgb("55535c"), rgb("46444d")
+MISSING_A, MISSING_B, MISSING_EDGE = rgb("d9d3c4"), rgb("cbc4b3"), rgb("8a8470")   # the "capture missing" slab
 
-COLOURS = {"text": TEXT, "dim": TEXT_DIM, "accent": ACCENT_LIGHT, "gold": BORDER_LIGHT, "good": GOOD,
+COLOURS = {"text": TEXT, "dim": TEXT_DIM, "accent": ACCENT, "gold": GOLD_TEXT, "good": GOOD,
            "bad": BAD, "ink": INK, "white": (255, 255, 255, 255)}
+
+
+def luminance(c):
+    """WCAG relative luminance of an RGB(A) colour (0 black .. 1 white)."""
+    def lin(v):
+        v /= 255.0
+        return v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4
+    return 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2])
+
+
+def contrast(a, b):
+    """WCAG contrast ratio of two colours (1 .. 21); body text needs 4.5."""
+    hi, lo = sorted((luminance(a), luminance(b)), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
 
 
 def colour(c, default=None):
@@ -412,10 +429,18 @@ def text_width(string, scale=1):
 def font_text(canvas, x, y, string, col=None, scale=1, shadow=True):
     """Draw string in the vanilla font; shadow=True is the game's drop shadow, a colour gives that shadow colour.
 
+    The automatic shadow follows the text: dark text (the ink on the cream panels) gets a light one, so it
+    stays crisp instead of muddy; light text gets the game's dark one.
+
     Returns the x just after the text.  A line is 8 * scale high (9 with descenders)."""
     col = colour(col, TEXT)
     if shadow:
-        dark = colour(shadow) if shadow is not True else (col[0] // 4, col[1] // 4, col[2] // 4, 255)
+        if shadow is not True:
+            dark = colour(shadow)
+        elif luminance(col) > 0.4:
+            dark = (col[0] // 4, col[1] // 4, col[2] // 4, 255)
+        else:
+            dark = (255, 255, 255, 255)
         font_text(canvas, x + scale, y + scale, string, dark, scale, False)
     for ch in string:
         if ch != " ":
@@ -500,13 +525,13 @@ def panel(w, h, fill=None, border=None, edge=2, ornaments=False):
                                (edge + 2, h - edge - 3, 1, -1), (w - edge - 3, h - edge - 3, -1, -1)):
             for i in range(n):
                 for j in range(edge):
-                    c.set(cx + dx * i, cy + dy * j, BORDER_LIGHT)
-                    c.set(cx + dx * j, cy + dy * i, BORDER_LIGHT)
+                    c.set(cx + dx * i, cy + dy * j, BORDER)
+                    c.set(cx + dx * j, cy + dy * i, BORDER)
     return c
 
 
 def card(w, h, dither=True, seed=7, fill=None):
-    """The framed card: gold border with corner ornaments round a violet slate panel."""
+    """The framed card: gold border with corner ornaments round a cream-white panel."""
     fill = fill or PANEL
     c = Canvas(w, h, fill)
     if dither:
@@ -540,17 +565,17 @@ def card(w, h, dither=True, seed=7, fill=None):
 
 
 def heading(text, scale=4, col=None, shade=None):
-    """Big lettering with a darker copy offset one font pixel down-right, on a transparent canvas."""
-    col, shade = colour(col, BORDER_LIGHT), colour(shade, BORDER_DARK)
+    """Big lettering (dark brass) with a soft gold copy offset one font pixel down-right, on a transparent canvas."""
+    col, shade = colour(col, TITLE), colour(shade, BORDER)
     c = Canvas(text_width(text, scale) + scale, 9 * scale)
     font_text(c, 0, 0, text, col, scale, shadow=shade)
     return c
 
 
 def chip(text, style="accent", scale=2, pad=(14, 10)):
-    """A tag chip.  style: accent (violet border) or brass (solid gold)."""
+    """A tag chip.  style: accent (violet border) or brass (solid gold with a dark brass border)."""
     if style == "brass":
-        fill, border, col = BORDER, BRASS[5], INK
+        fill, border, col = BORDER, BORDER_DARK, INK
     else:
         fill, border, col = PANEL_MID, ACCENT, TEXT
     c = panel(text_width(text, scale) + 2 * pad[0], 7 * scale + 2 * pad[1], fill, border, 2)
@@ -568,15 +593,15 @@ def chips_row(chips, gap=16):
 
 
 def label_box(text, scale=2, col=None, tab=None):
-    """A dark name box (brass tab on the left) that sits on a picture corner."""
-    c = panel(text_width(text, scale) + 22, 8 * scale + 14, RIM, BORDER_DARK, 2)
+    """A cream name box (brass tab on the left, thin dark brass border) that sits on a picture corner."""
+    c = panel(text_width(text, scale) + 22, 8 * scale + 14, PANEL, BORDER_DARK, 2)
     c.rect(2, 2, 4, c.h - 4, colour(tab, BORDER))
     font_text(c, 13, 7, text, colour(col, TEXT), scale, shadow=True)
     return c
 
 
 def bay(w, h, edge=2):
-    """The recessed picture bay: brass rim round a dark interior with a shadow along the top and left."""
+    """The recessed picture bay: dark brass rim round a beige interior with a shadow along the top and left."""
     b = panel(w, h, PANEL_DARK, BORDER_DARK, edge)
     b.hline(edge, edge, w - 2 * edge, RIM)
     b.vline(edge, edge, h - 2 * edge, RIM)
@@ -584,17 +609,17 @@ def bay(w, h, edge=2):
 
 
 def placeholder(w, h, name):
-    """The marker drawn when a capture file is missing: grey hatched slab with the file name.  Never a fake."""
+    """The marker drawn when a capture file is missing: grey-beige hatched slab with the file name.  Never a fake."""
     c = Canvas(w, h, MISSING_A)
     for y in range(h):
         for x in range((y % 24), w, 24):
             c.rect(x, y, 2, 1, MISSING_B)
-    c.frame(0, 0, w, h, rgb("2a2931"), 2)
+    c.frame(0, 0, w, h, MISSING_EDGE, 2)
     lines = ["capture missing:", name]
     scale = 2 if max(text_width(t, 2) for t in lines) <= w - 24 else 1
     total = len(lines) * 8 * scale + (len(lines) - 1) * 6
     y = (h - total) // 2
     for line in lines:
-        text_centred(c, w // 2, y, line, rgb("f0eef4"), scale, shadow=rgb("1c1b21"))
+        text_centred(c, w // 2, y, line, INK, scale)
         y += 8 * scale + 6
     return c
