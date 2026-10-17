@@ -1,0 +1,297 @@
+package navrelis.glintsmith.config;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import navrelis.glintsmith.style.ColorStyle;
+import navrelis.glintsmith.style.Colors;
+import navrelis.glintsmith.style.DurabilityAlert;
+import navrelis.glintsmith.style.GlintCategory;
+import navrelis.glintsmith.style.Num;
+import navrelis.glintsmith.style.OutlineSettings;
+import navrelis.glintsmith.style.OutlineTarget;
+import navrelis.glintsmith.style.Rule;
+
+/**
+ * Root of {@code glintsmith.json}. Plain public fields, serialised by Gson.
+ * <p>
+ * Call {@link #sanitize()} after loading or editing; {@link ConfigManager} does it on every load and save.
+ * Instances handed out by {@link ConfigManager#get()} must be treated as read-only; edit a {@link #copy()}
+ * and save that.
+ */
+public final class GlintsmithConfig {
+	static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+
+	public int version = 1;
+	public Outline outline = new Outline();
+	public Glint glint = new Glint();
+	public GapFix gapFix = new GapFix();
+	public DurabilityAlert durabilityAlert = new DurabilityAlert();
+	/** Overrides of the enchantment colours, enchantment id to hex. */
+	public Map<String, String> enchantmentColors = new LinkedHashMap<>();
+	/** Evaluated in order, later rules override earlier ones. */
+	public List<Rule> rules = defaultRules();
+
+	public GlintsmithConfig() {
+	}
+
+	/**
+	 * @return the rules a fresh config starts with
+	 */
+	public static List<Rule> defaultRules() {
+		List<Rule> list = new ArrayList<>();
+
+		Rule totem = new Rule();
+		totem.name = "Totem of Undying";
+		totem.items.add("minecraft:totem_of_undying");
+		totem.enchantedCondition = Rule.Condition.ANY;
+		totem.outline = OutlineSettings.colored(ColorStyle.of("#FFF3A5"));
+		list.add(totem);
+
+		Rule books = new Rule();
+		books.name = "Example: no outline on books";
+		books.enabled = true;
+		books.items.add("minecraft:enchanted_book");
+		books.outline = OutlineSettings.enabled(false);
+		list.add(books);
+
+		return list;
+	}
+
+	/**
+	 * @return an independent deep copy (sanitised if this one was)
+	 */
+	public GlintsmithConfig copy() {
+		GlintsmithConfig copy = GSON.fromJson(GSON.toJson(this), GlintsmithConfig.class);
+		return copy.sanitize();
+	}
+
+	/**
+	 * Clamps every range, replaces missing sections by defaults and compiles the rule patterns
+	 * (invalid rules keep their text and get {@link Rule#error} set).
+	 *
+	 * @return {@code this}
+	 */
+	public GlintsmithConfig sanitize() {
+		if (version < 1) {
+			version = 1;
+		}
+		if (outline == null) {
+			outline = new Outline();
+		}
+		outline.sanitize();
+		if (glint == null) {
+			glint = new Glint();
+		}
+		glint.sanitize();
+		if (gapFix == null) {
+			gapFix = new GapFix();
+		}
+		gapFix.sanitize();
+		if (durabilityAlert == null) {
+			durabilityAlert = new DurabilityAlert();
+		}
+		durabilityAlert.sanitize();
+
+		Map<String, String> colors = new LinkedHashMap<>();
+		if (enchantmentColors != null) {
+			for (Map.Entry<String, String> e : enchantmentColors.entrySet()) {
+				if (e.getKey() != null && e.getValue() != null && Colors.isValidHex(e.getValue())) {
+					colors.put(e.getKey(), e.getValue());
+				}
+			}
+		}
+		enchantmentColors = colors;
+
+		List<Rule> cleaned = new ArrayList<>();
+		if (rules != null) {
+			for (Rule rule : rules) {
+				if (rule != null) {
+					cleaned.add(rule.sanitize());
+				}
+			}
+		}
+		rules = cleaned;
+		return this;
+	}
+
+	/**
+	 * Global outline settings; these are the defaults that rules override.
+	 */
+	public static final class Outline {
+		public boolean enabled = true;
+		public OutlineCondition condition = OutlineCondition.ENCHANTED;
+		public Targets targets = new Targets();
+		public boolean onlyLocalPlayer = false;
+		public ColorStyle color = ColorStyle.of(ColorStyle.DEFAULT_COLOR);
+		/** Screen pixels, 0.5..8. */
+		public float thickness = 2.0f;
+		/** 0..1. */
+		public float softness = 0.0f;
+		/** 0..1. */
+		public float opacity = 1.0f;
+		public boolean disableWithShaders = false;
+
+		public Outline() {
+		}
+
+		void sanitize() {
+			if (condition == null) {
+				condition = OutlineCondition.ENCHANTED;
+			}
+			if (targets == null) {
+				targets = new Targets();
+			}
+			if (color == null) {
+				color = ColorStyle.of(ColorStyle.DEFAULT_COLOR);
+			}
+			color.sanitize();
+			thickness = Num.clamp(thickness, OutlineSettings.MIN_THICKNESS, OutlineSettings.MAX_THICKNESS, 2.0f);
+			softness = Num.clamp(softness, 0.0f, 1.0f, 0.0f);
+			opacity = Num.clamp(opacity, 0.0f, 1.0f, 1.0f);
+		}
+	}
+
+	/**
+	 * Which render targets outlines are drawn in at all. Rules cannot override these.
+	 */
+	public static final class Targets {
+		public boolean firstPerson = true;
+		public boolean thirdPerson = true;
+		public boolean armor = true;
+		public boolean dropped = true;
+		public boolean itemFrame = true;
+		public boolean gui = false;
+
+		public Targets() {
+		}
+
+		/**
+		 * @return whether outlines may be drawn in this target; {@link OutlineTarget#OTHER} is always allowed
+		 */
+		public boolean allows(OutlineTarget target) {
+			return switch (target) {
+				case FIRST_PERSON -> firstPerson;
+				case THIRD_PERSON -> thirdPerson;
+				case ARMOR -> armor;
+				case DROPPED -> dropped;
+				case ITEM_FRAME -> itemFrame;
+				case GUI -> gui;
+				case OTHER -> true;
+			};
+		}
+	}
+
+	/**
+	 * Glint settings: a master switch and the defaults of the four glint layers.
+	 */
+	public static final class Glint {
+		/** Master switch; off leaves every glint untouched (vanilla). */
+		public boolean enabled = true;
+		public GlintCategorySettings item = new GlintCategorySettings();
+		public GlintCategorySettings armor = new GlintCategorySettings();
+		public GlintCategorySettings entity = new GlintCategorySettings();
+		public GlintCategorySettings gui = new GlintCategorySettings();
+
+		public Glint() {
+		}
+
+		/**
+		 * @return the defaults of the given layer
+		 */
+		public GlintCategorySettings forCategory(GlintCategory category) {
+			return switch (category) {
+				case ITEM -> item;
+				case ARMOR -> armor;
+				case ENTITY -> entity;
+				case GUI -> gui;
+			};
+		}
+
+		void sanitize() {
+			if (item == null) {
+				item = new GlintCategorySettings();
+			}
+			if (armor == null) {
+				armor = new GlintCategorySettings();
+			}
+			if (entity == null) {
+				entity = new GlintCategorySettings();
+			}
+			if (gui == null) {
+				gui = new GlintCategorySettings();
+			}
+			item.sanitize();
+			armor.sanitize();
+			entity.sanitize();
+			gui.sanitize();
+		}
+	}
+
+	/**
+	 * Defaults of one glint layer. The vanilla look is the default value of every field.
+	 */
+	public static final class GlintCategorySettings {
+		/** {@code false} hides the glint of this layer. */
+		public boolean enabled = true;
+		/** Preset id, resource location or {@code config:<file>.png}; null for the vanilla texture. */
+		public String texture = null;
+		/** Null for no tint. */
+		public ColorStyle tint = null;
+		/** 0..10, 1 = vanilla. */
+		public float speed = 1.0f;
+		/** 0.1..10, 1 = vanilla. */
+		public float scale = 1.0f;
+		/** 0..1. */
+		public float strength = 1.0f;
+		/** Degrees, -180..180, 10 = vanilla. */
+		public float rotation = 10.0f;
+
+		public GlintCategorySettings() {
+		}
+
+		void sanitize() {
+			if (texture != null && texture.isBlank()) {
+				texture = null;
+			}
+			if (tint != null) {
+				tint.sanitize();
+			}
+			speed = Num.clamp(speed, 0.0f, 10.0f, 1.0f);
+			scale = Num.clamp(scale, 0.1f, 10.0f, 1.0f);
+			strength = Num.clamp(strength, 0.0f, 1.0f, 1.0f);
+			rotation = Num.clamp(rotation, -180.0f, 180.0f, 10.0f);
+		}
+	}
+
+	/**
+	 * Settings of the glint gap fix (the seams the vanilla glint leaves on some models).
+	 */
+	public static final class GapFix {
+		public boolean enabled = true;
+		public GapFixMode mode = GapFixMode.AUTO;
+		/** 0..1. */
+		public float uvShrinkMultiplier = 0.0f;
+		/** -0.1..0.1. */
+		public float sideExpansion = 0.0f;
+		/** -0.1..0.1. */
+		public float sideIndent = 0.0001f;
+		public boolean preciseSpans = false;
+
+		public GapFix() {
+		}
+
+		void sanitize() {
+			if (mode == null) {
+				mode = GapFixMode.AUTO;
+			}
+			uvShrinkMultiplier = Num.clamp(uvShrinkMultiplier, 0.0f, 1.0f, 0.0f);
+			sideExpansion = Num.clamp(sideExpansion, -0.1f, 0.1f, 0.0f);
+			sideIndent = Num.clamp(sideIndent, -0.1f, 0.1f, 0.0001f);
+		}
+	}
+}
