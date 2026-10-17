@@ -135,7 +135,9 @@ Client side only. Do not put it on a server; the mod does nothing there and is d
   game with Punchy 2.8f, main hand and offhand). Items such as
   Punchy's bedrock-geometry items, chests and boats are not outlined in first person, and with player-animation-lib or
   Better Combat in first-person mode the held item is outlined as a third-person item (none under a shader pack).
-- **Iris with no shader pack selected.** Treated like vanilla rendering.
+- **Iris with no shader pack selected.** Treated like vanilla rendering. Custom glints work everywhere, including in the
+  world (armor, held items of other entities, item frames, dropped items). Checked in game with Iris 1.8.14-beta.1: the
+  generated presets show in their colours on armor stands, against the purple vanilla glint.
 - **Iris with a shader pack.** World outlines (third person, armor, dropped items, item frames) are turned off, because
   the scene depth they need is not available. Hand outlines stay on by default ("Hand with shader pack" switches them
   off), and the arm hides them correctly. GUI outlines work. "Off with shader packs" disables all outlines while a pack

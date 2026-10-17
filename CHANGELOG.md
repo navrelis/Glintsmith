@@ -30,6 +30,9 @@ First release. Client-side only. The jar is `glintsmith-1.0.0.jar`.
 - Compatibility with Sodium: works; the log has one expected Sodium warning about optimized vertex writing.
 - Iris support: world outlines are turned off while a shader pack is active, hand outlines stay on and have a switch
   (the arm hides them), GUI outlines work, and there is an option to turn all outlines off under shaders.
+- Iris support for the glint: with Iris installed and shaders off, custom glints also work in the world (armor, held items
+  of other entities, item frames, dropped items). With a shader pack active the world and hand glint stay vanilla and the
+  GUI glint is customised.
 - Settings screen on vanilla widgets with tabs Outline, Glint, Model fix, Rules and Enchantments, colour picker and tooltips.
   English and German.
 - Mod Menu entry (Mod Menu optional), `/glintsmith` with `reload` and `toggle`, and two key bindings, both unbound.

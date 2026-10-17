@@ -40,7 +40,7 @@ Glintsmith works on what the game really draws, so there are no item whitelists 
 
 ## Sodium and Iris
 
-Glintsmith is made to run with Sodium and Iris. With Iris and no shader pack selected, outlines and glint work as in vanilla rendering. With a shader pack:
+Glintsmith is made to run with Sodium and Iris. With Iris and no shader pack selected, outlines and glint work as in vanilla rendering, and custom glints show everywhere, including in the world (armor, held items of other entities, item frames, dropped items). With a shader pack:
 
 - Outlines in the world are turned off, because they need the scene depth that the shader pack changes.
 - Outlines on the item in your hand stay on by default, and the arm hides them correctly. They can be switched off ("Hand with shader pack").
