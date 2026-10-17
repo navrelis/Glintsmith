@@ -150,7 +150,7 @@ Composite locations at a glance:
 |---|---|---|---|
 | WORLD | mask LEQUAL against its own depth (cleared to far), then a copy of main depth for the passes | `endBatch(waterMask)` TAIL (before translucent terrain, particles, weather) | main |
 | HAND, vanilla | same, with the main depth as it is after the hand's depth clear | after `renderHandsWithItems` returns (before screen effects) | main |
-| HAND, Iris pack | mask depth cleared to far, no scene depth (every mask pixel is a seed) | `GameRenderer.renderLevel` RETURN | main (contains Iris's final image) |
+| HAND, Iris pack | mask depth cleared to far; no copy of the main depth; the hand's occluder geometry is drawn into it after the item masks (3.3) | `GameRenderer.renderLevel` RETURN | main (contains Iris's final image) |
 | GUI | none (no depth test, every mask pixel is a seed) | after each `GuiGraphics.renderItem` (the item is drawn by then: by its own flush, or under HUD batching by the O1-end flush of outlined GUI items) | main |
 
 ---
@@ -384,10 +384,56 @@ Depth handling per phase (`OutlineCompositor.MaskDepth`):
 * **HAND, vanilla** (`COPY`). The same as WORLD. The main depth was cleared before the hand and now
   contains hand plus arm depth.
 * **HAND, Iris** (`CLEAR` at the first hand flush, then `NONE`). No copy (main depth is not Iris's
-  depth). The first flush of the frame clears mask colour and depth, with no scissor. Under Iris,
-  `renderHandsWithItems` runs twice per frame (solid and translucent passes), so the mask
-  accumulates across both calls. The deferred composite uses `UseDepth=0`: every mask pixel is a seed
-  and no outline is suppressed.
+  depth, and it holds no hand at all). The first flush of the frame clears mask colour and depth, with
+  no scissor. Under Iris, `renderHandsWithItems` runs twice per frame (solid and translucent passes),
+  so the mask accumulates across both calls. The scene depth for this phase is made by the occluder
+  mechanism below. The deferred composite uses `UseDepth=1`.
+
+  **Hand occluders (shader pack, T21).** Without a pack, the arm hides the first-person outline
+  because the main depth holds the arm. Under a pack the hand goes into the pack's own targets, so
+  the arm has to reach the mask depth another way. Before this mechanism every mask pixel was a seed
+  and the outline drew over the arm wherever the item went behind it.
+  1. `OutlineSystem.beginHands(source)` is called by the O2b wrap. Under a shader pack it returns an
+     `OccluderBufferSource` (one reused instance) wrapping the hand buffer source `source`; the wrap
+     passes that to `renderHandsWithItems` instead of `source`. Without a pack, or if the phase
+     cannot open, it returns `source` unchanged. The wrap needs no other change: vanilla's arm, and a
+     first-person animation mod's arm code injected into the wrapped body, draw into the same source.
+  2. `OccluderBufferSource.getBuffer(type)` returns the real buffer, or a `TeeVertexConsumer` that
+     also writes into `PhaseState.occluderSource`, for every render type that writes depth itself
+     (depth test on, depth write on; `MaskTypes.occluderFor`): arm, sleeve, armor on the arm, maps and
+     the held items. The occluder type (`glintsmith_outline_occluder`) is `DEPTH_WRITE` only, depth
+     test `LEQUAL`, repeats the source's layering and draws the source's texture through the mask
+     shader, so cutout pixels do not occlude. Style index 0 and no screen bounds: an occluder is never
+     a seed and never widens the region, and occluders alone do not set `hasGeometry` (no composite
+     for an arm without an outlined item). At most 64 (render type, buffer) pairs per pass; more are
+     passed through without occluding.
+  3. `drawMask` draws the occluders after the item masks (`occluderSource.endBatch()`). Drawn first, an
+     occluder would keep the item pixels behind it out of the mask colour, and an outline on the arm
+     could no longer be told from an outline next to the item. After both draws the mask colour holds
+     the item depth and the depth attachment holds the nearest of item and hand: the same scene
+     depth the vanilla phase gets from the main depth copy. Item pixels behind the arm are hidden
+     item pixels, so the rules below apply as they do without a pack.
+  4. `drawMaskOnly` stores the z terms of the projection it draws with (`PhaseState.captureProjection`),
+     because Iris renders the hand with its own projection and the composite runs later at
+     `renderLevel` RETURN under another one. `resolve` runs `passes` with `UseDepth=1` and these terms.
+     A projection that `OutlineDepth.invertible` rejects leaves them unset, and the composite falls
+     back to the vanilla near and far planes.
+  5. The composite linearises depth from the projection z terms. The uniform
+     `DepthProj = (m22, m32)` replaces `NearFar`: `v = (2z - 1) + m22`; the distance is `m32 / v` for
+     `v < 0` and `OutlineDepth.BEYOND_FAR` (1e9) otherwise. With the vanilla terms this is the
+     previous formula. Iris scales the first-person projection by 1/8 in z; its own terms keep the
+     distances in blocks right, and a window depth past its scaled far end, in particular the cleared
+     depth 1.0, means "nothing there".
+
+  Rejected: reading Iris's own hand depth (it is pack-specific and needs Iris internals), and turning
+  hand outlines off under a shader pack (the feature stays, with the arm now hiding it).
+
+  Known limits: (a) with both Iris hand passes in one frame the mask depth is shared, so an arm drawn
+  in pass 1 can cover an item drawn in pass 2 that is in front of it in the scene; (b) hand geometry
+  drawn outside the buffer source passed to `renderHandsWithItems` (a direct draw, or a mod drawing
+  its arm elsewhere) does not occlude; (c) a pack that moves or distorts the hand after the pass leaves
+  the occluders where the hand was drawn, like the mask itself. None of this is checked in game:
+  **[in-game check pending: T21]**.
 * **GUI** (`NONE`). Scissored clear of the mask colour inside the item's bbox; the mask depth is not
   touched. Mask types use `NO_DEPTH_TEST`. The composite uses `UseDepth=0`: every mask pixel is a seed.
 
@@ -404,7 +450,9 @@ mask colour (24-bit window depth).
 * **Seeds.** In the EDT pass, a mask pixel is a seed only if the item is visible there. Hidden item
   pixels are no seeds. They are invisible to the distance search, as if the mask were empty there.
 * **Composite, per output pixel p.** After the distance search the nearest seed s is known. `zp` and
-  `zs` are the linearised scene depths at p and s, using `NearFar = (0.05, GameRenderer.getDepthFar())`.
+  `zs` are the linearised scene depths at p and s, using `DepthProj = (m22, m32)` of the projection
+  the depth was drawn with (vanilla near 0.05 and `GameRenderer.getDepthFar()`, or under a shader pack the
+  captured hand projection, see the hand occluders above).
   Since s is a visible item pixel, `zs` is also the item's distance.
   * p is a visible item pixel: no outline (inside the silhouette).
   * p is a hidden item pixel (the mask has an item there, but the scene is in front): the item
@@ -455,7 +503,8 @@ WORLD and HAND (vanilla) outlines; GUI keeps working.
   * Depth attachment: during the mask draw it is the mask's own depth (cleared to far, nearest item
     surface wins). In WORLD and vanilla HAND it is then overwritten with a copy of the main depth, so
     that the passes read the item depth from the colour and the scene depth from the depth attachment
-    (3.3). Under a shader pack (HAND) it is only cleared. In GUI it is not used.
+    (3.3). Under a shader pack (HAND) it is only cleared, and the hand occluders are then drawn into
+    it (3.3). In GUI it is not used.
 * **Style table** (`StyleTable`, one per phase). Open addressing over `int[]` keys
   (argb, packed thickness/softness/opacity bytes). It is reset after each composite. At most 255
   entries per composite; further distinct styles reuse index 255 (rare, logged at debug level).
@@ -642,7 +691,7 @@ void main() {
         { "name": "Radius", "type": "int", "count": 1, "values": [ 4 ] },
         { "name": "Region", "type": "float", "count": 4, "values": [ 0.0, 0.0, 1.0, 1.0 ] },
         { "name": "UseDepth", "type": "int", "count": 1, "values": [ 0 ] },
-        { "name": "NearFar", "type": "float", "count": 2, "values": [ 0.05, 1024.0 ] },
+        { "name": "DepthProj", "type": "float", "count": 2, "values": [ -1.0000977, -0.1000049 ] },
         { "name": "DepthTolerance", "type": "float", "count": 1, "values": [ 0.15 ] },
         { "name": "CoverTolerance", "type": "float", "count": 1, "values": [ 0.15 ] },
         { "name": "SeedEpsilon", "type": "float", "count": 1, "values": [ 0.0000019 ] },
@@ -667,7 +716,7 @@ uniform sampler2D StyleSampler;
 uniform int Radius;
 uniform vec4 Region;
 uniform int UseDepth;
-uniform vec2 NearFar;
+uniform vec2 DepthProj; // z terms (m22, m32) of the projection the depth was drawn with
 uniform float DepthTolerance; // front tolerance in blocks (per phase)
 uniform float CoverTolerance; // tolerance in blocks on hidden item pixels
 uniform float SeedEpsilon; // window depth
@@ -675,10 +724,10 @@ uniform vec2 DistanceFade; // (start, end) in blocks; end <= start disables
 
 out vec4 fragColor;
 
+// Distance in blocks (OutlineDepth.linear). Iris scales the hand projection in z; past its far end lies nothing.
 float linearDepth(float z) {
-    float n = NearFar.x;
-    float f = NearFar.y;
-    return (2.0 * n * f) / (f + n - (2.0 * z - 1.0) * (f - n));
+    float v = (2.0 * z - 1.0) + DepthProj.x;
+    return v < 0.0 ? DepthProj.y / v : 1.0e9;
 }
 
 float unpackDepth(vec3 gba) {
@@ -795,7 +844,7 @@ state, return.
    * `DepthSampler` = `Integer.valueOf(mask.getDepthTextureId())` (the scene depth after the copy)
    * `StyleSampler` = style `DynamicTexture`
 
-   Set uniforms `UseDepth`, `NearFar`, `DepthTolerance` (`frontTolerance` of the phase: 0.15 blocks in
+   Set uniforms `UseDepth`, `DepthProj`, `DepthTolerance` (`frontTolerance` of the phase: 0.15 blocks in
    WORLD, 0.03 in HAND), `CoverTolerance` (0.15), `SeedEpsilon` and `DistanceFade`. Enable blend with
    `blendFuncSeparate(SRC_ALPHA, ONE_MINUS_SRC_ALPHA, ZERO, ONE)`, which keeps the main target's alpha.
    Draw.
@@ -1231,7 +1280,7 @@ specs. Generation cost at start-up is **[UNVERIFIED, not measured]**.
 | Fabulous | Full. Composite goes into main before the transparency chain; translucent layers combine over it correctly. `glintTranslucent` / `entityGlint` slots keep `ITEM_ENTITY_TARGET`. | Full | Full | Full |
 | Sodium 0.8.13 | Full. Sodium replaces terrain only. Its item fast path (`ItemRendererMixin`) and `putBulkData` intrinsics fall back to vanilla code for our tee because it is not a `BufferBuilder` or `VertexBufferWriter`. Sodium logs **one** WARN per class (`VertexConsumerTracker`: "does not support optimized vertex writing code paths"). FRAPI models render through the `MultiBufferSource` we pass. | Full | Full | Full |
 | Iris installed, shaders off | Full (Iris batching and hand pathway inactive) | Full | Full | Full |
-| Iris, shader pack on | **Off** (log once per pack activation, at INFO). Main depth is not the scene depth and entities go to Iris gbuffers. The shadow pass is skipped too (phase closed, plus an explicit `isRenderingShadowPass()` check). | **Best effort, default on, option to disable.** The mask is flushed at TAIL of `renderHandsWithItems` with Iris's hand matrices; the composite happens after Iris's final pass at `GameRenderer.renderLevel` RETURN. No occluder test. Packs that move or distort the hand (DOF, hand sway) may misalign it. **[UNVERIFIED in game]** | Full | GUI full. World and hand use the vanilla look unless G7 is on; with G7 our slots go through Iris's glint program (texture and matrix honoured; tint and strength pack-dependent). |
+| Iris, shader pack on | **Off** (log once per pack activation, at INFO). Main depth is not the scene depth and entities go to Iris gbuffers. The shadow pass is skipped too (phase closed, plus an explicit `isRenderingShadowPass()` check). | **Best effort, default on, option to disable.** The mask is flushed at TAIL of `renderHandsWithItems` with Iris's hand matrices; the composite happens after Iris's final pass at `GameRenderer.renderLevel` RETURN. The arm hides the outline through hand occluders: under a pack the hand buffer source is wrapped in an `OccluderBufferSource` that records every depth-writing render type of the hand pass (arm, sleeve, held items, maps) as depth-only geometry (`DEPTH_WRITE`, `LEQUAL`, the source's layering and cutout), drawn into the mask depth after the item masks; the composite runs with `UseDepth=1` and linearises depth from the hand projection terms (`DepthProj`; Iris scales the hand projection by 1/8 in z), see 3.3. Known limits: with both Iris hand passes an arm from pass 1 can cover an item from pass 2; hand geometry drawn outside the passed buffer source does not occlude. Packs that move or distort the hand (DOF, hand sway) may misalign it. **[in-game check pending: T21]** | Full | GUI full. World and hand use the vanilla look unless G7 is on; with G7 our slots go through Iris's glint program (texture and matrix honoured; tint and strength pack-dependent). |
 | First-person animation mods (Punchy 2.8f) | n/a | Full for items drawn through `ItemRenderer.render` inside `renderHandsWithItems`: THIRD_PERSON hand contexts there count as FIRST_PERSON. Not outlined: items Punchy draws without `ItemRenderer.render` (bedrock-geometry items, chests, boats). Verified in game: first-person outlines and glint rules on Punchy-held items drawn through `ItemRenderer.render` (main hand and offhand). | n/a | Full: the hand pass marker (G8) applies first-person rules to the same items |
 | First-person mode of player-animation-lib / Better Combat | The held item is drawn in the world pass as THIRD_PERSON and is outlined as a third-person item; none under a shader pack | Not applicable (the item is not drawn in the HAND phase) | n/a | THIRD_PERSON rules |
 | Other glint mods | Unaffected | Unaffected | Unaffected | If they replace the `RenderType.glint()` getters, our G5a never sees vanilla types and their look wins. If they also hook `BufferSource.getBuffer`, the last modifier wins. Document as incompatible-by-design. |
@@ -1361,7 +1410,7 @@ final class OutlineCompositor {
     enum MaskDepth { COPY, CLEAR, NONE }                    // how the mask target's depth is prepared
     static void composite(PhaseState phase, MaskDepth depth, boolean useDepth, float fadeStart, float fadeEnd);
     static boolean drawMaskOnly(PhaseState phase, boolean clear);   // Iris hand: mask now, composite later
-    static void resolve(PhaseState phase);                          // passes over an earlier mask, UseDepth 0
+    static void resolve(PhaseState phase);                          // passes over an earlier mask, UseDepth 1
 }
 final class OutlineDepth { /* constants and the depth rules as plain Java; mirrored by the shaders, tested on the JVM */ }
 final class OutlineFailsafe { static boolean tripped(); static void trip(String where, Throwable t); }

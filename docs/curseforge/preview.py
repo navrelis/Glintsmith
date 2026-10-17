@@ -4,7 +4,10 @@
     py -B docs/curseforge/preview.py --check     only check; exit 1 on a problem (also if preview.html is out of date)
 
 preview.html shows the description with the images inline (img/<file>), for a browser, offline.
-description_paste.md is description.md without the "VERIFY IN GAME" comments; it still has the image markers.
+description_paste.md is description.md without its HTML comments (such as pending-check markers); it still has the
+">>> PASTE IMAGE: <file> | <alt> <<<" marker lines. Both files are built from description.md only, and the check
+also verifies that every marked image exists in img/ and that summary.txt (if present) is one line of at most 250
+characters.
 Python 3 standard library only.
 """
 import html
