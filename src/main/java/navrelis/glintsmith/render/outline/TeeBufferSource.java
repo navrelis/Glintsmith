@@ -7,6 +7,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import it.unimi.dsi.fastutil.objects.Object2ObjectSortedMaps;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The buffer source handed to a qualifying item render instead of the real one. Every buffer it returns writes to
@@ -79,6 +80,17 @@ final class TeeBufferSource extends MultiBufferSource.BufferSource {
 	/** Whether the tee still copies into the mask. */
 	boolean active() {
 		return active;
+	}
+
+	/** The phase the tee copies into, or null once released. */
+	@Nullable
+	PhaseState phase() {
+		return phase;
+	}
+
+	/** The real buffer source the item was handed. */
+	MultiBufferSource delegate() {
+		return delegate;
 	}
 
 	@Override
