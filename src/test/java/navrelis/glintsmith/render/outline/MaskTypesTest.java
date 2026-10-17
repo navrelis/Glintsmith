@@ -8,7 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Proxy;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
@@ -143,6 +145,64 @@ class MaskTypesTest {
 		assertTrue(MaskTypes.writesDepth(RenderStateShard.COLOR_DEPTH_WRITE, RenderStateShard.EQUAL_DEPTH_TEST));
 		assertFalse(MaskTypes.writesDepth(RenderStateShard.COLOR_WRITE, RenderStateShard.LEQUAL_DEPTH_TEST));
 		assertFalse(MaskTypes.writesDepth(RenderStateShard.COLOR_DEPTH_WRITE, RenderStateShard.NO_DEPTH_TEST));
+	}
+
+	@Test
+	void depthTestedMaskAndOccluderRepeatTheSourceCulling() {
+		// Vanilla's item sheets (itemEntityTranslucentCull, entitySolid, entityCutout) cull back faces: drawn
+		// double-sided, the back quad and the inner side quads of a generated item seeded stray 1-px outline rings.
+		RenderType item = RenderType.itemEntityTranslucentCull(TEXTURE);
+		RenderType solid = RenderType.entitySolid(TEXTURE);
+		RenderType cutoutNoCull = RenderType.entityCutoutNoCull(TEXTURE);
+		RenderType sleeve = RenderType.entityTranslucent(TEXTURE); // NO_CULL in vanilla
+		assertSame(RenderStateShard.CULL, MaskTypes.lookup(item).cull);
+		assertSame(RenderStateShard.NO_CULL, MaskTypes.lookup(cutoutNoCull).cull);
+
+		assertSame(RenderStateShard.CULL, stateOf(MaskTypes.forSource(item, true)).glintsmith$outlineCullState());
+		assertSame(RenderStateShard.CULL, stateOf(MaskTypes.forSource(solid, true)).glintsmith$outlineCullState());
+		assertSame(RenderStateShard.CULL, stateOf(MaskTypes.forSource(RenderType.entityCutout(TEXTURE), true)).glintsmith$outlineCullState());
+		assertSame(RenderStateShard.NO_CULL, stateOf(MaskTypes.forSource(cutoutNoCull, true)).glintsmith$outlineCullState(),
+			"double-sided sources stay double-sided");
+
+		// The flat GUI mask draws both sides whatever the source does.
+		assertSame(RenderStateShard.NO_CULL, stateOf(MaskTypes.forSource(item, false)).glintsmith$outlineCullState());
+		assertSame(RenderStateShard.NO_CULL, stateOf(MaskTypes.forSource(solid, false)).glintsmith$outlineCullState());
+
+		// Occluders hide exactly what the source's own faces hide: the arm culls, the sleeve does not.
+		assertSame(RenderStateShard.CULL, stateOf(MaskTypes.occluderFor(solid)).glintsmith$outlineCullState());
+		assertSame(RenderStateShard.CULL, stateOf(MaskTypes.occluderFor(item)).glintsmith$outlineCullState());
+		assertSame(RenderStateShard.NO_CULL, stateOf(MaskTypes.occluderFor(sleeve)).glintsmith$outlineCullState());
+	}
+
+	@Test
+	void unreadableCullStateFallsBackToDoubleSidedMasks() {
+		CompositeStateAccessor missing = accessorWithCull(() -> {
+			throw new AbstractMethodError("accessor not applied");
+		});
+		assertSame(RenderStateShard.NO_CULL, MaskTypes.cullOf(missing));
+		assertSame(RenderStateShard.NO_CULL, MaskTypes.cullOf(accessorWithCull(() -> {
+			throw new IllegalStateException("broken");
+		})));
+		assertSame(RenderStateShard.NO_CULL, MaskTypes.cullOf(accessorWithCull(() -> null)));
+		assertSame(RenderStateShard.CULL, MaskTypes.cullOf(accessorWithCull(() -> RenderStateShard.CULL)));
+
+		// An entry without a cull state still builds its types, double-sided as before.
+		MaskTypes.Entry entry = new MaskTypes.Entry(TEXTURE, VertexFormat.Mode.QUADS, false, null, null, true);
+		assertSame(RenderStateShard.NO_CULL, entry.cull);
+		assertSame(RenderStateShard.NO_CULL, stateOf(entry.maskType(true)).glintsmith$outlineCullState());
+		assertSame(RenderStateShard.NO_CULL, stateOf(entry.occluderType()).glintsmith$outlineCullState());
+		assertSame(RenderStateShard.NO_CULL, MaskTypes.Entry.NOT_MASKABLE.cull);
+	}
+
+	/** An accessor whose cull state comes from {@code cull}; every other shard is null. */
+	private static CompositeStateAccessor accessorWithCull(Supplier<RenderStateShard.CullStateShard> cull) {
+		return (CompositeStateAccessor) Proxy.newProxyInstance(CompositeStateAccessor.class.getClassLoader(),
+			new Class<?>[] {CompositeStateAccessor.class}, (proxy, method, args) -> {
+				if (method.getName().equals("glintsmith$outlineCullState")) {
+					return cull.get();
+				}
+				return null;
+			});
 	}
 
 	private static CompositeStateAccessor stateOf(RenderType type) {

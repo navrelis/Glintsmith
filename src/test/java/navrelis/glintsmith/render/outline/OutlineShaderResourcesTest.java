@@ -118,6 +118,14 @@ class OutlineShaderResourcesTest {
 		assertEquals(1.0e9f, OutlineDepth.BEYOND_FAR);
 	}
 
+	@Test
+	void maskCutoutMatchesVanilla() throws IOException {
+		// Vanilla's item and entity shaders discard alpha < 0.1; a lower mask threshold would seed faint texels.
+		String mask = read(resolve("glintsmith_mask.fsh"));
+		assertTrue(mask.contains("if (texture(Sampler0, texCoord0).a < 0.1) {"), "mask discards like vanilla's cutout");
+		assertTrue(mask.contains("discard;"));
+	}
+
 	/** The classpath resource vanilla would load for {@code minecraft:shaders/core/<file>}. */
 	private static String resolve(String file) {
 		ResourceLocation location = OutlineShaders.remap(ResourceLocation.withDefaultNamespace("shaders/core/" + file));

@@ -29,12 +29,19 @@ import org.jetbrains.annotations.Nullable;
  * The depth-tested type does not test against the scene: it is drawn into a mask depth cleared to the far plane, with
  * depth writes, so the mask keeps every item pixel (also hidden ones) with the depth of the nearest item surface
  * (packed into the colour by {@code mask.fsh}). It repeats the source's layering, so that depth equals the item's
- * depth in the scene and the passes can tell visible from hidden item pixels ({@link OutlineDepth}). The flat type
- * (GUI) has no depth test and no depth write.
+ * depth in the scene and the passes can tell visible from hidden item pixels ({@link OutlineDepth}). It also repeats
+ * the source's face culling: generated item models are full of faces that only exist from one side (the back quad,
+ * side quads seen from inside, side quads that vanilla merges across transparent pixels), and drawn double-sided
+ * their back-facing slivers seeded isolated 1-px outline rings next to the item where vanilla draws nothing. The flat
+ * type (GUI) has no depth test and no depth write and stays double-sided: under the orthographic GUI projection a
+ * back face lies inside the item's own silhouette with the same style index, so it can only close pinholes there,
+ * and the GUI mask never depends on the winding of a GUI pose.
  * <p>
  * The occluder type (first-person hand under a shader pack) writes only depth, tested {@code LEQUAL} against the mask
- * depth with the source's layering and cutout: the geometry hides outlines and item pixels behind it, as it would in
- * the main depth. Only source types that write depth themselves (depth test on, depth write on) get one.
+ * depth with the source's layering, culling and cutout: the geometry hides outlines and item pixels behind it, as it
+ * would in the main depth. Only source types that write depth themselves (depth test on, depth write on) get one.
+ * <p>
+ * If the cull state cannot be read, the masks fall back to double-sided drawing (the behaviour before the copy).
  * Render thread only.
  */
 final class MaskTypes {
@@ -59,7 +66,7 @@ final class MaskTypes {
 	 * What the mask needs to know about one source type.
 	 */
 	static final class Entry {
-		static final Entry NOT_MASKABLE = new Entry(null, null, false, RenderStateShard.NO_LAYERING, false);
+		static final Entry NOT_MASKABLE = new Entry(null, null, false, RenderStateShard.NO_LAYERING, RenderStateShard.NO_CULL, false);
 
 		final ResourceLocation texture;
 		final VertexFormat.Mode mode;
@@ -67,6 +74,8 @@ final class MaskTypes {
 		final boolean defaultUv;
 		/** The source's layering, repeated by the depth-tested mask type (for example the armor's view offset). */
 		final RenderStateShard.LayeringStateShard layering;
+		/** The source's face culling, repeated by the depth-tested mask type and the occluder type. */
+		final RenderStateShard.CullStateShard cull;
 		/** The source writes depth, so its geometry hides what lies behind it. */
 		final boolean occludes;
 		private RenderType depthTested;
@@ -74,11 +83,12 @@ final class MaskTypes {
 		private RenderType occluder;
 
 		Entry(ResourceLocation texture, VertexFormat.Mode mode, boolean defaultUv, RenderStateShard.LayeringStateShard layering,
-			boolean occludes) {
+			RenderStateShard.CullStateShard cull, boolean occludes) {
 			this.texture = texture;
 			this.mode = mode;
 			this.defaultUv = defaultUv;
 			this.layering = layering == null ? RenderStateShard.NO_LAYERING : layering;
+			this.cull = cull == null ? RenderStateShard.NO_CULL : cull;
 			this.occludes = occludes;
 		}
 
@@ -96,7 +106,7 @@ final class MaskTypes {
 				return null;
 			}
 			if (occluder == null) {
-				occluder = createOccluder(texture, mode, layering);
+				occluder = createOccluder(texture, mode, layering, cull);
 			}
 			return occluder;
 		}
@@ -111,7 +121,7 @@ final class MaskTypes {
 			}
 			RenderType type = depth ? depthTested : flat;
 			if (type == null) {
-				type = create(texture, mode, depth, layering);
+				type = create(texture, mode, depth, layering, cull);
 				if (depth) {
 					depthTested = type;
 				} else {
@@ -197,8 +207,21 @@ final class MaskTypes {
 		if (chosen == null) {
 			return Entry.NOT_MASKABLE;
 		}
-		return new Entry(chosen, source.mode(), !hasUv, shards.glintsmith$outlineLayeringState(),
+		return new Entry(chosen, source.mode(), !hasUv, shards.glintsmith$outlineLayeringState(), cullOf(shards),
 			writesDepth(shards.glintsmith$outlineWriteMaskState(), shards.glintsmith$outlineDepthTestState()));
+	}
+
+	/**
+	 * The source's cull state, or {@code NO_CULL} (the masks' old double-sided drawing) if it cannot be read: a missing
+	 * accessor must not cost the outline, only the culling.
+	 */
+	static RenderStateShard.CullStateShard cullOf(CompositeStateAccessor shards) {
+		try {
+			RenderStateShard.CullStateShard cull = shards.glintsmith$outlineCullState();
+			return cull == null ? RenderStateShard.NO_CULL : cull;
+		} catch (LinkageError | RuntimeException e) {
+			return RenderStateShard.NO_CULL;
+		}
 	}
 
 	/**
@@ -261,7 +284,7 @@ final class MaskTypes {
 	}
 
 	private static RenderType create(ResourceLocation texture, VertexFormat.Mode mode, boolean depth,
-		RenderStateShard.LayeringStateShard layering) {
+		RenderStateShard.LayeringStateShard layering, RenderStateShard.CullStateShard cull) {
 		// Binds the texture without touching its filter, unlike TextureStateShard.
 		RenderStateShard.EmptyTextureStateShard textureShard = new RenderStateShard.EmptyTextureStateShard(
 			() -> RenderSystem.setShaderTexture(0, texture), () -> {
@@ -271,7 +294,8 @@ final class MaskTypes {
 				.setShaderState(MASK_SHADER)
 				.setTextureState(textureShard)
 				.setTransparencyState(RenderStateShard.NO_TRANSPARENCY)
-				.setCullState(RenderStateShard.NO_CULL)
+				// The source's back faces stay culled; the flat GUI mask draws both sides (see the class comment).
+				.setCullState(depth ? cull : RenderStateShard.NO_CULL)
 				.setDepthTestState(depth ? RenderStateShard.LEQUAL_DEPTH_TEST : RenderStateShard.NO_DEPTH_TEST)
 				.setLayeringState(depth ? layering : RenderStateShard.NO_LAYERING)
 				.setWriteMaskState(depth ? RenderStateShard.COLOR_DEPTH_WRITE : RenderStateShard.COLOR_WRITE)
@@ -279,7 +303,8 @@ final class MaskTypes {
 				.createCompositeState(false));
 	}
 
-	private static RenderType createOccluder(ResourceLocation texture, VertexFormat.Mode mode, RenderStateShard.LayeringStateShard layering) {
+	private static RenderType createOccluder(ResourceLocation texture, VertexFormat.Mode mode, RenderStateShard.LayeringStateShard layering,
+		RenderStateShard.CullStateShard cull) {
 		RenderStateShard.EmptyTextureStateShard textureShard = new RenderStateShard.EmptyTextureStateShard(
 			() -> RenderSystem.setShaderTexture(0, texture), () -> {
 			});
@@ -289,7 +314,7 @@ final class MaskTypes {
 				.setShaderState(MASK_SHADER)
 				.setTextureState(textureShard)
 				.setTransparencyState(RenderStateShard.NO_TRANSPARENCY)
-				.setCullState(RenderStateShard.NO_CULL)
+				.setCullState(cull)
 				.setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
 				.setLayeringState(layering)
 				.setWriteMaskState(RenderStateShard.DEPTH_WRITE)

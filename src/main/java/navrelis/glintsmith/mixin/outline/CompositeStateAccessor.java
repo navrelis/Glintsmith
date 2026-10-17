@@ -9,7 +9,8 @@ import org.spongepowered.asm.mixin.gen.Accessor;
  * A2: the shards of a composite state that decide whether a render type can be outlined (texture, glint detection,
  * invisible depth-only geometry), and its layering, which the mask copies so the item depth in the mask matches the
  * item depth in the scene. The depth test and the write mask also tell whether the type's geometry hides what lies
- * behind it (first-person occluders under a shader pack).
+ * behind it (first-person occluders under a shader pack). The cull state is copied too: a mask that drew back faces
+ * the source culls would seed outlines on pixels the item never covers.
  */
 @Mixin(RenderType.CompositeState.class)
 public interface CompositeStateAccessor {
@@ -30,4 +31,7 @@ public interface CompositeStateAccessor {
 
 	@Accessor("depthTestState")
 	RenderStateShard.DepthTestStateShard glintsmith$outlineDepthTestState();
+
+	@Accessor("cullState")
+	RenderStateShard.CullStateShard glintsmith$outlineCullState();
 }

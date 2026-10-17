@@ -179,6 +179,7 @@ class OutlineMixinApplicationTest {
 		assertAccessorBody(node, "glintsmith$outlineWriteMaskState", "writeMaskState", null);
 		assertAccessorBody(node, "glintsmith$outlineLayeringState", "layeringState", null);
 		assertAccessorBody(node, "glintsmith$outlineDepthTestState", "depthTestState", null);
+		assertAccessorBody(node, "glintsmith$outlineCullState", "cullState", null);
 	}
 
 	@Test
