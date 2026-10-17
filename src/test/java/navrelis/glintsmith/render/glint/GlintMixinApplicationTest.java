@@ -71,12 +71,15 @@ class GlintMixinApplicationTest {
 
 	/**
 	 * Asserts that a method called {@code method} whose descriptor contains {@code descPart} calls a method of the same
-	 * class whose name contains {@code handlerPart}, and that this handler exists.
+	 * class whose name contains {@code handlerPart}, and that this handler exists. When another {@code @WrapMethod} (the
+	 * outline feature) wraps the same method, MixinExtras moves our wrapper's call into a {@code $mixinextras$wrapped}
+	 * copy of the method, so the target and those copies are all searched.
 	 */
 	private static void assertCallsHandler(ClassNode node, String method, String descPart, String handlerPart) {
 		boolean found = false;
 		for (MethodNode m : node.methods) {
-			if (!m.name.equals(method) || !m.desc.contains(descPart)) {
+			boolean wrappedCopy = m.name.startsWith(method + "$mixinextras$wrapped");
+			if (!(m.name.equals(method) || wrappedCopy) || !m.desc.contains(descPart)) {
 				continue;
 			}
 			for (AbstractInsnNode insn : m.instructions) {

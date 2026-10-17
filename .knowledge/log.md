@@ -47,3 +47,4 @@
 - 2026-10-17 T5 finish, Opus, L, accepted (lead read OutlineSystem, Compositor, shaders, TeeVertexConsumer, mixin config; worktree build 203 green). Committed 01879d9 on t5-outline, merged into dev (fabric.mod.json conflict resolved by Sonnet, S-).
 - 2026-10-17 Merged build: 304 tests, 3 fail in GlintMixinApplicationTest (glint handler now inside the outline's $mixinextras$wrapped copy; test does not follow the chain). Fix queued with T8.
 - 2026-10-17 T10g, Sonnet, S, accepted (3 scripts + run_ingame.py config launcher + copy_captures.py; dry-runs green). Its first launcher draft wrote config/glintsmith.json into the real instance; lead deleted it.
+- 2026-10-17 T8 wiring + glint mixin test fix, Sonnet, S, accepted (lead read Glintsmith.java + diffs; build 304 green). Open: lang key glintsmith.modelfix.mode.tooltip still overclaims (fix in final docs pass).

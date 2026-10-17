@@ -140,7 +140,7 @@ public final class GlintsmithConfig {
 		public Targets targets = new Targets();
 		public boolean onlyLocalPlayer = false;
 		public ColorStyle color = ColorStyle.of(ColorStyle.DEFAULT_COLOR);
-		/** Screen pixels, 0.5..8. */
+		/** Screen pixels, 0.5..16. */
 		public float thickness = 2.0f;
 		/** 0..1. */
 		public float softness = 0.0f;

@@ -144,7 +144,7 @@
 	"glintsmith.modelfix.mode": "Modus",
 	"glintsmith.modelfix.mode.tooltip": "Automatisch wählt passende Werte für jedes Modell. Benutzerdefiniert verwendet die Werte unten unverändert.",
 	"glintsmith.modelfix.mode.auto": "Automatisch",
-	"glintsmith.modelfix.mode.auto.tooltip": "Erkennt, was jedes Modell braucht. Empfohlen.",
+	"glintsmith.modelfix.mode.auto.tooltip": "Wählt feste Werte passend zu deinem Betriebssystem und schaltet sich ab, wenn die Mod Model Fix installiert ist. Empfohlen.",
 	"glintsmith.modelfix.mode.custom": "Benutzerdefiniert",
 	"glintsmith.modelfix.mode.custom.tooltip": "Verwendet die Werte unten für jedes Modell.",
 	"glintsmith.modelfix.uv_shrink": "UV-Verkleinerung: %s",
