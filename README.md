@@ -18,9 +18,9 @@ reloaded while the game runs.
   exact distance transform turns it into an outline. Flat items, 3D models, shields, tridents, banners, armor, elytra and
   items of other mods are treated the same way. <!-- VERIFY IN GAME: outlines look right on items of advancednetherite, eternal_starlight, cataclysm, immersive_armors, and on shield, trident, banner, elytra -->
 - The outline is depth aware: it is hidden where a wall or another block is in front of the item. <!-- VERIFY IN GAME: no outline through walls, for dropped items, item frames and other players' held items -->
-- Where outlines are drawn: first-person hand, third-person held items (players and mobs), worn armor and elytra, dropped
-  items, item frames, and optionally items in the GUI (inventory, hotbar, menus) and other places such as items worn on the
-  head. Each place has its own switch.
+- Where outlines are drawn: first-person hand, third-person held items (players and mobs), dropped items and item frames
+  are on by default. Worn armor (this includes worn elytra), items in the GUI (inventory, hotbar, menus) and other places
+  such as items worn on the head are available and off by default. Each place has its own switch.
 - Which items get one: enchanted items (this includes items that only show the vanilla glint), all items, or only the
   items your rules select.
 - Look: thickness (0.5 to 16 screen pixels), softness, opacity, distance fade (0 to 256 blocks), and optional scaling of the
@@ -51,8 +51,8 @@ reloaded while the game runs.
 - Modes: off, automatic (values chosen by the mod; macOS gets its own values because its drivers bleed without UV shrink)
   or custom (your values). With "precise spans" the sides are built from more, smaller faces, which is exact but creates
   many more quads on HD textures; it is off by default.
-- Automatic mode switches itself off when the mod `modelfix` (Model Gap Fix) is installed, so two fixes do not act on the same
-  models. <!-- VERIFY IN GAME: AUTO really stays off with modelfix present; this depends on the T8 wiring, which was not in the source when this was written -->
+- Automatic mode switches itself off when the mod `modelfix` (Model Gap Fix) is installed, because that mod already closes
+  the seams. Custom mode still applies next to it, on top of that mod's own changes; precise spans do nothing then. <!-- VERIFY IN GAME: AUTO really stays off with modelfix present; this depends on the T8 wiring, which was not in the source when this was written -->
 - If the fix throws an error while a model is generated, it logs it once and stays off for the session.
 
 ### Rules
@@ -125,7 +125,10 @@ Client side only. Do not put it on a server; the mod does nothing there and is d
 - **Other glint mods.** A mod that replaces the vanilla glint render types itself can win over Glintsmith's glint, or the
   other way round. Use one of them.
 - **Items drawn without the game's normal item rendering** (some mods that batch GUI items) are not outlined.
-- **Model Gap Fix (`modelfix`).** Compatible; the gap fix of Glintsmith in automatic mode stays off while it is installed.
+- **Model Gap Fix (`modelfix`).** Compatible. Only the precise spans part of the gap fix is left out while it is installed,
+  because that mod replaces the same game method; the other parts of the gap fix work as usual. In automatic mode the gap fix
+  stays off, and `modelfix` handles the seams. In custom mode the settings of Glintsmith stack on top of `modelfix` (logged
+  once at INFO), and precise spans are inactive.
 - **Failure behaviour.** Outlines, glint and gap fix each have a failsafe: after an error in a render hook the feature
   logs it once and stays off for the session; the game keeps rendering the vanilla way.
 - **Cost.** Frames in which no outlined item is drawn do no outline work except the rule lookup per drawn item.

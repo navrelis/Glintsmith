@@ -18,7 +18,7 @@ Glintsmith works on what the game really draws, so there are no item whitelists 
 
 >>> PASTE IMAGE: card_outline_styles.png | Outlines that fit your look <<<
 
-**Outlines wherever an item is drawn.** First-person hand, third-person held items of players and mobs, worn armor and elytra, dropped items and item frames. Items in the inventory and other menus are available too and are off by default. Each place has its own switch.
+**Outlines wherever an item is drawn.** First-person hand, third-person held items of players and mobs, dropped items and item frames are on by default. Worn armor (this includes worn elytra) and items in the inventory and other menus are available too and are off by default. Each place has its own switch.
 
 >>> PASTE IMAGE: card_targets.png | Everywhere an item is drawn <<<
 
@@ -26,7 +26,7 @@ Glintsmith works on what the game really draws, so there are no item whitelists 
 
 >>> PASTE IMAGE: card_glint_presets.png | Pick your glint <<<
 
-**A fix for gaps in item models.** Some flat item models show thin seams and gaps between their faces (Mojang bug MC-73186), which the vanilla glint leaves visible. Glintsmith scales the UV shrink on the block atlas, grows and moves the side faces of generated items, and can build the sides from contiguous pixel runs only. Set it to off, automatic or custom. Automatic is meant to turn itself off when the mod Model Gap Fix (`modelfix`) is installed, so the two do not act on the same models. <!-- VERIFY IN GAME: gap fix visible effect on 16x and HD items; AUTO stays off with modelfix present (depends on the wiring task T8) -->
+**A fix for gaps in item models.** Some flat item models show thin seams and gaps between their faces (Mojang bug MC-73186), which the vanilla glint leaves visible. Glintsmith scales the UV shrink on the block atlas, grows and moves the side faces of generated items, and can build the sides from contiguous pixel runs only. Set it to off, automatic or custom. Automatic turns itself off when the mod Model Gap Fix (`modelfix`) is installed, because that mod already closes the seams. Custom still applies next to it, on top of that mod's own changes. <!-- VERIFY IN GAME: gap fix visible effect on 16x and HD items; AUTO stays off with modelfix present (depends on the wiring task T8) -->
 
 >>> PASTE IMAGE: card_gap_fix.png | Seams closed, edges clean <<<
 
@@ -61,8 +61,8 @@ Checked on 2026-10-17 against the public pages and repositories of each project.
 |---|---|---|---|---|---|
 | What it does | Outlines, glint, gap fix | Outline on enchanted held items and the Totem of Undying | Gap fix | Rainbow glint on enchanted items | Outline on enchanted tools, 3D bows and maces |
 | Which items | Every item of every mod; rules choose | Vanilla weapons, tools, shields and the totem by default; more items can be added by id, modded ones included | Block and item models | All enchanted items | Described as tools; the page does not mention modded items |
-| Where outlines are drawn | Hand, held items of players and mobs, armor, elytra, dropped items, item frames, optionally GUI | Held items, first and third person | not applicable | not applicable | Item models, through CIT |
-| Armor | Yes | Not listed; asked for in an open issue | not applicable | not applicable | not listed |
+| Where outlines are drawn | Hand, held items of players and mobs, dropped items, item frames; optionally worn armor, elytra and GUI | Held items, first and third person | not applicable | not applicable | Item models, through CIT |
+| Armor | Optional, off by default | Not listed; asked for in an open issue | not applicable | not applicable | not listed |
 | Allow and deny | Rules with allow and except lists by id, tag, enchantment, mod | Whitelist; a blacklist is asked for in an open issue | not applicable | not applicable | not applicable |
 | Colours | Static, rainbow, pulse, gradient, per enchantment; per rule | Colour picker, RGB mode; separate settings for tools and totem | not applicable | Rainbow | One fixed colour; the page points to another pack for other colours |
 | Through walls | Hidden by depth test | Not stated on its pages | not applicable | not applicable | not applicable |
@@ -89,7 +89,7 @@ Client side only. Install it on your client; it does nothing on a server.
 - A mod that replaces the vanilla glint render types itself can win over Glintsmith's glint, or the other way round. Use one of them.
 - Items that a mod draws without the game's normal item rendering are not outlined.
 - Outlines and glint on items in the GUI work for items drawn by the game's own inventory code. Mods that batch their own GUI items may bypass this.
-- Model Gap Fix (`modelfix`) can stay installed. Glintsmith's automatic mode stays off while it is present.
+- Model Gap Fix (`modelfix`) can stay installed. Glintsmith's automatic mode stays off while it is present. In custom mode the settings stack on top of it, and precise spans are inactive.
 
 ## Commands and keys
 

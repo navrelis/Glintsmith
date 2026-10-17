@@ -142,7 +142,7 @@
 	"glintsmith.modelfix.enabled": "Lückenfix",
 	"glintsmith.modelfix.enabled.tooltip": "Schließt die dünnen Lücken und Nähte, die der Vanilla-Glanz bei manchen flachen Gegenstandsmodellen lässt.",
 	"glintsmith.modelfix.mode": "Modus",
-	"glintsmith.modelfix.mode.tooltip": "Automatisch wählt passende Werte für jedes Modell. Benutzerdefiniert verwendet die Werte unten unverändert.",
+	"glintsmith.modelfix.mode.tooltip": "Automatisch verwendet feste Werte passend zu deinem Betriebssystem und schaltet sich ab, wenn Model Fix installiert ist. Benutzerdefiniert verwendet die Werte unten unverändert.",
 	"glintsmith.modelfix.mode.auto": "Automatisch",
 	"glintsmith.modelfix.mode.auto.tooltip": "Wählt feste Werte passend zu deinem Betriebssystem und schaltet sich ab, wenn die Mod Model Fix installiert ist. Empfohlen.",
 	"glintsmith.modelfix.mode.custom": "Benutzerdefiniert",

@@ -1341,9 +1341,10 @@ Outlines:
 5. F5 third person: your own held item is outlined; the outline is hidden where your arm is in front.
    A zombie holding an enchanted sword: outlined (with "only local player" off), not outlined (with it
    on).
-6. Armor stand and player with full enchanted netherite armor plus trims: armor silhouettes are
-   outlined; the body behind shows the outline; turning the "armor" target off removes it. Elytra
-   (enchanted) is outlined.
+6. Armor stand and player with full enchanted netherite armor plus trims: not outlined by default (the
+   "armor" target is off by default). With the "armor" target switched on, armor silhouettes are
+   outlined; the body behind shows the outline; switching it off again removes it. Elytra
+   (enchanted) is outlined with the "armor" target on, and not outlined with it off.
 7. A dropped enchanted book and a dropped enchanted block item: outlined. Behind a wall: **not**
    visible. Half behind a wall corner: outline only around the visible part, none on the wall. Under
    water: visible through the water surface (Fast and Fancy) **F**.

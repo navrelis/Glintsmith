@@ -41,7 +41,7 @@ Paths are relative to the repository root.
 | Optional dependency | Mod Menu |
 | Compatible (not a declared relation) | Sodium, Iris, Model Gap Fix |
 
-`fabric.mod.json` lists Mod Menu, Sodium and Iris under `suggests`. Model Gap Fix is not a dependency or a conflict; in automatic mode the gap fix of Glintsmith stays off while it is installed.
+`fabric.mod.json` lists Mod Menu, Sodium and Iris under `suggests`. Model Gap Fix is not a dependency or a conflict; in automatic mode the gap fix of Glintsmith stays off while it is installed, and in custom mode the settings stack on top of it (precise spans are inactive).
 
 ## The project page
 

@@ -58,3 +58,8 @@
 - 2026-10-17 T10 smoke (player): 188/188 steps ok, no Glintsmith ERROR; GUI outlines + occlusion OK; first-person HAND OUTLINE MISSING; fps on/off/on 362/529/476. Owner saw 'broken textures': long fins on held generated items.
 - 2026-10-17 Fins bisect (mini script): no Glintsmith = normal; gapFix off = normal; CUSTOM shrink 1 + indent 0.0001 = fins. Cause: GapFix.adjustSideElement path (suspect sortCorners on vanilla's inverted LEFT/RIGHT side elements).
 - 2026-10-17 Armor target default off, Sonnet, S, accepted (build 311 green).
+- 2026-10-17 T13 gap-fix fins delegated, Opus, S (main tree). T14 hand outline delegated, Opus, L (worktree Glintsmith-hand). Game lock released, instance cleaned.
+- 2026-10-17 Session 5 stopped at the context limit; T13/T14 Opus agents stopped at start (no file changes). State: F:\Coding\handoff.md
+- 2026-10-17 Session 6 start: repo matches handoff (dev 6645192, worktree Glintsmith-hand clean, no lock); baseline build 311 green.
+- 2026-10-17 Delegated in parallel: T13 fins Opus S (main tree, modelfix files), T14 hand outline Opus L (worktree), T9a docs armor/modelfix/lang Sonnet S, T16 in-game script prep Sonnet S (.dev/ingame).
+- 2026-10-17 T9a docs armor-default/modelfix/lang tooltip, Sonnet, S, accepted (lead read diff; VERIFY markers kept for T9b; description_paste.md, cards.json, docs/curseforge/README.md card text left for T9b/T12).

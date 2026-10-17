@@ -142,7 +142,7 @@
 	"glintsmith.modelfix.enabled": "Gap fix",
 	"glintsmith.modelfix.enabled.tooltip": "Close the thin gaps and seams the vanilla glint leaves on some flat item models.",
 	"glintsmith.modelfix.mode": "Mode",
-	"glintsmith.modelfix.mode.tooltip": "Automatic picks suitable values for every model. Custom uses the values below as they are.",
+	"glintsmith.modelfix.mode.tooltip": "Automatic uses fixed values for your operating system and turns itself off when Model Fix is installed. Custom uses the values below as they are.",
 	"glintsmith.modelfix.mode.auto": "Automatic",
 	"glintsmith.modelfix.mode.auto.tooltip": "Picks fixed values for your operating system, and turns itself off when the Model Fix mod is installed. Recommended.",
 	"glintsmith.modelfix.mode.custom": "Custom",
