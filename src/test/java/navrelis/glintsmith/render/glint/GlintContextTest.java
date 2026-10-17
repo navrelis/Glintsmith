@@ -127,6 +127,67 @@ class GlintContextTest {
 	}
 
 	@Test
+	void handPassCountsThirdPersonHandContextsAsFirstPerson() {
+		assertFalse(GlintContext.inHands());
+		GlintContext.beginHands();
+		assertTrue(GlintContext.inHands());
+		GlintContext.pushItem(null, ItemDisplayContext.THIRD_PERSON_RIGHT_HAND);
+		GlintContext.Frame f = GlintContext.top();
+		assertEquals(OutlineTarget.FIRST_PERSON, GlintCategories.targetFor(GlintCategory.ITEM, f));
+		assertEquals(OutlineTarget.FIRST_PERSON, GlintCategories.targetFor(GlintCategory.ENTITY, f));
+		assertEquals(OutlineTarget.FIRST_PERSON, GlintContext.targetOf(ItemDisplayContext.THIRD_PERSON_LEFT_HAND, true));
+		assertEquals(OutlineTarget.FIRST_PERSON, GlintContext.targetOf(ItemDisplayContext.FIRST_PERSON_LEFT_HAND, true));
+		assertEquals(OutlineTarget.FIRST_PERSON, GlintContext.targetOf(ItemDisplayContext.FIRST_PERSON_RIGHT_HAND, true));
+		GlintContext.pop();
+		GlintContext.endHands();
+		assertFalse(GlintContext.inHands());
+	}
+
+	@Test
+	void handPassKeepsOtherContextsAndCategories() {
+		assertEquals(OutlineTarget.DROPPED, GlintContext.targetOf(ItemDisplayContext.GROUND, true));
+		assertEquals(OutlineTarget.ITEM_FRAME, GlintContext.targetOf(ItemDisplayContext.FIXED, true));
+		assertEquals(OutlineTarget.GUI, GlintContext.targetOf(ItemDisplayContext.GUI, true));
+		assertEquals(OutlineTarget.OTHER, GlintContext.targetOf(ItemDisplayContext.HEAD, true));
+		assertEquals(OutlineTarget.OTHER, GlintContext.targetOf(null, true));
+		GlintContext.beginHands();
+		GlintContext.pushArmor(null);
+		assertEquals(OutlineTarget.ARMOR, GlintCategories.targetFor(GlintCategory.ARMOR, GlintContext.top()));
+		GlintContext.pop();
+		GlintContext.pushItem(null, ItemDisplayContext.GUI);
+		assertEquals(OutlineTarget.GUI, GlintCategories.targetFor(GlintCategory.GUI, GlintContext.top()));
+	}
+
+	@Test
+	void outsideTheHandPassThirdPersonStaysThirdPerson() {
+		GlintContext.pushItem(null, ItemDisplayContext.THIRD_PERSON_RIGHT_HAND);
+		assertEquals(OutlineTarget.THIRD_PERSON, GlintCategories.targetFor(GlintCategory.ITEM, GlintContext.top()));
+		assertEquals(OutlineTarget.THIRD_PERSON, GlintContext.targetOf(ItemDisplayContext.THIRD_PERSON_LEFT_HAND, false));
+		// after a hand pass the mapping is back to normal
+		GlintContext.beginHands();
+		GlintContext.endHands();
+		assertEquals(OutlineTarget.THIRD_PERSON, GlintCategories.targetFor(GlintCategory.ITEM, GlintContext.top()));
+	}
+
+	@Test
+	void handPassFlagNestsIgnoresExtraEndAndResets() {
+		GlintContext.endHands(); // extra end: ignored
+		assertFalse(GlintContext.inHands());
+		GlintContext.beginHands();
+		GlintContext.beginHands();
+		GlintContext.endHands();
+		assertTrue(GlintContext.inHands());
+		GlintContext.endHands();
+		assertFalse(GlintContext.inHands());
+		GlintContext.beginHands();
+		GlintContext.resetHands(); // frame start safety net
+		assertFalse(GlintContext.inHands());
+		GlintContext.beginHands();
+		GlintContext.reset(); // the test hook clears it too
+		assertFalse(GlintContext.inHands());
+	}
+
+	@Test
 	void overflowIsIgnoredAndStaysBalanced() {
 		for (int i = 0; i < GlintContext.CAPACITY + 5; i++) {
 			GlintContext.pushItem(null, i == 0 ? ItemDisplayContext.GUI : ItemDisplayContext.GROUND);

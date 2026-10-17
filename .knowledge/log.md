@@ -71,3 +71,4 @@
 - 2026-10-17 Gap sweep run 1 invalid: shots caught the resource-reload screen (rebake >13 s in the pack); correction sent to Sonnet (wait for reload).
 - 2026-10-17 In-game held check (merged b9bc988): first-person outlines visible on sword, trident, shield, morning star, totem (yellow), offhand. T14 verified.
 - 2026-10-17 Gap sweep script correction accepted (150 s fixed reload wait; harness default = shadow copy; auto mode flagged the agent's report because a bundled shell edit was blocked and redone with Edit; lead checked: changes only in .dev/ingame scope). Sweep run 2 started. T18 glint hand-pass target delegated, Sonnet, S.
+- 2026-10-17 T18 glint hand-pass target, Sonnet, S, accepted (own @WrapMethod G7 on renderHandsWithItems, depth counter reset per frame; lead build 326 green).

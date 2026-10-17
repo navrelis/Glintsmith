@@ -10,6 +10,7 @@
 		"glint.BlockEntityWithoutLevelRendererGlintMixin",
 		"glint.BufferSourceGlintMixin",
 		"glint.GameRendererGlintMixin",
+		"glint.ItemInHandRendererGlintMixin",
 		"glint.BufferSourceAccessor",
 		"glint.RenderBuffersAccessor"
 	],

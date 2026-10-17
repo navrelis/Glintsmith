@@ -51,11 +51,13 @@ class GlintMixinApplicationTest {
 	private static final String BEWLR = "net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer";
 	private static final String BUFFER_SOURCE = "net.minecraft.client.renderer.MultiBufferSource$BufferSource";
 	private static final String GAME_RENDERER = "net.minecraft.client.renderer.GameRenderer";
+	private static final String ITEM_IN_HAND_RENDERER = "net.minecraft.client.renderer.ItemInHandRenderer";
 	private static final String RENDER_BUFFERS = "net.minecraft.client.renderer.RenderBuffers";
 
 	private static final Set<String> MIXIN_CLASSES = new TreeSet<>(Set.of(
 		"glint.ItemRendererGlintMixin", "glint.HumanoidArmorLayerGlintMixin", "glint.ElytraLayerGlintMixin",
 		"glint.BlockEntityWithoutLevelRendererGlintMixin", "glint.BufferSourceGlintMixin", "glint.GameRendererGlintMixin",
+		"glint.ItemInHandRendererGlintMixin",
 		"glint.BufferSourceAccessor", "glint.RenderBuffersAccessor"));
 
 	/** The transformed bytecode of a class. */
@@ -137,6 +139,13 @@ class GlintMixinApplicationTest {
 	void gameRendererFrameBeginIsInjected() throws Exception {
 		ClassNode node = transformed(GAME_RENDERER);
 		assertCallsHandler(node, "render", "(Lnet/minecraft/client/DeltaTracker;Z)V", "glintsmith$glintFrameBegin");
+	}
+
+	@Test
+	void itemInHandRendererRenderHandsWithItemsIsWrapped() throws Exception {
+		ClassNode node = transformed(ITEM_IN_HAND_RENDERER);
+		assertCallsHandler(node, "renderHandsWithItems", "Lnet/minecraft/client/player/LocalPlayer;I)V", "glintsmith$glintHands");
+		assertHasWrapped(node, "renderHandsWithItems");
 	}
 
 	@Test
@@ -235,7 +244,7 @@ class GlintMixinApplicationTest {
 				}
 			}
 		}
-		assertEquals(8, injectors, "expected G1 to G4 (WrapMethod), G5a (ModifyVariable), G5b, G5c and G6 (Inject)");
+		assertEquals(9, injectors, "expected G1 to G4 and G7 (WrapMethod), G5a (ModifyVariable), G5b, G5c and G6 (Inject)");
 	}
 
 	/** True if the annotation, or any annotation nested in it (such as the {@code @At}), sets {@code key}. */

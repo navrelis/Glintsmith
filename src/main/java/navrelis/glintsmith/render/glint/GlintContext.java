@@ -25,6 +25,8 @@ public final class GlintContext {
 	private static final Frame[] FRAMES = new Frame[CAPACITY];
 	private static int depth;
 	private static int overflow;
+	/** Nesting depth of {@code ItemInHandRenderer.renderHandsWithItems}; above zero while the first-person hand pass runs. */
+	private static int handsDepth;
 
 	static {
 		for (int i = 0; i < CAPACITY; i++) {
@@ -54,6 +56,37 @@ public final class GlintContext {
 	 */
 	public static void pushBewlr(@Nullable ItemStack stack, @Nullable ItemDisplayContext context) {
 		push(BEWLR_FRAME, stack, context);
+	}
+
+	/**
+	 * The first-person hand pass ({@code ItemInHandRenderer.renderHandsWithItems}) starts. Independent of the outline
+	 * system, so the glint classification does not depend on outlines being on.
+	 */
+	public static void beginHands() {
+		handsDepth++;
+	}
+
+	/**
+	 * The hand pass ends. An extra call is ignored.
+	 */
+	public static void endHands() {
+		if (handsDepth > 0) {
+			handsDepth--;
+		}
+	}
+
+	/**
+	 * Safety net for the start of a frame: no hand pass can be open there, so a leaked flag is cleared.
+	 */
+	public static void resetHands() {
+		handsDepth = 0;
+	}
+
+	/**
+	 * @return whether the first-person hand pass is running right now
+	 */
+	public static boolean inHands() {
+		return handsDepth > 0;
 	}
 
 	/**
@@ -89,6 +122,7 @@ public final class GlintContext {
 			pop();
 		}
 		overflow = 0;
+		handsDepth = 0;
 	}
 
 	private static void push(byte kind, @Nullable ItemStack stack, @Nullable ItemDisplayContext context) {
@@ -115,12 +149,23 @@ public final class GlintContext {
 	 * Display context to rule target, the same table as the outline system uses (duplicated on purpose).
 	 */
 	static OutlineTarget targetOf(@Nullable ItemDisplayContext context) {
+		return targetOf(context, false);
+	}
+
+	/**
+	 * Like {@link #targetOf(ItemDisplayContext)}, but inside the first-person hand pass the hand contexts (first and
+	 * third person) both count as FIRST_PERSON: first-person animation mods (for example Punchy) cancel the vanilla arm
+	 * and draw the held item with a THIRD_PERSON hand context from inside {@code renderHandsWithItems}. Same rule as
+	 * the outline system's HAND phase. Other contexts keep their normal target.
+	 */
+	static OutlineTarget targetOf(@Nullable ItemDisplayContext context, boolean inHands) {
 		if (context == null) {
 			return OutlineTarget.OTHER;
 		}
 		return switch (context) {
 			case FIRST_PERSON_LEFT_HAND, FIRST_PERSON_RIGHT_HAND -> OutlineTarget.FIRST_PERSON;
-			case THIRD_PERSON_LEFT_HAND, THIRD_PERSON_RIGHT_HAND -> OutlineTarget.THIRD_PERSON;
+			case THIRD_PERSON_LEFT_HAND, THIRD_PERSON_RIGHT_HAND ->
+				inHands ? OutlineTarget.FIRST_PERSON : OutlineTarget.THIRD_PERSON;
 			case GROUND -> OutlineTarget.DROPPED;
 			case FIXED -> OutlineTarget.ITEM_FRAME;
 			case GUI -> OutlineTarget.GUI;

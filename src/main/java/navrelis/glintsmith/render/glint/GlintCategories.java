@@ -40,7 +40,7 @@ final class GlintCategories {
 		return switch (category) {
 			case GUI -> OutlineTarget.GUI;
 			case ARMOR -> OutlineTarget.ARMOR;
-			default -> GlintContext.targetOf(frame.context);
+			default -> GlintContext.targetOf(frame.context, GlintContext.inHands());
 		};
 	}
 }

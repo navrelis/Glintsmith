@@ -131,6 +131,7 @@ public final class GlintSystem {
 	 */
 	public static void onFrameBegin() {
 		try {
+			GlintContext.resetHands();
 			if (initialized && !started) {
 				onClientStarted(Minecraft.getInstance());
 			}
