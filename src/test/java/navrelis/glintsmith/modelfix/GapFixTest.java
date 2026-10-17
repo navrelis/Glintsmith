@@ -41,34 +41,48 @@ class GapFixTest {
 		assertOrdered(from, to);
 	}
 
+	// Vanilla builds EAST (left edge) and WEST (right edge) elements with from.y > to.y; the tests below use that shape.
+
 	@Test
 	void eastIsTheLeftEdgeSoItMovesRightAndGrowsYZ() {
-		Vector3f from = new Vector3f(3, 2, 7.5F);
-		Vector3f to = new Vector3f(3, 6, 8.5F);
+		Vector3f from = new Vector3f(3, 6, 7.5F);
+		Vector3f to = new Vector3f(3, 2, 8.5F);
 		GapFix.adjustSideElement(Direction.EAST, from, to, 0.5F, 0.25F);
-		assertVec(3.25F, 1.5F, 7.0F, from);
-		assertVec(3.25F, 6.5F, 9.0F, to);
-		assertOrdered(from, to);
+		assertVec(3.25F, 6.5F, 7.0F, from);
+		assertVec(3.25F, 1.5F, 9.0F, to);
 	}
 
 	@Test
 	void westIsTheRightEdgeSoItMovesLeftAndGrowsYZ() {
-		Vector3f from = new Vector3f(4, 2, 7.5F);
-		Vector3f to = new Vector3f(4, 6, 8.5F);
+		Vector3f from = new Vector3f(4, 6, 7.5F);
+		Vector3f to = new Vector3f(4, 2, 8.5F);
 		GapFix.adjustSideElement(Direction.WEST, from, to, 0.5F, 0.25F);
-		assertVec(3.75F, 1.5F, 7.0F, from);
-		assertVec(3.75F, 6.5F, 9.0F, to);
-		assertOrdered(from, to);
+		assertVec(3.75F, 6.5F, 7.0F, from);
+		assertVec(3.75F, 1.5F, 9.0F, to);
 	}
 
 	@Test
 	void eastAndWestGrowOnYInsteadOfShrinking() {
 		for (Direction face : new Direction[]{Direction.EAST, Direction.WEST}) {
-			Vector3f from = new Vector3f(3, 2, 7.5F);
-			Vector3f to = new Vector3f(3, 6, 8.5F);
+			Vector3f from = new Vector3f(3, 6, 7.5F);
+			Vector3f to = new Vector3f(3, 2, 8.5F);
 			GapFix.adjustSideElement(face, from, to, 0.1F, 0.0F);
-			assertTrue(to.y - from.y > 4.0F, face + " must grow on y");
-			assertEquals(4.2F, to.y - from.y, 1.0E-5F);
+			assertEquals(4.2F, from.y - to.y, 1.0E-5F, face + " must grow on y");
+		}
+	}
+
+	@Test
+	void cornerOrderIsKeptOnEveryAxis() {
+		// Swapping from and to would flip the baked quad's winding and its V direction (FaceBakery does not sort).
+		for (Direction face : new Direction[]{Direction.EAST, Direction.WEST}) {
+			for (float indent : new float[]{0.0F, 0.0001F, 0.05F, -0.05F}) {
+				Vector3f from = new Vector3f(3, 6, 7.5F);
+				Vector3f to = new Vector3f(3, 2, 8.5F);
+				GapFix.adjustSideElement(face, from, to, 0.02F, indent);
+				assertTrue(from.y > to.y, face + " must keep from.y > to.y");
+				assertTrue(from.z < to.z, face + " must keep from.z < to.z");
+				assertEquals(from.x, to.x, face + " stays a plane");
+			}
 		}
 	}
 
@@ -120,12 +134,17 @@ class GapFixTest {
 	}
 
 	@Test
-	void fromNeverExceedsToEvenWithNegativeExpansion() {
+	void negativeExpansionNeverFlipsAnElement() {
 		for (Direction face : Direction.values()) {
 			Vector3f from = new Vector3f(1, 1, 7.5F);
 			Vector3f to = new Vector3f(1.2F, 1.2F, 8.5F);
 			GapFix.adjustSideElement(face, from, to, -5.0F, 0.1F);
 			assertOrdered(from, to);
+
+			Vector3f reversedFrom = new Vector3f(1, 1.2F, 7.5F);
+			Vector3f reversedTo = new Vector3f(1, 1, 8.5F);
+			GapFix.adjustSideElement(face, reversedFrom, reversedTo, -5.0F, 0.1F);
+			assertTrue(reversedFrom.y >= reversedTo.y, face + " must not flip y");
 		}
 	}
 

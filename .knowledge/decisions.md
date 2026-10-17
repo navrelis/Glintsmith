@@ -23,3 +23,4 @@
 - 2026-10-17 Gap-fix mixins that collide with modelfix are not applied when modelfix is loaded (IMixinConfigPlugin): Mixin cannot inject into a method another mod merged, and the pack ships modelfix.
 - 2026-10-17 Owner: modelfix removed from the Nytheria pack, Glintsmith's own gap fix (AUTO) takes over there. Jar moved (not deleted) to .dev/removed-mods/; instance repo not committed, CurseForge manifest not edited. The modelfix compat plugin stays: the public mod must not crash in other packs with modelfix.
 - 2026-10-17 Owner: no outline on worn armor by default; the armor target (also covers worn elytra) defaults to off and stays a config/screen option.
+- 2026-10-17 Gap fix keeps vanilla's corner order of side elements (no sorting): vanilla stores LEFT/RIGHT spans with from.y > to.y on purpose and FaceBakery derives winding from that order.

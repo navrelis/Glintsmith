@@ -76,42 +76,44 @@ public final class GapFix {
 	/**
 	 * Adjusts a single-face side element of a generated item.
 	 *
-	 * <p>The element moves {@code indent} towards the item centre, perpendicular to its face, and grows by
-	 * {@code expansion} on both in-plane axes. In generated models UP and DOWN elements sit on the top and bottom edge of
-	 * a pixel row, EAST on the left edge (smaller x) and WEST on the right edge (larger x) of a pixel column, so inward is
-	 * -y for UP, +y for DOWN, +x for EAST and -x for WEST. NORTH and SOUTH are the front and back faces and stay as they are.
+	 * <p>The element moves {@code indent} towards the opaque pixel it borders, perpendicular to its face, and grows by
+	 * {@code expansion} on both in-plane axes. UP and DOWN elements sit on the top and bottom edge of a pixel row, so
+	 * inward is -y for UP and +y for DOWN. Vanilla keys a left edge (smaller x) as EAST and a right edge (larger x) as
+	 * WEST, and builds both with {@code from.y > to.y} (the {@code 16 - y} flip in {@code createSideElements}).
+	 * {@code FaceBakery} does not sort corners, so that flip turns the baked quads outwards: an EAST element bakes as a
+	 * west-facing quad and its V runs top to bottom. Inward is therefore +x for EAST and -x for WEST, and the order of
+	 * {@code from} and {@code to} must stay as it is on every axis. NORTH and SOUTH are the front and back faces and stay
+	 * as they are.
 	 */
 	public static void adjustSideElement(Direction face, Vector3f from, Vector3f to, float expansion, float indent) {
 		switch (face) {
 			case UP -> {
 				from.y -= indent;
 				to.y -= indent;
-				growX(from, to, expansion);
-				growZ(from, to, expansion);
+				grow(from, to, 0, expansion);
+				grow(from, to, 2, expansion);
 			}
 			case DOWN -> {
 				from.y += indent;
 				to.y += indent;
-				growX(from, to, expansion);
-				growZ(from, to, expansion);
+				grow(from, to, 0, expansion);
+				grow(from, to, 2, expansion);
 			}
 			case EAST -> {
 				from.x += indent;
 				to.x += indent;
-				growY(from, to, expansion);
-				growZ(from, to, expansion);
+				grow(from, to, 1, expansion);
+				grow(from, to, 2, expansion);
 			}
 			case WEST -> {
 				from.x -= indent;
 				to.x -= indent;
-				growY(from, to, expansion);
-				growZ(from, to, expansion);
+				grow(from, to, 1, expansion);
+				grow(from, to, 2, expansion);
 			}
 			default -> {
-				return;
 			}
 		}
-		sortCorners(from, to);
 	}
 
 	/** The UV shrink ratio to use for a sprite: vanilla's, scaled by the multiplier on the blocks atlas only. */
@@ -122,36 +124,19 @@ public final class GapFix {
 		return vanillaRatio * settings.uvShrinkMultiplier();
 	}
 
-	private static void growX(Vector3f from, Vector3f to, float e) {
-		from.x -= e;
-		to.x += e;
-	}
-
-	private static void growY(Vector3f from, Vector3f to, float e) {
-		from.y -= e;
-		to.y += e;
-	}
-
-	private static void growZ(Vector3f from, Vector3f to, float e) {
-		from.z -= e;
-		to.z += e;
-	}
-
-	private static void sortCorners(Vector3f from, Vector3f to) {
-		if (from.x > to.x) {
-			float t = from.x;
-			from.x = to.x;
-			to.x = t;
-		}
-		if (from.y > to.y) {
-			float t = from.y;
-			from.y = to.y;
-			to.y = t;
-		}
-		if (from.z > to.z) {
-			float t = from.z;
-			from.z = to.z;
-			to.z = t;
-		}
+	/**
+	 * Moves the two ends of {@code axis} apart by {@code e} each and keeps their order, whichever end is larger. A
+	 * negative {@code e} stops where the ends meet.
+	 */
+	private static void grow(Vector3f from, Vector3f to, int axis, float e) {
+		float a = from.get(axis);
+		float b = to.get(axis);
+		float min = Math.min(a, b);
+		float max = Math.max(a, b);
+		float mid = (min + max) * 0.5F;
+		float low = Math.min(min - e, mid);
+		float high = Math.max(max + e, mid);
+		from.setComponent(axis, a <= b ? low : high);
+		to.setComponent(axis, a <= b ? high : low);
 	}
 }

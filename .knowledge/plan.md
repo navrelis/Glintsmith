@@ -19,7 +19,7 @@ Status: open / in progress / in review / done. Size S = short (1 unit), L = long
 | T10p | In-game test scripts | `.dev/ingame/` smoke.json, smoke_owner.json, README; dry-run passes | - | Sonnet | S | done (dry-run green against a shadow harness copy; real harness broken) |
 | T10 | In-game test | Nytheria client with `--add-mod`, Sodium + Iris, screenshots of all features (also used as showcase images) | T8 | Lead | - | in progress (session 5: modelfix crash fixed a43f7e7, modelfix removed from pack; smoke run OK except: fins on held generated items (gap fix) and no first-person hand outline; both with Opus) |
 | T11 | Final acceptance | Full build/tests, Graphify, report, push | T10 | Lead | - | open |
-| T13 | Gap fix fins | Root cause + failing test + fix in GapFix; held items normal in game with AUTO | T10 | Opus | S | in progress (session 6, main tree) |
+| T13 | Gap fix fins | Root cause + failing test + fix in GapFix; held items normal in game with AUTO | T10 | Opus | S | done in code (session 6; in-game check pending) |
 | T14 | Hand outline missing | Root cause + fix in worktree Glintsmith-hand (branch fix-hand-outline); first-person outlines visible in game | T10 | Opus | L | in progress (session 6, worktree) |
 | T16 | In-game script prep | held.json (first-person check) + gallery/showcase configs enable targets.armor where armor is shown; README expectations; dry-runs pass | - | Sonnet | S | done (session 6; .dev is git-ignored, SHOTLIST committed) |
 | T15 | Armor outline default off (owner) | targets.armor = false, tests | - | Sonnet | S | done (6645192); docs in T9 final |
