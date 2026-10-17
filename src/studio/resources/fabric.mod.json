@@ -1,0 +1,26 @@
+{
+	"schemaVersion": 1,
+	"id": "glintsmith_studio",
+	"version": "1.0.0-dev",
+	"name": "Glintsmith Studio",
+	"description": "Dev-only render mode: turntables and stills of the real Glintsmith pipeline with controlled camera and light. Never shipped.",
+	"authors": [
+		"navrelis"
+	],
+	"license": "MIT",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"navrelis.glintsmith.studio.StudioMod"
+		]
+	},
+	"mixins": [
+		"glintsmith_studio.mixins.json"
+	],
+	"depends": {
+		"glintsmith": "*",
+		"fabricloader": ">=0.16.0",
+		"minecraft": "1.21.1",
+		"fabric-api": "*"
+	}
+}

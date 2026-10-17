@@ -54,3 +54,7 @@ graphify-out/cache/
 # in-game captures for the art pipeline (real screenshots, kept out of the repository)
 art/captures/*
 !art/captures/.gitkeep
+
+# glintsmith studio (dev-only render mode): run dir and optional local mod jars
+run-studio/
+studio-mods/

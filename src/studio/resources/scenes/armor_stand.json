@@ -1,0 +1,57 @@
+{
+	"scene": "armor_stand",
+	"type": "turntable",
+	"width": 480,
+	"height": 600,
+	"supersample": 2,
+	"fps": 30,
+	"seconds_per_look": 4.0,
+	"turns_per_look": 1,
+	"time_offset": 5.0,
+	"camera": {
+		"projection": "orthographic",
+		"pitch": 12,
+		"distance": 6,
+		"view_height": 3.0
+	},
+	"subjects": [
+		{
+			"type": "armor_stand",
+			"nbt": "{ShowArms:1b,NoBasePlate:1b,Pose:{RightArm:[-15f,0f,10f],LeftArm:[-10f,0f,-10f]}}",
+			"equipment": {
+				"head": { "item": "minecraft:netherite_helmet", "enchantments": { "minecraft:protection": 4 } },
+				"chest": { "item": "minecraft:netherite_chestplate", "enchantments": { "minecraft:protection": 4 } },
+				"legs": { "item": "minecraft:netherite_leggings", "enchantments": { "minecraft:protection": 4 } },
+				"feet": { "item": "minecraft:netherite_boots", "enchantments": { "minecraft:protection": 4 } },
+				"mainhand": { "item": "minecraft:netherite_sword", "enchantments": { "minecraft:sharpness": 5 } }
+			}
+		}
+	],
+	"looks": [
+		{
+			"id": "vanilla",
+			"caption": "Vanilla",
+			"vanilla": true
+		},
+		{
+			"id": "armor_outline",
+			"caption": "Armor outline",
+			"outline": { "color": "#B05CFF", "thickness": 3 },
+			"gap_fix": "auto"
+		},
+		{
+			"id": "rainbow",
+			"caption": "Rainbow glint + rainbow outline",
+			"outline": { "color": { "mode": "rainbow" }, "thickness": 3 },
+			"glint": { "texture": "preset:rainbow" },
+			"gap_fix": "auto"
+		},
+		{
+			"id": "void_glow",
+			"caption": "Void glint + soft glow",
+			"outline": { "color": "#9B4DFF", "thickness": 6, "softness": 0.85, "opacity": 0.9 },
+			"glint": { "texture": "preset:void" },
+			"gap_fix": "auto"
+		}
+	]
+}

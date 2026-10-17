@@ -1,0 +1,73 @@
+{
+	"scene": "hero_sword",
+	"type": "turntable",
+	"width": 512,
+	"height": 512,
+	"supersample": 2,
+	"fps": 30,
+	"seconds_per_look": 3.0,
+	"turns_per_look": 1,
+	"time_offset": 5.0,
+	"camera": {
+		"projection": "orthographic",
+		"pitch": 25,
+		"distance": 4,
+		"view_height": 1.7
+	},
+	"lights": {
+		"key": [-0.45, 0.75, 0.6],
+		"fill": [0.65, 0.2, 0.45]
+	},
+	"subjects": [
+		{
+			"type": "item",
+			"item": {
+				"item": "minecraft:netherite_sword",
+				"enchantments": { "minecraft:sharpness": 5, "minecraft:unbreaking": 3, "minecraft:mending": 1 }
+			},
+			"rotation": [0, 0, 45],
+			"scale": 1.0
+		}
+	],
+	"looks": [
+		{
+			"id": "vanilla",
+			"caption": "Vanilla",
+			"vanilla": true
+		},
+		{
+			"id": "purple_outline",
+			"caption": "Static purple outline",
+			"outline": { "color": "#B05CFF", "thickness": 3 },
+			"gap_fix": "auto"
+		},
+		{
+			"id": "rainbow",
+			"caption": "Rainbow glint + rainbow outline",
+			"outline": { "color": { "mode": "rainbow", "speed": 1.0 }, "thickness": 3 },
+			"glint": { "texture": "preset:rainbow" },
+			"gap_fix": "auto"
+		},
+		{
+			"id": "fire",
+			"caption": "Fire glint + pulse outline",
+			"outline": { "color": { "mode": "pulse", "colors": ["#FF4A00", "#FFD23F"], "speed": 1.5 }, "thickness": 3 },
+			"glint": { "texture": "preset:fire" },
+			"gap_fix": "auto"
+		},
+		{
+			"id": "aurora",
+			"caption": "Aurora glint + gradient outline",
+			"outline": { "color": { "mode": "gradient", "colors": ["#3CFFB4", "#4B7BFF", "#C05CFF"], "speed": 1.0 }, "thickness": 3 },
+			"glint": { "texture": "preset:aurora" },
+			"gap_fix": "auto"
+		},
+		{
+			"id": "void_glow",
+			"caption": "Void glint + soft glow",
+			"outline": { "color": "#9B4DFF", "thickness": 6, "softness": 0.85, "opacity": 0.9 },
+			"glint": { "texture": "preset:void" },
+			"gap_fix": "auto"
+		}
+	]
+}

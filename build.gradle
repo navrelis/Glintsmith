@@ -37,10 +37,48 @@ repositories {
 	}
 }
 
+// Dev-only "studio" render mode (docs/STUDIO.md): its own source set and mod (glintsmith_studio). Nothing of it ends
+// up in the released jar, which is built from sourceSets.main only.
+sourceSets {
+	studio {
+		compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
+		runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
+	}
+}
+
 loom {
 	mods {
 		"glintsmith" {
 			sourceSet sourceSets.main
+		}
+		"glintsmith_studio" {
+			sourceSet sourceSets.studio
+		}
+	}
+
+	runs {
+		// ./gradlew runStudio -Pscene=<scene file, or the name of a scene in src/studio/resources/scenes>
+		studio {
+			client()
+			name = "Glintsmith Studio"
+			source sourceSets.studio
+			runDir "run-studio"
+			ideConfigGenerated false
+			property "glintsmith.studio.repo", projectDir.absolutePath
+			def scene = project.findProperty("scene")
+			if (scene != null) {
+				def sceneFile = file(scene.toString())
+				property "glintsmith.studio.scene", sceneFile.isFile() ? sceneFile.absolutePath : scene.toString()
+			}
+			def studioOut = project.findProperty("studioOut")
+			if (studioOut != null) {
+				property "glintsmith.studio.out", file(studioOut.toString()).absolutePath
+			}
+			// Optional local mod jars (git-ignored), so a scene can show items of other mods without a build dependency.
+			def extraMods = file("studio-mods").listFiles()?.findAll { it.isFile() && it.name.endsWith(".jar") }?.sort { it.name }
+			if (extraMods) {
+				property "fabric.addMods", extraMods.collect { it.absolutePath }.join(File.pathSeparator)
+			}
 		}
 	}
 }
@@ -81,6 +119,11 @@ processResources {
 	filesMatching("fabric.mod.json") {
 		expand "version": inputs.properties.version
 	}
+}
+
+// Compile the studio with every build so it cannot rot; it is never packaged.
+tasks.named("check") {
+	dependsOn tasks.named("studioClasses")
 }
 
 tasks.withType(JavaCompile).configureEach {
