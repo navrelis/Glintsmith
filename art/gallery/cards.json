@@ -129,7 +129,7 @@
      "type": "text",
      "at": [
       40,
-      426
+      422
      ],
      "width": 920,
      "text": "Outlines and glints are drawn on whatever the game renders: flat sprites, 3D models, shields, tridents and items from other mods; worn armor can be outlined too. Nothing to set up per item."
@@ -138,14 +138,14 @@
      "type": "rule",
      "at": [
       40,
-      484
+      506
      ]
     },
     {
      "type": "chips",
      "at": [
       40,
-      500
+      520
      ],
      "items": [
       "ADVANCED NETHERITE",
@@ -702,7 +702,7 @@
      "type": "text",
      "at": [
       40,
-      466
+      460
      ],
      "width": 920,
      "text": "Hands, other players and mobs, dropped items, item frames, worn armor and your inventory: every place an item is drawn has its own switch."
@@ -711,7 +711,7 @@
      "type": "text",
      "at": [
       40,
-      518
+      512
      ],
      "width": 920,
      "text": "Worn armor (shown here with its target switched on) and the inventory are off by default because they can get busy.",

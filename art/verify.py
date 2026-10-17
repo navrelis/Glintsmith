@@ -6,6 +6,8 @@
 1. PNG reader: every filter type and colour layout the game or the vanilla textures use decodes back exactly.
 2. Manifest: known element types (no drawn ones), positive crops, every picture inside its card, area-filter options,
    every capture is in SHOTLIST.md.
+2b. Contrast: every text colour the build sets on a background it uses (the art/README.md table, the label styles, the
+   named text colours, the colours the manifest asks for) has a WCAG contrast ratio of at least 4.5:1.
 3. Determinism: the logo files, the cards and the GIF are built twice (once from the captures in the repository,
    once from synthetic test captures) and must be byte-identical both times.
 4. Committed files: every image in docs/curseforge/img/ and the logo files equal a fresh build (an image whose
@@ -181,6 +183,102 @@ def test_manifest(manifest):
     check(len(lg.get("gif", {}).get("captures", [])) >= 2, "logo_animated.gif cross-fades at least two hero shots")
     for g in manifest.get("gifs", []):
         check(g["frames_dir"] in shotlist and "0001" in shotlist, "GIF frames %s/NNNN.png described in SHOTLIST.md" % g["frames_dir"])
+
+
+# ---------------------------------------------------------------------------------------- 2b. contrast
+
+MIN_CONTRAST = 4.5      # WCAG AA for body text; the gallery does not use the 3:1 allowance for large text
+
+
+def darkest_speck():
+    """The darkest colour lib.card() dithers onto the panel, read from a real card (text can sit on it)."""
+    c = lib.card(400, 240, seed=7)
+    best = None
+    for y in range(40, 200):
+        for x in range(40, 360):
+            px = c.get(x, y)
+            if best is None or lib.luminance(px) < lib.luminance(best):
+                best = px
+    return best
+
+
+def contrast_report(pairs):
+    """(failing descriptions, lowest ratio, text of every pair) for [(name, text colour, background)]."""
+    bad, low = [], 99.0
+    for name, fg, bg in pairs:
+        r = lib.contrast(fg, bg)
+        low = min(low, r)
+        if r < MIN_CONTRAST:
+            bad.append("%s %.2f" % (name, r))
+    return bad, low
+
+
+def test_contrast(manifest):
+    print("2b. contrast (WCAG, at least %.1f:1)" % MIN_CONTRAST)
+    speck = darkest_speck()
+    check(lib.luminance(speck) < lib.luminance(lib.PANEL), "darkest dither speck on a card is darker than the panel (%s)"
+          % "#%02x%02x%02x" % speck[:3])
+
+    # the table of art/README.md: one row per line
+    rows = [
+        ("TEXT on PANEL, speck, PANEL_DARK, PANEL_MID, PAGE", [
+            ("TEXT on PANEL", lib.TEXT, lib.PANEL), ("TEXT on the darkest speck", lib.TEXT, speck),
+            ("TEXT on PANEL_DARK", lib.TEXT, lib.PANEL_DARK), ("TEXT on PANEL_MID", lib.TEXT, lib.PANEL_MID),
+            ("TEXT on PAGE", lib.TEXT, lib.PAGE)]),
+        ("TEXT_DIM on PANEL, speck, PANEL_DARK", [
+            ("TEXT_DIM on PANEL", lib.TEXT_DIM, lib.PANEL), ("TEXT_DIM on the darkest speck", lib.TEXT_DIM, speck),
+            ("TEXT_DIM on PANEL_DARK", lib.TEXT_DIM, lib.PANEL_DARK)]),
+        ("INK on BORDER (brass chip)", [("INK on BORDER", lib.INK, lib.BORDER)]),
+        ("GOOD, BAD, GOLD_TEXT, ACCENT on PANEL", [
+            ("GOOD on PANEL", lib.GOOD, lib.PANEL), ("BAD on PANEL", lib.BAD, lib.PANEL),
+            ("GOLD_TEXT on PANEL", lib.GOLD_TEXT, lib.PANEL), ("ACCENT on PANEL", lib.ACCENT, lib.PANEL)]),
+        ("TITLE on PANEL and on the darkest speck (card headings)", [
+            ("TITLE on PANEL", lib.TITLE, lib.PANEL), ("TITLE on the darkest speck", lib.TITLE, speck)]),
+        ("INK on the grey-beige capture-missing slab", [
+            ("INK on MISSING_A", lib.INK, lib.MISSING_A), ("INK on MISSING_B", lib.INK, lib.MISSING_B)]),
+    ]
+    for title, pairs in rows:
+        bad, low = contrast_report(pairs)
+        check(not bad, "%s: lowest %.1f:1%s" % (title, low, "" if not bad else " -> below %.1f: %s" % (MIN_CONTRAST, "; ".join(bad))))
+
+    # label styles: the text colour of every style sits on the cream label box (lib.PANEL)
+    pairs = [("label style %s" % name, col, lib.PANEL) for name, (_tab, col) in sorted(build.LABEL_STYLES.items())]
+    bad, low = contrast_report(pairs)
+    check(not bad, "%d label styles (%s) on the label box PANEL: lowest %.1f:1%s" % (
+        len(pairs), ", ".join(n for n in sorted(build.LABEL_STYLES)), low, "" if not bad else " -> below %.1f: %s" % (MIN_CONTRAST, "; ".join(bad))))
+
+    # every named text colour on the card panel (and the darkest speck); the neutral ones also on the raised and recessed panels.
+    # "white" is the light-on-dark colour of the old theme: it is not used on a card and is not a card text colour.
+    neutral = ("text", "dim", "ink")
+    pairs = []
+    for name, col in sorted(lib.COLOURS.items()):
+        if name == "white":
+            continue
+        pairs += [("%s on PANEL" % name, col, lib.PANEL), ("%s on the darkest speck" % name, col, speck)]
+        if name in neutral:
+            pairs += [("%s on PANEL_MID" % name, col, lib.PANEL_MID), ("%s on PANEL_DARK" % name, col, lib.PANEL_DARK)]
+    bad, low = contrast_report(pairs)
+    check(not bad, "%d lib.COLOURS text colours on PANEL / speck / PANEL_MID / PANEL_DARK: lowest %.1f:1%s" % (
+        len(pairs), low, "" if not bad else " -> below %.1f: %s" % (MIN_CONTRAST, "; ".join(bad))))
+
+    # what cards.json really asks for: text and bullets colours on the card (and on a panel element they sit in), the GIF caption bar on PAGE
+    fills = {"dark": lib.PANEL_DARK, "mid": lib.PANEL_MID, "slate": lib.PANEL}
+    pairs = []
+    for card in manifest["cards"]:
+        panels = [(e["at"], e["size"], fills[e.get("fill", "dark")]) for e in card.get("elements", []) if e["type"] == "panel"]
+        for e in card.get("elements", []):
+            if e["type"] not in ("text", "bullets"):
+                continue
+            col = lib.colour(e.get("color", "text"))
+            x, y = e["at"]
+            beds = [lib.PANEL, speck] + [f for (px, py), (pw, ph), f in panels if px <= x < px + pw and py <= y < py + ph]
+            pairs += [("%s: %s text on %s" % (card["out"], e.get("color", "text"), "#%02x%02x%02x" % bg[:3]), col, bg) for bg in beds]
+    for g in manifest.get("gifs", []):
+        if g.get("caption_bar"):
+            pairs.append(("%s caption bar" % g["out"], lib.colour(g["caption_bar"].get("color", "text")), lib.PAGE))
+    bad, low = contrast_report(pairs)
+    check(pairs and not bad, "%d text colour / background pairs the manifest uses: lowest %.1f:1%s" % (
+        len(pairs), low, "" if not bad else " -> below %.1f: %s" % (MIN_CONTRAST, "; ".join(bad))))
 
 
 # ---------------------------------------------------------------------------------------- 3 + 4. builds
@@ -449,6 +547,7 @@ def main():
     manifest = common.load_manifest()
     test_reader()
     test_manifest(manifest)
+    test_contrast(manifest)
     test_builds(manifest)
     test_sizes(manifest)
     test_area()
