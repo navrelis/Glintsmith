@@ -86,10 +86,13 @@ def resolve_crop(crop, img_w, img_h):
     return int(x), int(y), int(w), int(h)
 
 
-def cut(img, crop, down=1, scale=1):
-    """The crop of a capture, box-downscaled by `down`, then scaled up by `scale` (whole factors only)."""
+def cut(img, crop, down=1, scale=1, size=None):
+    """The crop of a capture, then either box-downscaled by `down` and scaled up by `scale` (whole factors only), or,
+    when `size` [w, h] is given, resized to exactly that size with the area filter (`resample: "area"`)."""
     x, y, w, h = resolve_crop(crop, img.w, img.h)
     out = img.crop(x, y, w, h)
+    if size:
+        return out.area(int(size[0]), int(size[1]))
     if down > 1:
         out = out.down(down)
     if scale > 1:
@@ -97,8 +100,20 @@ def cut(img, crop, down=1, scale=1):
     return out
 
 
-def out_size(crop, down=1, scale=1):
+def out_size(crop, down=1, scale=1, size=None):
+    if size:
+        return (int(size[0]), int(size[1]))
     return (crop[2] // down * scale, crop[3] // down * scale)
+
+
+def picture_size(el):
+    """Size on the card of a capture element or GIF entry: `size` with `resample: "area"`, else crop / down * scale."""
+    return out_size(el["crop"], el.get("down", 1), el.get("scale", 1), el.get("size") if el.get("resample") == "area" else None)
+
+
+def cut_el(img, el):
+    """The picture of a capture element: crop, then the resampling the element asks for (see cut)."""
+    return cut(img, el["crop"], el.get("down", 1), el.get("scale", 1), el.get("size") if el.get("resample") == "area" else None)
 
 
 def write(folder, name, data):
@@ -118,4 +133,9 @@ def required_captures(manifest):
                 out.append((card["out"], el["capture"]))
     for gif in manifest.get("gifs", []):
         out.append((gif["out"], gif["frames_dir"] + "/NNNN.png"))
+    logo = manifest.get("logo")
+    if logo:
+        out.append(("logo.png, icon.png", logo["capture"]))
+        for rel in logo.get("gif", {}).get("captures", []):
+            out.append((logo["gif"]["out"], rel))
     return out

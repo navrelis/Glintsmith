@@ -43,3 +43,4 @@
 - 2026-10-17 T12b delegated, Sonnet, S (logo/icon/banner from captures, area resample, no drawn sparkles, gitignore captures).
 - 2026-10-17 T9 docs draft delegated, Sonnet, S (README, CHANGELOG, curseforge texts, comparison, DESIGN 5.6; in-game claims marked).
 - 2026-10-17 T9 draft, Sonnet, S, accepted as draft (lead read description/README; 11 VERIFY IN GAME markers; findings for T8: modelfix AUTO-off missing, AUTO tooltip overclaims, thickness Javadoc 0.5..8, fabric.mod.json minecraft range).
+- 2026-10-17 T12b, Sonnet, S, accepted (lead read lib.area/logo.py diff, verify.py all passed; drawn logo/sparkle/arrow removed; icon.png still hand-drawn until logo_sword capture exists).

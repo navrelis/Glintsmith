@@ -2,9 +2,9 @@
 
     1. Sources   the Minecraft 1.21.1 client jar (read at run time; nothing of it is stored in the repository)
     2. Palette   violet slate panel, brass frame, enchant-purple accent
-    3. Canvas    RGBA canvas: fill, frame, crop, integer scale, box downscale, alpha blit, PNG in / out
+    3. Canvas    RGBA canvas: fill, frame, crop, integer scale, box and area downscale, alpha blit, PNG in / out
     4. Text      the vanilla bitmap font (font/ascii.png from the jar), width, word wrap, paragraphs
-    5. Furniture card frame, panel, chip, heading, label, bay, placeholder, sparkle, arrow
+    5. Furniture card frame, panel, chip, heading, label, bay, placeholder
 
 The card frame, the text routines and the jar lookup are adapted from the MIT licensed showcase library of
 Lootr Remastered (art/showcase_lib.py, same author), re-implemented on a byte buffer so that 1920 x 1080
@@ -246,6 +246,63 @@ class Canvas:
             out.buf[y * ow * 4:(y + 1) * ow * 4] = orow
         return out
 
+    def area(self, ow, oh):
+        """Area-filter resize to ow x oh: every output pixel is the exact mean of the source area it covers, source
+        pixels cut by the edge of that area counting by their covered fraction (a box filter for any factor, not
+        only whole ones).  For a whole-number factor this equals down().  Integer arithmetic, so the result is
+        identical on every machine; a canvas with transparency is averaged weighted by alpha."""
+        assert ow >= 1 and oh >= 1, (ow, oh)
+        w, h = self.w, self.h
+        if (ow, oh) == (w, h):
+            return Canvas(w, h, buf=bytearray(self.buf))
+        if w % ow == 0 and h % oh == 0 and w // ow == h // oh:
+            return self.down(w // ow)
+        xt, yt = _taps(w, ow), _taps(h, oh)
+        total = w * h
+        opaque = self.opaque()
+        chans = (0, 1, 2) if opaque else (0, 1, 2, 3)
+        out = Canvas(ow, oh)
+        stride = w * 4
+        cache = {}
+
+        def hsums(y):
+            """Weighted horizontal sums of source row y: one list per channel (premultiplied if not opaque)."""
+            if y not in cache:
+                row = self.buf[y * stride:(y + 1) * stride]
+                al = row[3::4]
+                planes = []
+                for ch in chans:
+                    plane = row[ch::4]
+                    if not opaque and ch < 3:
+                        plane = [p * a for p, a in zip(plane, al)]
+                    planes.append([sum([wt * plane[j] for j, wt in taps]) for taps in xt])
+                cache[y] = planes
+            return cache[y]
+
+        half = total // 2
+        for oy, taps in enumerate(yt):
+            for stale in [k for k in cache if k < taps[0][0]]:
+                del cache[stale]
+            acc = None
+            for sy, wt in taps:
+                planes = hsums(sy)
+                if acc is None:
+                    acc = [[wt * v for v in pl] for pl in planes]
+                else:
+                    acc = [[a + wt * v for a, v in zip(ar, pl)] for ar, pl in zip(acc, planes)]
+            base = oy * ow * 4
+            if opaque:
+                for ch in range(3):
+                    out.buf[base + ch:base + ow * 4:4] = bytes([(v + half) // total for v in acc[ch]])
+                out.buf[base + 3:base + ow * 4:4] = bytes([255]) * ow
+            else:
+                alpha = acc[3]
+                for ch in range(3):
+                    out.buf[base + ch:base + ow * 4:4] = bytes(
+                        [(v + a // 2) // a if a else 0 for v, a in zip(acc[ch], alpha)])
+                out.buf[base + 3:base + ow * 4:4] = bytes([(a + half) // total for a in alpha])
+        return out
+
     def blit(self, src, x, y):
         """Draw src at (x, y): transparent pixels are skipped, half-transparent ones blended."""
         for sy in range(max(0, -y), min(src.h, self.h - y)):
@@ -294,6 +351,16 @@ class Canvas:
     def open(path, max_rows=None):
         with open(path, "rb") as f:
             return Canvas.from_png(f.read(), max_rows)
+
+
+def _taps(n, m):
+    """Area-filter taps for resizing a line of n pixels to m: per output pixel a list of (source index, weight).
+    Weights are integers (overlap of the two pixel grids scaled by n * m) and add up to n."""
+    out = []
+    for i in range(m):
+        lo, hi = i * n, (i + 1) * n
+        out.append([(j, min(hi, (j + 1) * m) - max(lo, j * m)) for j in range(lo // m, (hi - 1) // m + 1)])
+    return out
 
 
 def noise(seed):
@@ -530,38 +597,4 @@ def placeholder(w, h, name):
     for line in lines:
         text_centred(c, w // 2, y, line, rgb("f0eef4"), scale, shadow=rgb("1c1b21"))
         y += 8 * scale + 6
-    return c
-
-
-def sparkle(canvas, x, y, k=4, big=True, ramp=None):
-    """A glint like the ones on the logo: a plus of k-pixel blocks (big) or a single block."""
-    ramp = ramp or VIOLET
-    if big:
-        for dx, dy in ((0, -1), (-1, 0), (1, 0), (0, 1)):
-            canvas.rect(x + dx * k, y + dy * k, k, k, ramp[3])
-        canvas.rect(x, y, k, k, ramp[5])
-    else:
-        canvas.rect(x, y, k, k, ramp[2])
-
-
-def arrow(length=96, k=4, col=None, shade=None):
-    """A blocky arrow pointing right in k-pixel steps with a dark outline, on a transparent canvas."""
-    col, shade = colour(col, BORDER_LIGHT), colour(shade, BORDER_DARK)
-    head = 5
-    c = Canvas(length + 2 * k, (2 * head + 1) * k + 2 * k)
-    body = set()
-    cells = length // k
-    for i in range(cells - head):
-        for j in (-1, 0, 1):
-            body.add((i, j))
-    for i in range(head + 1):
-        for j in range(-(head - i), head - i + 1):
-            body.add((cells - head - 1 + i, j))
-    for (i, j) in body:
-        lit = (i, j - 1) not in body
-        c.rect(k + i * k, k + (j + head) * k, k, k, BRASS[5] if lit else col)
-    for (i, j) in body:
-        for di, dj in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            if (i + di, j + dj) not in body:
-                c.rect(k + (i + di) * k, k + (j + dj + head) * k, k, k, shade)
     return c

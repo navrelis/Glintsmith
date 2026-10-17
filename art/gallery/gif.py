@@ -60,7 +60,7 @@ def bar(width, height, text, scale, colour):
 def build_gif(spec, captures, report, log=None):
     """Returns the GIF as bytes."""
     crop, down, scale = spec["crop"], spec.get("down", 1), spec.get("scale", 1)
-    w, h = common.out_size(crop, down, scale)
+    w, h = common.picture_size(spec)
     cap = spec.get("caption_bar")
     bar_h = cap["height"] if cap else 0
     files = frame_files(captures, spec["frames_dir"])
@@ -104,7 +104,7 @@ def encode(spec, captures, files, step, fps, dims, log):
             size = (fw, fh)
         elif (fw, fh) != size:
             sys.exit("error: frame %s is %dx%d but the first one is %dx%d" % (name, fw, fh, size[0], size[1]))
-        pic = common.cut(img, [x, y, cw, ch], down, scale)
+        pic = common.cut_el(img, dict(spec, crop=[x, y, cw, ch]))
         if cap:
             full = Canvas(w, h + bar_h)
             full.blit(pic, 0, 0)

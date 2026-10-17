@@ -18,3 +18,5 @@
 - 2026-10-17 Vanilla font/textures are read from the Minecraft jar at image build time and never committed: same practice as the Obscura preview tools.
 - 2026-10-17 Raw in-game captures (`art/captures/**`) stay local and git-ignored; only the composed gallery images are committed: 38 stills + 280 GIF frames would add several hundred MB to the repo.
 - 2026-10-17 Owner: no pixel art anywhere, real renders only (method left to the lead). Logo, icon, banner hero, cards and GIF all come from in-game renders of the mod (narrow-FOV hero close-ups on a dark backdrop); the hand-drawn logo committed in a816b40 is replaced. No Blender: not installed, and a download is not needed.
+- 2026-10-17 fabric.mod.json depends on minecraft "1.21.1" exactly (not ~1.21.1): mixins target 1.21.1 internals; 1.21.2+ changed rendering.
+- 2026-10-17 T9 docs drafted before the in-game test with VERIFY IN GAME markers; a final pass removes them after T10: saves wall-clock time, claims stay checked.

@@ -2,11 +2,15 @@
 
 Everything that makes the CurseForge page images and the mod icon.
 
-* **The gallery** (`docs/curseforge/img/banner.png`, `card_*.png`, `showcase.gif`) is composed from **in-game captures of the
-  real mod running**: screenshots of Minecraft with Glintsmith, cropped, scaled by whole factors and set into framed cards.
-  Nothing in it is drawn or simulated; a picture slot whose capture is missing shows a grey "capture missing" placeholder.
-* **The logo** (`art/logo/`, the mod icon, `logo_animated.gif`) is **original pixel art** drawn by `art/logo.py`. It contains
-  no Minecraft pixels; it is the mod's identity.
+**No pixel art, no drawn art, anywhere.** Every picture is a real in-game render: a screenshot of Minecraft with Glintsmith
+running. The only things set by code are layout: the card frame and panels, and text in the game's own font.
+
+* **The gallery** (`docs/curseforge/img/banner.png`, `card_*.png`, `showcase.gif`) is composed from in-game captures: cropped,
+  scaled (by whole factors, or with the area filter) and set into framed cards. A picture slot whose capture is missing shows a
+  grey "capture missing" placeholder.
+* **The logo, the mod icon and `logo_animated.gif`** are cut from captures too: the logo and the icon from `logo_sword.png`
+  (an enchanted sword with a custom glint and outline on a black backdrop), the animated logo from the hero shots of three
+  glint presets. The banner is the `hero_sword_rainbow` render plus a strip from `hero_lineup`.
 
 Python 3 standard library only (`py -B ...` on this machine; `python` is not on the PATH). PNG is written with `zlib` + `struct`,
 GIF with our own LZW encoder and median-cut palette (`imgio.py`). Output is byte-identical from run to run (no timestamps, fixed seeds).
@@ -14,11 +18,14 @@ GIF with our own LZW encoder and median-cut palette (`imgio.py`). Output is byte
 ## Workflow
 
 ```
-1. capture      follow art/gallery/SHOTLIST.md; save the PNGs as art/captures/<name>.png (and art/captures/showcase/0001.png ...)
+1. capture      follow art/gallery/SHOTLIST.md (the hero shots first); save the PNGs as art/captures/<name>.png
+                (and art/captures/showcase/0001.png ...). art/captures/ is git-ignored: real captures are never committed
 2. look         py -B art/gallery/build.py --list      which captures exist, which are missing
 3. build        py -B art/gallery/build.py             writes docs/curseforge/img/*.png and showcase.gif
                 py -B art/gallery/build.py --strict    the same, but exit 1 if any capture is missing (use before a release)
-4. adjust       open the cards; move a crop in art/gallery/cards.json where the subject is off; build again
+                py -B art/logo.py                      the logo, the mod icon and logo_animated.gif from the hero shots
+4. adjust       open the cards; move a crop in art/gallery/cards.json where the subject is off (the logo crop is the
+                "logo" section of the same file); build again
 5. verify       py -B art/verify.py
 ```
 
@@ -29,22 +36,44 @@ py -B art/gallery/build.py --only card_gap_fix            only the images whose 
 py -B art/gallery/build.py --captures DIR --out DIR       read the captures from / write the images to other folders
 py -B art/gallery/gif.py                                  only the showcase GIF (build.py calls it too; --no-gif skips it)
 py -B art/gallery/synth.py DIR                            synthetic stand-ins for every capture, to test the layout (see below)
-py -B art/logo.py [--out DIR]                             the logo, the mod icon and logo_animated.gif
+py -B art/logo.py [--captures DIR] [--out DIR] [--strict] [--no-gif]
+                                                          the logo, the mod icon and logo_animated.gif
 ```
 
 Always run Python with `-B` so no `__pycache__` is left in `art/` (every script also sets `sys.dont_write_bytecode`).
+
+### The logo, the icon and the animated logo
+
+`py -B art/logo.py` reads `art/captures/logo_sword.png` (1920 x 1080, the sword centred, see the shot list) and cuts a square from
+it: by default the centred square of the full height (1080 x 1080). The square can be moved or tightened in the `logo` section of
+`gallery/cards.json` (`crop.centre` [x, y] in capture pixels, `"c"` for the middle; `crop.size` in pixels or `"full"`); a square that
+would leave the picture is moved inside it. The square is resized with the **area filter** (`Canvas.area`: every output pixel is the
+exact mean of the source area it covers, partly covered source pixels by their fraction; for whole factors it equals `down`) to
+
+* `art/logo/logo_512.png` (512 x 512), the logo,
+* `src/main/resources/assets/glintsmith/icon.png` (128 x 128), the mod icon,
+* `art/logo/logo_32.png` (32 x 32).
+
+`docs/curseforge/img/logo_animated.gif` (128 x 128) is built from `hero_sword_rainbow.png`, `hero_sword_void.png` and
+`hero_sword_fire.png`: the same square crop of each, every look held 14 frames, then 6 frames of cross-fade to the next, the last
+back into the first, 5 cs per frame, 60 frames. The numbers are in the `logo.gif` entry.
+
+If a capture is missing the script says which one, writes nothing for it and exits 0 (1 with `--strict`); the committed `icon.png`
+is never touched by that. A GIF with any of its three hero shots missing is skipped the same way.
 
 ### Missing captures are never faked
 
 `build.py` draws a clearly marked grey slab, "capture missing: <file name>", where a capture is not there, prints one warning per
 file and carries on; with `--strict` it exits 1 afterwards. `gif.py` does the same with a one-frame grey GIF when
-`art/captures/showcase/` has no frames. The repository ships in that state until the captures exist.
+`art/captures/showcase/` has no frames. `logo.py` writes nothing (see above). The repository ships in that state until the
+captures exist; `build.py --list` shows every capture, including the hero shots and the logo capture, and which ones are missing.
 
 ### Testing the layout without captures
 
 `py -B art/gallery/synth.py DIR` writes a 1920 x 1080 stand-in for every capture the manifest names (a gradient with a coordinate
-grid, a diagonal bar, the file name and the words "SYNTHETIC TEST CAPTURE") and 40 numbered GIF frames. Build from it with
-`build.py --captures DIR --out DIR2` and look at `DIR2` to check crops, scales, labels and spacing. The grid labels show which source
+grid, a diagonal bar, the file name and the words "SYNTHETIC TEST CAPTURE"; the manifest names the hero shots and the logo capture
+too) and 40 numbered GIF frames. Build from it with `build.py --captures DIR --out DIR2` and `logo.py --captures DIR --out DIR3` and
+look at `DIR2` / `DIR3` to check crops, scales, labels and spacing. The grid labels show which source
 pixels a crop picks. These files are only ever written to a folder you name (use a temp folder); they carry the text in a PNG
 chunk and `verify.py` fails if one ends up in `art/captures/`.
 
@@ -52,15 +81,15 @@ chunk and `verify.py` fails if one ends up in `art/captures/`.
 
 | File | What it does |
 | --- | --- |
-| `gallery/cards.json` | Manifest of every gallery image: output name, size, title, and a list of elements (captures with crop / scale / position / label, text, bullets, chips, panels, logo, ...), plus the GIF entry. |
+| `gallery/cards.json` | Manifest of every gallery image: output name, size, title, and a list of elements (captures with crop / resampling / position / label, text, bullets, chips, panels, ...), the `logo` section (logo capture, square crop, animated logo) and the GIF entry. |
 | `gallery/build.py` | Reads the manifest and the captures, writes the PNGs. |
 | `gallery/gif.py` | Builds `showcase.gif` from `art/captures/showcase/NNNN.png`: crop, optional whole-number scale, every n-th frame, caption bar in the game font, one global palette with delta frames, loops forever, below 8 MB (raises the step by itself if needed). |
 | `gallery/synth.py` | Synthetic test captures (see above). |
-| `gallery/common.py` | Manifest and capture loading, crop / scale helpers, the missing-capture report. |
-| `gallery/SHOTLIST.md` | Every capture: rig, world, scene, camera, config values, file name. |
-| `lib.py` | RGBA canvas (fill, frame, crop, nearest-neighbour scale, box downscale, alpha blit, PNG in and out), the vanilla font, word wrap, the card frame, chips, labels, bays, placeholder. |
+| `gallery/common.py` | Manifest and capture loading, crop / scale / area-resample helpers, the missing-capture report. |
+| `gallery/SHOTLIST.md` | Every capture: rig, world, scene, camera, config values, file name, including the seven hero shots. |
+| `lib.py` | RGBA canvas (fill, frame, crop, nearest-neighbour scale, box and area downscale, alpha blit, PNG in and out), the vanilla font, word wrap, the card frame, chips, labels, bays, placeholder. |
 | `imgio.py` | PNG writer and reader (8-bit RGB / RGBA of every filter type, which is what the game writes; palette and grey for the vanilla font), GIF89a writer with LZW, median-cut quantiser with delta frames, and a small GIF decoder used by `verify.py`. |
-| `logo.py` | The 32 x 32 logo, its 512 and 128 versions and the animated icon. |
+| `logo.py` | Logo, icon and animated logo from the captures (square crop, area filter, cross-fade GIF). |
 | `verify.py` | The checks below. |
 
 ### The manifest
@@ -70,14 +99,14 @@ Element types:
 
 | `type` | Keys |
 | --- | --- |
-| `capture` | `capture` (file in `art/captures`), `crop` [x, y, w, h] in source pixels (x or y may be `"c"` to centre), optional `down` (box downscale by a whole factor, applied first), `scale` (whole-number upscale), `at` [x, y] (top left of the picture), `frame` (default true: a 3 px brass rim over the picture edge), `label`, `label_style` (accent, good, bad, dim, gold), `label_at` (tl, tr, bl, br) |
+| `capture` | `capture` (file in `art/captures`), `crop` [x, y, w, h] in source pixels (x or y may be `"c"` to centre), optional `down` (box downscale by a whole factor, applied first), `scale` (whole-number upscale), or instead `resample: "area"` with `size` [w, h] (the crop is resized to exactly that size with the area filter; use it for hero shots that are scaled down by a non-whole factor), `at` [x, y] (top left of the picture), `frame` (default true: a 3 px brass rim over the picture edge), `label`, `label_style` (accent, good, bad, dim, gold), `label_at` (tl, tr, bl, br) |
 | `label` | `at`, `text`, `style` |
 | `text` | `at`, `width`, `text`, `size` (whole scale, default 2), `color` (text, dim, accent, gold, good, bad or `#rrggbb`), `align` (left: `at.x` is the left edge; centre: the middle; right: the right edge), `leading` |
 | `bullets` | `at`, `width`, `items`, `size`, `gap` |
 | `chips` | `at`, `align`, `items` (strings or `{text, style}`; style accent or brass), `gap` |
-| `rule`, `panel`, `heading`, `strip`, `logo`, `arrow`, `sparkle` | see `build.py` |
+| `rule`, `panel`, `heading`, `strip` | see `build.py` (layout only; there are no drawn decorations) |
 
-Picture size on the card is `crop size / down * scale`, so pictures stay on whole pixels. For captures taken at **GUI scale 2**,
+Picture size on the card is `crop size / down * scale`, or `size` with `resample: "area"` (the crop must have the same shape as `size`), so pictures stay on whole pixels. For captures taken at **GUI scale 2**,
 `down: 2` is lossless: one GUI pixel becomes one card pixel and the game's text stays crisp. The card text uses only ASCII, set in the game's own
 font read from the Minecraft 1.21.1 client jar at build time.
 
@@ -90,12 +119,20 @@ The `gifs` entry takes `frames_dir`, `crop`, `down`, `scale`, `step` (keep every
 
 * the PNG reader decodes every filter type, RGB, RGBA and a 1-bit palette image exactly, and rejects garbage;
 * the manifest only uses known elements, every picture box lies inside its card, and every capture is described in `SHOTLIST.md`;
-* the logo files, the cards and the GIF are built twice, from the captures in the repository and from synthetic ones, and come out
+* the area filter averages exactly (a 4 x 4 image becomes the 2 x 2 block means, 3 -> 2 weights by covered fraction, a flat colour
+  stays flat, transparent pixels do not darken, whole factors equal the box downscale), and the logo crop picks the centred square
+  of the full height by default;
+* the logo files, the cards and the GIFs are built twice, from the captures in the repository and from synthetic ones, and come out
   byte-identical both times, and the synthetic build draws no placeholder;
-* every committed image is byte-identical to a fresh build (an image whose captures are not on this machine is reported as skipped, not failed);
-* sizes: cards and banner as in the manifest (at most 1000 px wide), logo 32 / 512, icon 128, `logo_512.png` and the icon are exact
-  whole-number scalings of the native logo, the animated logo is 128 x 128, 40 frames at 20 fps, below 1 MB, loops forever and
-  its last frame leads seamlessly into the first, the showcase GIF has the manifest size, loops forever and is below 8 MB;
+* from a synthetic capture: `logo_512.png` and `icon.png` are the area-filtered square crop byte for byte, 512 / 128 / 32 px; the
+  animated logo is 128 x 128, 60 frames, constant delay, loops forever, below 1 MB, and cross-fades the last hero shot back into the first;
+* `logo.py` without `logo_sword.png` prints the missing capture, writes nothing and exits 0 (1 with `--strict`), and leaves the committed
+  `icon.png` untouched;
+* every committed image is byte-identical to a fresh build (an image whose captures are not on this machine is reported as skipped, not
+  failed; a warning is printed while `icon.png` is still the hand-drawn one of the first commit);
+* sizes: cards and banner as in the manifest (at most 1000 px wide), the showcase GIF has the manifest size, loops forever and is below 8 MB;
+* the manifest has no drawn elements (`logo`, `sparkle`, `arrow`), area-filter pictures are downscales of the same shape, and the banner
+  is made of the hero shots;
 * an impossible GIF size limit ends the build with an error instead of an oversized file;
 * every script imports only the standard library and no `__pycache__` exists below `art/`; no synthetic capture is in `art/captures/`.
 
@@ -103,15 +140,15 @@ The `gifs` entry takes `frames_dir`, `crop`, `down`, `scale`, `step` (keep every
 
 | Path | Size | What |
 | --- | --- | --- |
-| `art/logo/logo_native.png` | 32 x 32 | the logo: a sword with a one pixel rainbow outline on a dark violet tile |
-| `art/logo/logo_512.png` | 512 x 512 | the logo at x16 |
-| `src/main/resources/assets/glintsmith/icon.png` | 128 x 128 | the mod icon (the logo at x4) |
-| `docs/curseforge/img/logo_animated.gif` | 128 x 128, 40 frames, 2 s | the icon with the outline hue cycling and a glint running along the blade |
-| `docs/curseforge/img/banner.png` | 1000 x 420 | logo, title, tagline, chips and a real capture strip |
+| `art/logo/logo_512.png` | 512 x 512 | the logo, from `logo_sword.png` (not in the repository until the capture exists) |
+| `art/logo/logo_32.png` | 32 x 32 | the small logo |
+| `src/main/resources/assets/glintsmith/icon.png` | 128 x 128 | the mod icon, from `logo_sword.png` |
+| `docs/curseforge/img/logo_animated.gif` | 128 x 128, 60 frames | cross-fade of the rainbow, void and fire hero shots |
+| `docs/curseforge/img/banner.png` | 1000 x 420 | the `hero_sword_rainbow` render, title, tagline, chips and the `hero_lineup` strip |
 | `docs/curseforge/img/card_universal.png` | 1000 x 590 | vanilla and modded items, 3D shields and tridents, all outlined |
 | `docs/curseforge/img/card_glint_presets.png` | 1000 x 590 | the glint presets, captured, with the vanilla glint as the before |
 | `docs/curseforge/img/card_outline_styles.png` | 1000 x 590 | vanilla, static, rainbow, pulse, gradient, per enchantment, thickness, soft glow |
-| `docs/curseforge/img/card_targets.png` | 1000 x 590 | hand, third person, armor, dropped items, item frames, inventory |
+| `docs/curseforge/img/card_targets.png` | 1000 x 590 | hand and armor (hero shots), third person, dropped items, item frames, inventory |
 | `docs/curseforge/img/card_gap_fix.png` | 1000 x 590 | before / after of the gap fix, vanilla and modded item |
 | `docs/curseforge/img/card_rules.png` | 1000 x 590 | the rule list and the rule editor |
 | `docs/curseforge/img/card_config.png` | 1000 x 590 | the settings screen, Outline and Glint tabs |
@@ -120,8 +157,8 @@ The `gifs` entry takes `frames_dir`, `crop`, `down`, `scale`, `step` (keep every
 
 ## Licence and sources
 
-* **The logo** (`logo.py` and its outputs, the mod icon) is original pixel art, released under the MIT licence of the repository (see `LICENSE`).
-* **The gallery images** show Minecraft and the textures and models of the mods in the test pack as gameplay screenshots. They are
+* **The logo and the icon** are screenshots of the running mod (an enchanted sword), cut and resized by `logo.py`; they are not drawn.
+* **The gallery images and the animated logo** show Minecraft and the textures and models of the mods in the test pack as gameplay screenshots. They are
   screenshots of the running game, not redistributed assets, and nothing from the game is committed as a file other than those screenshots.
 * **The vanilla font** is read from your own Minecraft 1.21.1 client jar every time the gallery is built (`GLINTSMITH_MC_JAR`, else
   the Loom cache under `.gradle/loom-cache/minecraftMaven/` or `~/.gradle/caches/fabric-loom/1.21.1/`). It is never extracted or committed.

@@ -10,12 +10,23 @@
    "seed": 3,
    "elements": [
     {
-     "type": "logo",
+     "type": "capture",
+     "capture": "hero_sword_rainbow.png",
+     "crop": [
+      "c",
+      "c",
+      1080,
+      1080
+     ],
+     "size": [
+      180,
+      180
+     ],
+     "resample": "area",
      "at": [
       42,
       34
-     ],
-     "scale": 5
+     ]
     },
     {
      "type": "heading",
@@ -54,65 +65,22 @@
     },
     {
      "type": "capture",
-     "capture": "banner_strip.png",
+     "capture": "hero_lineup.png",
      "crop": [
       "c",
       "c",
+      1832,
+      200
+     ],
+     "size": [
       916,
       100
      ],
+     "resample": "area",
      "at": [
       42,
       288
      ]
-    },
-    {
-     "type": "sparkle",
-     "at": [
-      960,
-      56
-     ],
-     "big": true
-    },
-    {
-     "type": "sparkle",
-     "at": [
-      900,
-      130
-     ],
-     "big": false
-    },
-    {
-     "type": "sparkle",
-     "at": [
-      712,
-      36
-     ],
-     "big": false
-    },
-    {
-     "type": "sparkle",
-     "at": [
-      236,
-      238
-     ],
-     "big": true
-    },
-    {
-     "type": "sparkle",
-     "at": [
-      972,
-      238
-     ],
-     "big": false
-    },
-    {
-     "type": "sparkle",
-     "at": [
-      300,
-      26
-     ],
-     "big": false
     }
    ]
   },
@@ -617,21 +585,25 @@
    "elements": [
     {
      "type": "capture",
-     "capture": "target_first_person.png",
+     "capture": "hero_firstperson.png",
      "crop": [
-      1200,
-      600,
+      "c",
+      "c",
+      1920,
+      1038
+     ],
+     "size": [
       296,
       160
      ],
+     "resample": "area",
      "at": [
       40,
       108
      ],
      "label": "First person",
      "label_style": "accent",
-     "label_at": "bl",
-     "down": 1
+     "label_at": "bl"
     },
     {
      "type": "capture",
@@ -653,21 +625,25 @@
     },
     {
      "type": "capture",
-     "capture": "target_armor.png",
+     "capture": "hero_armor.png",
      "crop": [
       "c",
       "c",
+      1480,
+      800
+     ],
+     "size": [
       296,
       160
      ],
+     "resample": "area",
      "at": [
       664,
       108
      ],
      "label": "Armor",
      "label_style": "accent",
-     "label_at": "bl",
-     "down": 1
+     "label_at": "bl"
     },
     {
      "type": "capture",
@@ -1085,6 +1061,29 @@
    ]
   }
  ],
+ "logo": {
+  "comment": "The logo, the mod icon and logo_animated.gif come from captures, never from drawing. crop.centre is [x, y] in capture pixels (\"c\" = middle), crop.size a pixel count or \"full\" (the full height); the square is area-filtered to 512 / 128 / 32 px. The GIF cross-fades the gif.captures (each held `hold` frames, then `fade` frames to the next, last back to first) in the same square crop.",
+  "capture": "logo_sword.png",
+  "crop": {
+   "centre": [
+    "c",
+    "c"
+   ],
+   "size": "full"
+  },
+  "gif": {
+   "out": "logo_animated.gif",
+   "captures": [
+    "hero_sword_rainbow.png",
+    "hero_sword_void.png",
+    "hero_sword_fire.png"
+   ],
+   "size": 128,
+   "hold": 14,
+   "fade": 6,
+   "delay_cs": 5
+  }
+ },
  "gifs": [
   {
    "out": "showcase.gif",

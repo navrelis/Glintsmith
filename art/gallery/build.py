@@ -48,8 +48,7 @@ def anchor_x(x, width, align):
 
 
 def el_capture(c, el, ctx):
-    crop, down, scale = el["crop"], el.get("down", 1), el.get("scale", 1)
-    w, h = common.out_size(crop, down, scale)
+    w, h = common.picture_size(el)
     x, y = el["at"]
     img = ctx.captures.get(el["capture"])
     if img is None:
@@ -57,7 +56,7 @@ def el_capture(c, el, ctx):
         pic = lib.placeholder(w, h, el["capture"])
     else:
         pic = Canvas(w, h, lib.PANEL_DARK)
-        pic.blit(common.cut(img, crop, down, scale), 0, 0)
+        pic.blit(common.cut_el(img, el), 0, 0)
     c.blit(pic, x, y)
     edge = el.get("edge", 3)
     if el.get("frame", True) and edge:
@@ -155,34 +154,9 @@ def el_strip(c, el, ctx):
     c.blit(strip, x, y)
 
 
-def el_logo(c, el, ctx):
-    x, y = el["at"]
-    logo = Canvas.open(os.path.join(lib.ART, "logo", "logo_native.png")).scaled(el.get("scale", 5))
-    edge = el.get("edge", 4)
-    n = logo.w + 2 * edge + 4
-    framed = Canvas(n + 6, n + 6)
-    framed.rect(6, 6, n, n, lib.RIM)
-    framed.blit(lib.panel(n, n, lib.RIM, lib.BORDER, edge), 0, 0)
-    framed.hline(0, 0, n, lib.BORDER_LIGHT)
-    framed.vline(0, 0, n, lib.BORDER_LIGHT)
-    framed.blit(logo, edge + 2, edge + 2)
-    c.blit(framed, x, y)
-
-
-def el_arrow(c, el, ctx):
-    x, y = el["at"]
-    c.blit(lib.arrow(el.get("length", 96), el.get("k", 4)), x, y)
-
-
-def el_sparkle(c, el, ctx):
-    x, y = el["at"]
-    lib.sparkle(c, x, y, el.get("k", 4), el.get("big", True))
-
-
 ELEMENTS = {
     "capture": el_capture, "label": label, "text": el_text, "bullets": el_bullets, "chips": el_chips, "rule": el_rule,
-    "panel": el_panel, "heading": el_heading, "strip": el_strip, "logo": el_logo, "arrow": el_arrow,
-    "sparkle": el_sparkle,
+    "panel": el_panel, "heading": el_heading, "strip": el_strip,
 }
 
 

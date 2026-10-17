@@ -50,3 +50,7 @@ graphify-out/cache/
 
 # local in-game test tooling
 .dev/
+
+# in-game captures for the art pipeline (real screenshots, kept out of the repository)
+art/captures/*
+!art/captures/.gitkeep

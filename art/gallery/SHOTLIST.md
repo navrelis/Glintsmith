@@ -1,11 +1,12 @@
 # Glintsmith capture shot list
 
 Every image of the CurseForge gallery is built from in-game captures of the real mod running (see `art/README.md`).
-This file lists every capture that `art/gallery/cards.json` asks for: 38 stills and 280 GIF frames. Capture them,
+This file lists every capture that `art/gallery/cards.json` asks for: 42 stills (7 of them hero shots, which also make the logo, the icon and the banner) and 280 GIF frames. Capture them,
 save them as PNG under `art/captures/` with exactly these names, then run `py -B art/gallery/build.py --strict`.
 `py -B art/gallery/build.py --list` prints the same names and tells you which ones are still missing.
 
-Nothing here may be faked or composited: a capture is one unedited 1920 x 1080 screenshot of the game.
+Nothing here may be faked, drawn or composited: a capture is one unedited 1920 x 1080 screenshot of the game. The logo, the mod icon and the banner are
+cut from captures too (section 3, "Hero shots"); there is no drawn art anywhere in the gallery.
 
 ## 0. Rig
 
@@ -25,6 +26,20 @@ Nothing here may be faked or composited: a capture is one unedited 1920 x 1080 s
 
 Coordinates: `/tp @s X Y Z YAW PITCH` with **Y = feet**, eye = Y + 1.62, yaw 0 = south (+Z), 90 = west (-X), 180 = north (-Z),
 -90 = east (+X), pitch positive = looking down. "d" is the distance from the camera to the subject.
+
+### Hero shots rig (differs from the table above)
+
+The seven hero shots (section 3, "Hero shots") are product photos, not showroom shots, and use their own rig:
+
+| Setting | Value |
+| --- | --- |
+| FOV | **25** (20 to 30 is fine; 30 is the slider minimum, anything lower needs the FOV override of the test harness). The distances below are for 25; at another FOV scale them by tan(12.5 deg) / tan(FOV / 2) |
+| Backdrop | black concrete: the hero room H (section 1) is a closed box of `black_concrete`, nothing else in frame |
+| Light | light blocks (level 15) **out of frame** (behind or above the camera, never in the picture), `/time set midnight`, so the glint and the outline are the brightest things on screen |
+| HUD | F1 (hidden), GUI hidden, no crosshair, mouse pointer parked at the very top left |
+| Resolution | 1920 x 1080 framebuffer, unscaled |
+| Framing | the subject is **centred** and leaves a margin of at least 10 percent of the height on every side, so a centred square crop of the full height (1080 x 1080) and a 16 : 9 crop both work |
+| Everything else | as the rig above: no resource packs, offline Steve, Sodium on, shaders off, view bobbing off |
 
 ## 1. World and rooms
 
@@ -62,6 +77,19 @@ oak floor, stripped dark oak corner columns and an invisible ceiling of light bl
 /fill 23 100 47 23 108 47 minecraft:stripped_dark_oak_log
 /fill 2 108 34 22 108 46 minecraft:light[level=13]
 ```
+
+Room H (the hero studio, z 64..80) is a plain black box; its light blocks sit behind the camera positions of the hero shots:
+
+```
+/fill 0 98 64 24 109 80 minecraft:black_concrete hollow
+/setblock 12 104 68 minecraft:light[level=15]
+/setblock 9 104 70 minecraft:light[level=15]
+/setblock 12 104 73 minecraft:light[level=15]
+/time set midnight
+```
+
+The light blocks stay behind the camera lines of the hero shots below (z 67 and further south); if one shows up in a picture, move it.
+Frames for hero shots are invisible: add `Invisible:1b` to the frame summon.
 
 The walking floor is y = 100. Light blocks are invisible unless you hold one. Use `/gamemode spectator` for the camera shots that
 say "spectator" (no hand, free flying) and `/gamemode creative` or `survival` where a shot says so.
@@ -128,17 +156,38 @@ Colours: violet `#D088FC` (default), amber `#FF8A1F`, ice `#7DE8FF`, gold `#FFD3
 
 Changing `gapFix` needs a resource reload (F3 + T, wait until it is done).
 
-## 3. Stills (38)
+## 3. Stills (42)
 
 All camera lines assume the rooms above. "Crop" is where the card looks (source pixels, centred unless given); it only
 has to be roughly right, the lead moves the crop in `cards.json` after looking at the capture.
 
-### Banner and universal (2)
+### Universal (1)
 
 | File | Scene, camera, mode | Config | Notes |
 | --- | --- | --- | --- |
-| `banner_strip.png` | Room A, row of six frames at Y 105, X 4..9: `diamond_sword`, `bow`, `shield`, `cataclysm:black_steel_targe`, `eternal_starlight:glistering_morning_star`, `immersive_armors:warrior_chestplate`. Spectator, `tp 7.0 103.88 6.8 180 0`, d about 5.7 | BASE + `T(2)` + `OUT("RAINBOW", [], 1)` | crop 916 x 100 centred: the six items sit on the centre row, each about 70 px high |
 | `universal_wall.png` | Room A, two rows of five frames. Y 102 (vanilla) X 4..8: `diamond_sword`, `bow`, `trident`, `shield`, `elytra`. Y 103 (modded) X 4..8: `cataclysm:black_steel_targe`, `eternal_starlight:glistering_morning_star`, `advancednetherite:netherite_diamond_ingot`, `immersive_armors:warrior_helmet`, `immersive_armors:warrior_chestplate`. Spectator, `tp 6.5 101.38 6.2 180 0`, d about 5.1 | BASE + `T(3)` | crop 920 x 300 centred: exactly the two rows (about 150 px per block) |
+
+### Hero shots (7)
+
+The big images: they make the logo, the icon, `logo_animated.gif`, the banner and two cells of `card_targets`. Rig: "Hero shots rig" in
+section 0 (FOV 25, black concrete room H, light blocks out of frame, midnight, HUD hidden, 1920 x 1080). Every shot is a single unedited
+screenshot, subject centred. Outline and glint are the real mod; take animated colours at their best moment (three screenshots 0.4 s apart,
+keep one). The three sword shots and the logo shot use one invisible item frame at block `(12, 102, 65)` on the north wall of room H holding
+`minecraft:netherite_sword` with sharpness 5, unbreaking 3, mending 1; the camera is spectator at x 12.5 looking north (yaw 180, pitch 0), eye
+height 102.5 (feet 100.88), d about 1.8 blocks: `tp 12.5 100.88 67.3 180 0`. Move the camera in or out until the sword (its diagonal) fills about
+70 percent of the picture height and stays at least 10 percent away from every edge.
+
+| File | In frame | Scene, camera | Config |
+| --- | --- | --- | --- |
+| `hero_sword_rainbow.png` | the netherite sword, centred, diagonal across the picture | sword frame as above | BASE + `GL("rainbow")` + `T(3)` + `OUT("RAINBOW", [], 1)`. Used for the banner picture (the middle 1080 x 1080, shown at 180 x 180) and as the first look of `logo_animated.gif` |
+| `hero_sword_void.png` | the same sword, same camera, same framing as `hero_sword_rainbow` (no camera move between the shots) | same | BASE + `GL("void")` + `T(3)` + `OUT("ENCHANTMENT", [], 1)`. Second look of `logo_animated.gif` |
+| `hero_sword_fire.png` | the same sword, same camera, same framing | same | BASE + `GL("fire")` + `T(4)` + `OUT("PULSE", ["#FF8A1F"], 1)`, shot at the bright phase of the pulse. Third look of `logo_animated.gif` |
+| `logo_sword.png` | **the logo**: the sword exactly centred on the picture centre, blade diagonal about 70 percent of the height. The centred 1080 x 1080 square must read on its own at 128 px and 32 px, so keep the silhouette simple and nothing else in frame (square framing) | same frame and camera as the three above | BASE + `GL("aurora")` + `T(3)` + `OUT("GRADIENT", ["#7DFFB2", "#7D9BFF", "#D088FC"], 1)`. The icon is the area-filtered square crop of this picture. If one of the three shots above is already exactly centred and strong, it may be saved a second time as `logo_sword.png` |
+| `hero_armor.png` | the armor stand's netherite helmet and chestplate, head and chest centred, black behind. The card crops the middle 1480 x 800 | room H: `/summon minecraft:armor_stand 12.5 100 66.5 {Rotation:[0f,0f],ShowArms:1b,NoBasePlate:1b,Invulnerable:1b,NoGravity:1b,Pose:{LeftArm:[0f,0f,-12f],RightArm:[-18f,0f,12f]},ArmorItems:[{boots},{leggings},{chestplate},{helmet}],HandItems:[{netherite_sword},{}]}` (armor and sword as in section 1). Spectator, `tp 12.5 99.83 69.4 180 0`, d about 2.9 | BASE + `GL("rainbow")` + `T(3)` + `OUT("RAINBOW", [], 1)` |
+| `hero_lineup.png` | six enchanted items in a row, evenly spaced, vertically centred, each about 150 px high; the row spans the middle 1832 px of the width and the middle 200 px of the height (the banner strip) | six invisible frames at Y 102, X 6..11 on the north wall of room H (frame blocks at `z = 65`): `diamond_sword[ench]`, `bow[ench]`, `shield[ench]`, `cataclysm:black_steel_targe[glint]`, `eternal_starlight:glistering_morning_star[glint]`, `immersive_armors:warrior_chestplate[glint]`. Spectator, `tp 9.0 100.88 73.5 180 0`, d about 8 | BASE + `GL("aurora")` + `T(3)` + `OUT("RAINBOW", [], 1)` |
+| `hero_firstperson.png` | first person, the netherite sword in the right hand, blade pointing up and left across the picture, whole blade in frame, hand at the lower right, the black wall behind. The card crops the full width at 1920 x 1038 | room H, **creative, hand visible**, F1, FOV 25 (30 at most). `/item replace entity @s weapon.mainhand with minecraft:netherite_sword[ench]`, `tp 12.5 100 71.0 180 10` (about 6 blocks from the north wall) | BASE + `GL("rainbow")` + `T(3)` + `OUT("RAINBOW", [], 1)` |
+
+Frames and stand summons are the ones of section 1, moved into room H as the table says.
 
 ### Glint presets (9)
 
@@ -176,15 +225,13 @@ Spectator, `tp 13.5 100.88 4.7 180 0`, d about 3.6, the frame centred on the scr
 | `outline_thick_6.png` | BASE + `T(6)` |
 | `outline_soft_80.png` | BASE + `T(4)` + `{"outline": {"softness": 0.8}}` (soft glow) |
 
-### Targets (5, plus `outline_static.png` above)
+### Targets (3, plus `outline_static.png` above; first person and armor are hero shots)
 
-BASE + `T(3)` for all of them (the GUI one adds `GUION` and uses thickness 2). Crop 296 x 160.
+BASE + `T(3)` for all of them (the GUI one adds `GUION` and uses thickness 2). Crop 296 x 160. The first person and armor cells of this card are the hero shots `hero_firstperson.png` and `hero_armor.png`.
 
 | File | Scene, camera, mode | Notes |
 | --- | --- | --- |
-| `target_first_person.png` | Room B, creative, **hand visible**, F1. `/item replace entity @s weapon.mainhand with minecraft:netherite_sword[ench]`, `tp 12.0 100 41.0 180 12` | the sword in the lower right of the screen; default crop `[1200,600,296,160]` is a guess: put the blade and guard in the crop |
 | `target_third_person.png` | Room B, creative, sword in hand, F1. `tp 12.0 100 40.5 0 0`, then F5 twice (front view, the player faces the camera) | crop around the sword hand; default crop `[812,420,296,160]` is a guess |
-| `target_armor.png` | Room B stand, spectator, `tp 18.5 99.73 42.1 180 0`, d about 3.6 | head and chestplate centred; crop centred |
 | `target_dropped.png` | Room B slab floor: `/fill 4 100 40 9 100 45 minecraft:polished_blackstone_slab[type=bottom]`, then two floating items: `/summon minecraft:item 6.15 100.62 42.5 {Item:{id:"minecraft:diamond_sword",count:1,components:{...}},NoGravity:1b,Age:-32768,PickupDelay:32767,Motion:[0.0,0.0,0.0]}` and `/summon minecraft:item 6.85 100.62 42.5 {Item:{id:"minecraft:netherite_chestplate",...},...}`. Spectator, `tp 6.5 100.48 39.0 0 20` | both items fit in the crop; items bob, take the shot with both clearly outlined |
 | `target_gui.png` | Survival, standard inventory open (E), GUI scale 2, recipe book closed. Fill the hotbar and the first inventory row with enchanted items (below). Config adds `GUION` | the card uses `crop [c,500,592,320]` halved: main inventory and hotbar visible with outlines |
 
@@ -248,7 +295,7 @@ The shader pack is any one popular pack that is installed (Complementary Reimagi
 | --- | --- | --- | --- |
 | `shaders_sodium.png` | Sodium on, Iris with **no** pack | room B stand, spectator, `tp 18.5 99.73 42.1 180 0` | 452 x 170 centred |
 | `shaders_iris_world.png` | the same with the shader pack active | same camera | 452 x 170 centred |
-| `shaders_iris_hand.png` | shader pack active, creative, first person, sword in hand as in `target_first_person.png`, F1 | `tp 12.0 100 41.0 180 12` | 452 x 170 centred; adjust to the sword |
+| `shaders_iris_hand.png` | shader pack active, creative, first person, F1, `/item replace entity @s weapon.mainhand with minecraft:netherite_sword[ench]` (FOV 70 as in the rig) | `tp 12.0 100 41.0 180 12` | 452 x 170 centred; adjust to the sword |
 | `shaders_iris_gui.png` | shader pack active, survival, inventory open with the same items as `target_gui.png`, GUI scale 2 | none | `[c,480,904,340]` halved |
 
 ## 4. Showcase GIF (280 frames)
@@ -278,8 +325,8 @@ entry of `cards.json`; the GIF builder derives the frame delay from them.
 
 1. Rooms built, stand and frames summoned, rig options set, GUI scale 2.
 2. Capture in this order to avoid resource reloads: all shots that need `gapFix` on, except the gap pair; then the gap "off" pair (reload), then the gap "on" pair (reload).
-3. Every file exists with the exact name in `art/captures/` (`py -B art/gallery/build.py --list`).
+3. Every file exists with the exact name in `art/captures/` (`py -B art/gallery/build.py --list`). Then `py -B art/logo.py` (logo, icon and animated logo from the hero shots) and look at `src/main/resources/assets/glintsmith/icon.png`.
 4. `py -B art/gallery/build.py --strict` and look at each card; move crops in `cards.json` where the subject is off.
 5. `py -B art/gallery/gif.py --strict` for the GIF (the card build already calls it); then `py -B art/verify.py`.
 
-Counts: banner 1, universal 1, glint presets 9, outline styles 10, targets 5, gap fix 4, rules 2, config 2, Sodium/Iris 4 = **38 stills**; GIF 280 frames.
+Counts: hero shots 7, universal 1, glint presets 9, outline styles 10, targets 3, gap fix 4, rules 2, config 2, Sodium/Iris 4 = **42 stills**; GIF 280 frames.
