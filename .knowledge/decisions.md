@@ -8,3 +8,5 @@
 - 2026-10-17 Stack copied from DynamicLighting (Loom remap plugin, mojmap, Java 21, Gradle 9.5.0): proven in this workspace with the same pack versions.
 - 2026-10-17 GitHub repo public from the first push: owner confirmed the defaults in chat.
 - 2026-10-17 Outline condition ENCHANTED also counts foil items (enchanted golden apple etc.): matches what players see as enchanted.
+- 2026-10-17 Keybinds unbound by default; /glintsmith command and Mod Menu open the screen: avoids key conflicts in modpacks.
+- 2026-10-17 Parallel cap raised to up to 4 Sonnet + 2 Opus: owner allowed more parallel agents; files stay disjoint.

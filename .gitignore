@@ -47,3 +47,6 @@ graphify-out/cache/
 
 # claude code agent worktrees
 .claude/
+
+# local in-game test tooling
+.dev/

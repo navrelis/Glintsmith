@@ -29,6 +29,11 @@ Sources studied (reference only, clones live in the session scratchpad, never in
   - No upload; deliver jar plus mod page summary and description.
   - Graphify: build once at the end.
 
+## Later owner additions (chat, 2026-10-17)
+- Wants description, summary, pixel-art logo or rendered sword with glint and outline as a GIF cycling looks, showcase images like Lootr Remastered / Obscura's Simple Storage, and a statement how much better the mod is.
+- More parallel subagents allowed (up to 4 Sonnet + 2 Opus, disjoint files).
+- Original glow-outline jar may only be downloaded for a benchmark after the owner's OK (not asked yet).
+
 ## Environment facts (verified 2026-10-17)
 - Java 21.0.10 (Microsoft), gh logged in as `navrelis`, Gradle only via wrapper.
 - Template project with the same stack: `F:\Coding\DynamicLighting` (Loom plugin `net.fabricmc.fabric-loom-remap`, Gradle 9.5.0, JUnit with fabric-loader-junit).

@@ -5,3 +5,17 @@
 - 2026-10-17 T1 scaffold, Sonnet, S, accepted (build + genSources pass; Iris compile-only resolves from Modrinth maven).
 - 2026-10-17 T4 gap fix, Sonnet, S, accepted first pass (no Overwrite, precise spans via WrapOperation on getAnchor, EAST/WEST indent direction corrected from real geometry, 15 tests).
 - 2026-10-17 T3 config + rules + colours, Sonnet, L, accepted first pass (85 tests; ConfigManager.instance(); RuleEngine adapter untested until in-game).
+- 2026-10-17 T7 config screen delegated, Sonnet, L (vanilla widgets, tabs, rule editor, colour picker, keys, /glintsmith command, en+de).
+- 2026-10-17 T12 art pipeline delegated, Sonnet, L (owner asked for logo, sword GIF, showcase images like Lootr Remastered).
+- 2026-10-17 T10-prep in-game test scripts delegated, Sonnet, S (writes .dev/ingame, dry-run only).
+- 2026-10-17 Session stopped for context handoff; all agents stopped. State: F:\Coding\handoff.md
+- 2026-10-17 Session stopped for context handoff; all agents stopped. State: F:/Coding/handoff.md
+- 2026-10-17 Session 2 start: working tree compiles; partial T3 fix left 6 outdated tests failing (thickness 16, targets.other).
+- 2026-10-17 T3 correction finish delegated, Sonnet, S.
+- 2026-10-17 T5 outline core delegated, Opus, L (DESIGN 1-3, 4, 6-9 with lead deviations).
+- 2026-10-17 T6 glint system delegated, Sonnet, L (DESIGN 5 + 8.2, presets incl. gold and void).
+- 2026-10-17 T12 art pipeline restarted, Sonnet, L.
+- 2026-10-17 T10-prep in-game scripts delegated, Sonnet, S (dry-run only).
+- 2026-10-17 T7 first pass read by lead (screen, tabs, rows, rule editor, keys, commands): structure fine; update round queued (texture grammar, new outline rows, Iris info line, toggle message from saved state, reload shows warnings).
+- 2026-10-17 T3 correction, Sonnet, S, accepted (RuleEngine mutable lookup keys, copy on insert; 129 tests reported green; lead read diff).
+- 2026-10-17 T7 update round delegated, Sonnet, S (texture grammar, preset cycling, 5 outline rows, IrisInfo, review fixes).
