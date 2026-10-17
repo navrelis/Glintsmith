@@ -1,0 +1,1121 @@
+{
+ "comment": "Manifest of every gallery image. Positions are card pixels; crops are source pixels of the 1920x1080 captures in art/captures/ (x or y 'c' centres the rectangle). See art/README.md and gallery/SHOTLIST.md.",
+ "cards": [
+  {
+   "out": "banner.png",
+   "size": [
+    1000,
+    420
+   ],
+   "seed": 3,
+   "elements": [
+    {
+     "type": "logo",
+     "at": [
+      42,
+      34
+     ],
+     "scale": 5
+    },
+    {
+     "type": "heading",
+     "at": [
+      248,
+      40
+     ],
+     "text": "Glintsmith",
+     "size": 10,
+     "shadow": 1
+    },
+    {
+     "type": "strip",
+     "at": [
+      248,
+      148
+     ],
+     "width": 710,
+     "text": "Custom enchantment glints and item outlines for every item from every mod."
+    },
+    {
+     "type": "chips",
+     "at": [
+      500,
+      230
+     ],
+     "align": "centre",
+     "items": [
+      "FABRIC 1.21.1",
+      "CLIENT SIDE ONLY",
+      {
+       "text": "SODIUM + IRIS READY",
+       "style": "brass"
+      }
+     ]
+    },
+    {
+     "type": "capture",
+     "capture": "banner_strip.png",
+     "crop": [
+      "c",
+      "c",
+      916,
+      100
+     ],
+     "at": [
+      42,
+      288
+     ]
+    },
+    {
+     "type": "sparkle",
+     "at": [
+      960,
+      56
+     ],
+     "big": true
+    },
+    {
+     "type": "sparkle",
+     "at": [
+      900,
+      130
+     ],
+     "big": false
+    },
+    {
+     "type": "sparkle",
+     "at": [
+      712,
+      36
+     ],
+     "big": false
+    },
+    {
+     "type": "sparkle",
+     "at": [
+      236,
+      238
+     ],
+     "big": true
+    },
+    {
+     "type": "sparkle",
+     "at": [
+      972,
+      238
+     ],
+     "big": false
+    },
+    {
+     "type": "sparkle",
+     "at": [
+      300,
+      26
+     ],
+     "big": false
+    }
+   ]
+  },
+  {
+   "out": "card_universal.png",
+   "size": [
+    1000,
+    590
+   ],
+   "seed": 11,
+   "title": "Every item from every mod",
+   "elements": [
+    {
+     "type": "capture",
+     "capture": "universal_wall.png",
+     "crop": [
+      "c",
+      "c",
+      920,
+      300
+     ],
+     "at": [
+      40,
+      108
+     ]
+    },
+    {
+     "type": "label",
+     "at": [
+      54,
+      120
+     ],
+     "text": "Vanilla",
+     "style": "accent"
+    },
+    {
+     "type": "label",
+     "at": [
+      54,
+      270
+     ],
+     "text": "Modded",
+     "style": "gold"
+    },
+    {
+     "type": "text",
+     "at": [
+      40,
+      426
+     ],
+     "width": 920,
+     "text": "Outlines and glints are drawn on whatever the game renders: flat sprites, 3D models, shields, tridents, armor and items from other mods. Nothing to set up per item."
+    },
+    {
+     "type": "rule",
+     "at": [
+      40,
+      484
+     ]
+    },
+    {
+     "type": "chips",
+     "at": [
+      40,
+      500
+     ],
+     "items": [
+      "ADVANCED NETHERITE",
+      "ETERNAL STARLIGHT",
+      "CATACLYSM",
+      "IMMERSIVE ARMORS"
+     ]
+    }
+   ]
+  },
+  {
+   "out": "card_glint_presets.png",
+   "size": [
+    1000,
+    590
+   ],
+   "seed": 17,
+   "title": "Pick your glint",
+   "elements": [
+    {
+     "type": "capture",
+     "capture": "glint_vanilla.png",
+     "crop": [
+      "c",
+      "c",
+      176,
+      160
+     ],
+     "at": [
+      40,
+      108
+     ],
+     "label": "Vanilla",
+     "label_style": "accent",
+     "label_at": "bl"
+    },
+    {
+     "type": "capture",
+     "capture": "glint_neutral.png",
+     "crop": [
+      "c",
+      "c",
+      176,
+      160
+     ],
+     "at": [
+      226,
+      108
+     ],
+     "label": "Neutral + tint",
+     "label_style": "accent",
+     "label_at": "bl"
+    },
+    {
+     "type": "capture",
+     "capture": "glint_rainbow.png",
+     "crop": [
+      "c",
+      "c",
+      176,
+      160
+     ],
+     "at": [
+      412,
+      108
+     ],
+     "label": "Rainbow",
+     "label_style": "accent",
+     "label_at": "bl"
+    },
+    {
+     "type": "capture",
+     "capture": "glint_aurora.png",
+     "crop": [
+      "c",
+      "c",
+      176,
+      160
+     ],
+     "at": [
+      598,
+      108
+     ],
+     "label": "Aurora",
+     "label_style": "accent",
+     "label_at": "bl"
+    },
+    {
+     "type": "capture",
+     "capture": "glint_fire.png",
+     "crop": [
+      "c",
+      "c",
+      176,
+      160
+     ],
+     "at": [
+      784,
+      108
+     ],
+     "label": "Fire",
+     "label_style": "accent",
+     "label_at": "bl"
+    },
+    {
+     "type": "capture",
+     "capture": "glint_frost.png",
+     "crop": [
+      "c",
+      "c",
+      176,
+      160
+     ],
+     "at": [
+      40,
+      278
+     ],
+     "label": "Frost",
+     "label_style": "accent",
+     "label_at": "bl"
+    },
+    {
+     "type": "capture",
+     "capture": "glint_sparkle.png",
+     "crop": [
+      "c",
+      "c",
+      176,
+      160
+     ],
+     "at": [
+      226,
+      278
+     ],
+     "label": "Sparkle",
+     "label_style": "accent",
+     "label_at": "bl"
+    },
+    {
+     "type": "capture",
+     "capture": "glint_gold.png",
+     "crop": [
+      "c",
+      "c",
+      176,
+      160
+     ],
+     "at": [
+      412,
+      278
+     ],
+     "label": "Gold",
+     "label_style": "accent",
+     "label_at": "bl"
+    },
+    {
+     "type": "capture",
+     "capture": "glint_void.png",
+     "crop": [
+      "c",
+      "c",
+      176,
+      160
+     ],
+     "at": [
+      598,
+      278
+     ],
+     "label": "Void",
+     "label_style": "accent",
+     "label_at": "bl"
+    },
+    {
+     "type": "panel",
+     "at": [
+      784,
+      278
+     ],
+     "size": [
+      176,
+      160
+     ],
+     "fill": "dark",
+     "border": "#754b1d"
+    },
+    {
+     "type": "text",
+     "at": [
+      796,
+      292
+     ],
+     "width": 152,
+     "text": "Tint, speed, scale, strength and angle are all adjustable.",
+     "size": 2,
+     "color": "dim"
+    },
+    {
+     "type": "text",
+     "at": [
+      40,
+      454
+     ],
+     "width": 920,
+     "text": "Item, armor, entity and GUI glints are separate layers, so a rainbow chestplate and a plain sword are one setting each. Drop your own PNGs in as well."
+    },
+    {
+     "type": "chips",
+     "at": [
+      40,
+      516
+     ],
+     "items": [
+      "9 PRESETS",
+      "YOUR OWN PNGS",
+      {
+       "text": "EVERY LAYER",
+       "style": "brass"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "out": "card_outline_styles.png",
+   "size": [
+    1000,
+    590
+   ],
+   "seed": 23,
+   "title": "Outlines that fit your look",
+   "elements": [
+    {
+     "type": "capture",
+     "capture": "outline_vanilla.png",
+     "crop": [
+      "c",
+      "c",
+      176,
+      160
+     ],
+     "at": [
+      40,
+      108
+     ],
+     "label": "Vanilla",
+     "label_style": "bad",
+     "label_at": "bl"
+    },
+    {
+     "type": "capture",
+     "capture": "outline_static.png",
+     "crop": [
+      "c",
+      "c",
+      176,
+      160
+     ],
+     "at": [
+      226,
+      108
+     ],
+     "label": "Static",
+     "label_style": "accent",
+     "label_at": "bl"
+    },
+    {
+     "type": "capture",
+     "capture": "outline_rainbow.png",
+     "crop": [
+      "c",
+      "c",
+      176,
+      160
+     ],
+     "at": [
+      412,
+      108
+     ],
+     "label": "Rainbow",
+     "label_style": "accent",
+     "label_at": "bl"
+    },
+    {
+     "type": "capture",
+     "capture": "outline_pulse.png",
+     "crop": [
+      "c",
+      "c",
+      176,
+      160
+     ],
+     "at": [
+      598,
+      108
+     ],
+     "label": "Pulse",
+     "label_style": "accent",
+     "label_at": "bl"
+    },
+    {
+     "type": "capture",
+     "capture": "outline_gradient.png",
+     "crop": [
+      "c",
+      "c",
+      176,
+      160
+     ],
+     "at": [
+      784,
+      108
+     ],
+     "label": "Gradient",
+     "label_style": "accent",
+     "label_at": "bl"
+    },
+    {
+     "type": "capture",
+     "capture": "outline_enchant.png",
+     "crop": [
+      "c",
+      "c",
+      176,
+      160
+     ],
+     "at": [
+      40,
+      278
+     ],
+     "label": "Enchantment",
+     "label_style": "gold",
+     "label_at": "bl"
+    },
+    {
+     "type": "capture",
+     "capture": "outline_thick_1.png",
+     "crop": [
+      "c",
+      "c",
+      176,
+      160
+     ],
+     "at": [
+      226,
+      278
+     ],
+     "label": "1 px",
+     "label_style": "gold",
+     "label_at": "bl"
+    },
+    {
+     "type": "capture",
+     "capture": "outline_thick_3.png",
+     "crop": [
+      "c",
+      "c",
+      176,
+      160
+     ],
+     "at": [
+      412,
+      278
+     ],
+     "label": "3 px",
+     "label_style": "gold",
+     "label_at": "bl"
+    },
+    {
+     "type": "capture",
+     "capture": "outline_thick_6.png",
+     "crop": [
+      "c",
+      "c",
+      176,
+      160
+     ],
+     "at": [
+      598,
+      278
+     ],
+     "label": "6 px",
+     "label_style": "gold",
+     "label_at": "bl"
+    },
+    {
+     "type": "capture",
+     "capture": "outline_soft_80.png",
+     "crop": [
+      "c",
+      "c",
+      176,
+      160
+     ],
+     "at": [
+      784,
+      278
+     ],
+     "label": "Soft glow",
+     "label_style": "gold",
+     "label_at": "bl"
+    },
+    {
+     "type": "text",
+     "at": [
+      40,
+      454
+     ],
+     "width": 920,
+     "text": "Five colour modes, any thickness from half a pixel up, an optional soft glow and a low durability alert. The outline follows the real silhouette, flat or 3D."
+    },
+    {
+     "type": "chips",
+     "at": [
+      40,
+      516
+     ],
+     "items": [
+      "5 COLOUR MODES",
+      "0.5 - 16 PX",
+      "SOFT GLOW",
+      {
+       "text": "DURABILITY ALERT",
+       "style": "brass"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "out": "card_targets.png",
+   "size": [
+    1000,
+    590
+   ],
+   "seed": 29,
+   "title": "Everywhere an item is drawn",
+   "elements": [
+    {
+     "type": "capture",
+     "capture": "target_first_person.png",
+     "crop": [
+      1200,
+      600,
+      296,
+      160
+     ],
+     "at": [
+      40,
+      108
+     ],
+     "label": "First person",
+     "label_style": "accent",
+     "label_at": "bl",
+     "down": 1
+    },
+    {
+     "type": "capture",
+     "capture": "target_third_person.png",
+     "crop": [
+      812,
+      420,
+      296,
+      160
+     ],
+     "at": [
+      352,
+      108
+     ],
+     "label": "Third person",
+     "label_style": "accent",
+     "label_at": "bl",
+     "down": 1
+    },
+    {
+     "type": "capture",
+     "capture": "target_armor.png",
+     "crop": [
+      "c",
+      "c",
+      296,
+      160
+     ],
+     "at": [
+      664,
+      108
+     ],
+     "label": "Armor",
+     "label_style": "accent",
+     "label_at": "bl",
+     "down": 1
+    },
+    {
+     "type": "capture",
+     "capture": "target_dropped.png",
+     "crop": [
+      "c",
+      "c",
+      296,
+      160
+     ],
+     "at": [
+      40,
+      284
+     ],
+     "label": "Dropped items",
+     "label_style": "accent",
+     "label_at": "bl",
+     "down": 1
+    },
+    {
+     "type": "capture",
+     "capture": "outline_static.png",
+     "crop": [
+      "c",
+      "c",
+      296,
+      160
+     ],
+     "at": [
+      352,
+      284
+     ],
+     "label": "Item frames",
+     "label_style": "accent",
+     "label_at": "bl",
+     "down": 1
+    },
+    {
+     "type": "capture",
+     "capture": "target_gui.png",
+     "crop": [
+      "c",
+      500,
+      592,
+      320
+     ],
+     "at": [
+      664,
+      284
+     ],
+     "label": "Inventory",
+     "label_style": "accent",
+     "label_at": "bl",
+     "down": 2
+    },
+    {
+     "type": "text",
+     "at": [
+      40,
+      466
+     ],
+     "width": 920,
+     "text": "Hands, other players and mobs, worn armor, dropped items, item frames and your inventory: every place an item is drawn has its own switch."
+    },
+    {
+     "type": "text",
+     "at": [
+      40,
+      518
+     ],
+     "width": 920,
+     "text": "The inventory is off by default because it can get busy.",
+     "color": "dim"
+    }
+   ]
+  },
+  {
+   "out": "card_gap_fix.png",
+   "size": [
+    1000,
+    590
+   ],
+   "seed": 31,
+   "title": "Seams closed, edges clean",
+   "elements": [
+    {
+     "type": "capture",
+     "capture": "gap_sword_off.png",
+     "crop": [
+      "c",
+      "c",
+      452,
+      150
+     ],
+     "at": [
+      40,
+      108
+     ],
+     "label": "Vanilla",
+     "label_style": "bad",
+     "label_at": "tl"
+    },
+    {
+     "type": "capture",
+     "capture": "gap_sword_on.png",
+     "crop": [
+      "c",
+      "c",
+      452,
+      150
+     ],
+     "at": [
+      508,
+      108
+     ],
+     "label": "With Glintsmith",
+     "label_style": "good",
+     "label_at": "tl"
+    },
+    {
+     "type": "capture",
+     "capture": "gap_modded_off.png",
+     "crop": [
+      "c",
+      "c",
+      452,
+      150
+     ],
+     "at": [
+      40,
+      274
+     ],
+     "label": "Vanilla",
+     "label_style": "bad",
+     "label_at": "tl"
+    },
+    {
+     "type": "capture",
+     "capture": "gap_modded_on.png",
+     "crop": [
+      "c",
+      "c",
+      452,
+      150
+     ],
+     "at": [
+      508,
+      274
+     ],
+     "label": "With Glintsmith",
+     "label_style": "good",
+     "label_at": "tl"
+    },
+    {
+     "type": "text",
+     "at": [
+      40,
+      448
+     ],
+     "width": 920,
+     "text": "Flat item models can show hairline gaps between their faces, worst under the glint (MC-73186). The gap fix closes them on vanilla and modded items alike."
+    },
+    {
+     "type": "chips",
+     "at": [
+      40,
+      508
+     ],
+     "items": [
+      "AUTOMATIC",
+      "NO EXTRA GEOMETRY BY DEFAULT",
+      {
+       "text": "ONE SWITCH",
+       "style": "brass"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "out": "card_rules.png",
+   "size": [
+    1000,
+    590
+   ],
+   "seed": 37,
+   "title": "Rules for exactly the items you pick",
+   "elements": [
+    {
+     "type": "capture",
+     "capture": "rules_tab.png",
+     "crop": [
+      "c",
+      "c",
+      904,
+      600
+     ],
+     "at": [
+      40,
+      108
+     ],
+     "label": "Rule list",
+     "label_style": "accent",
+     "label_at": "bl",
+     "down": 2
+    },
+    {
+     "type": "capture",
+     "capture": "rule_edit.png",
+     "crop": [
+      "c",
+      "c",
+      904,
+      600
+     ],
+     "at": [
+      508,
+      108
+     ],
+     "label": "Rule editor",
+     "label_style": "gold",
+     "label_at": "bl",
+     "down": 2
+    },
+    {
+     "type": "bullets",
+     "at": [
+      40,
+      432
+     ],
+     "width": 440,
+     "gap": 10,
+     "items": [
+      "Match by item id, #tag, @mod or *wildcard.",
+      "Narrow it by enchantment, target and enchanted state."
+     ]
+    },
+    {
+     "type": "bullets",
+     "at": [
+      508,
+      432
+     ],
+     "width": 440,
+     "gap": 10,
+     "items": [
+      "Override the outline, the glint or both.",
+      "Later rules win; invalid ones are flagged, never fatal."
+     ]
+    }
+   ]
+  },
+  {
+   "out": "card_config.png",
+   "size": [
+    1000,
+    590
+   ],
+   "seed": 41,
+   "title": "Everything in one screen",
+   "elements": [
+    {
+     "type": "capture",
+     "capture": "config_outline.png",
+     "crop": [
+      "c",
+      "c",
+      904,
+      600
+     ],
+     "at": [
+      40,
+      108
+     ],
+     "label": "Outline tab",
+     "label_style": "accent",
+     "label_at": "bl",
+     "down": 2
+    },
+    {
+     "type": "capture",
+     "capture": "config_glint.png",
+     "crop": [
+      "c",
+      "c",
+      904,
+      600
+     ],
+     "at": [
+      508,
+      108
+     ],
+     "label": "Glint tab",
+     "label_style": "accent",
+     "label_at": "bl",
+     "down": 2
+    },
+    {
+     "type": "chips",
+     "at": [
+      500,
+      424
+     ],
+     "align": "centre",
+     "items": [
+      "OUTLINE",
+      "GLINT",
+      "MODEL FIX",
+      "RULES",
+      "ENCHANTMENTS"
+     ]
+    },
+    {
+     "type": "text",
+     "at": [
+      500,
+      480
+     ],
+     "width": 920,
+     "text": "Open it with a key or from Mod Menu. Every setting has a tooltip, changes show live, and glintsmith.json reloads while the game runs.",
+     "align": "centre"
+    }
+   ]
+  },
+  {
+   "out": "card_shaders.png",
+   "size": [
+    1000,
+    590
+   ],
+   "seed": 43,
+   "title": "Sodium and Iris friendly",
+   "elements": [
+    {
+     "type": "capture",
+     "capture": "shaders_sodium.png",
+     "crop": [
+      "c",
+      "c",
+      452,
+      170
+     ],
+     "at": [
+      40,
+      108
+     ],
+     "label": "Sodium",
+     "label_style": "accent",
+     "label_at": "bl",
+     "down": 1
+    },
+    {
+     "type": "capture",
+     "capture": "shaders_iris_world.png",
+     "crop": [
+      "c",
+      "c",
+      452,
+      170
+     ],
+     "at": [
+      508,
+      108
+     ],
+     "label": "Iris shader pack: world",
+     "label_style": "gold",
+     "label_at": "bl",
+     "down": 1
+    },
+    {
+     "type": "capture",
+     "capture": "shaders_iris_hand.png",
+     "crop": [
+      "c",
+      "c",
+      452,
+      170
+     ],
+     "at": [
+      40,
+      294
+     ],
+     "label": "Iris shader pack: hand",
+     "label_style": "gold",
+     "label_at": "bl",
+     "down": 1
+    },
+    {
+     "type": "capture",
+     "capture": "shaders_iris_gui.png",
+     "crop": [
+      "c",
+      480,
+      904,
+      340
+     ],
+     "at": [
+      508,
+      294
+     ],
+     "label": "Iris shader pack: inventory",
+     "label_style": "gold",
+     "label_at": "bl",
+     "down": 2
+    },
+    {
+     "type": "text",
+     "at": [
+      40,
+      484
+     ],
+     "width": 920,
+     "text": "Runs on Sodium. Under an Iris shader pack the glint keeps working and so do outlines in the inventory; hand outlines are best effort and world outlines step aside."
+    }
+   ]
+  }
+ ],
+ "gifs": [
+  {
+   "out": "showcase.gif",
+   "frames_dir": "showcase",
+   "crop": [
+    "c",
+    "c",
+    720,
+    405
+   ],
+   "down": 1,
+   "scale": 1,
+   "frames_per_caption": 40,
+   "step": 2,
+   "source_fps": 20,
+   "max_step": 4,
+   "max_mb": 8,
+   "caption_bar": {
+    "height": 36,
+    "scale": 2,
+    "color": "text"
+   },
+   "captions": [
+    "Vanilla",
+    "Outline only",
+    "Rainbow glint + rainbow outline",
+    "Fire glint + pulsing outline",
+    "Frost glint + soft cyan outline",
+    "Aurora glint + gradient outline",
+    "Void glint + enchantment colours"
+   ]
+  }
+ ]
+}
