@@ -48,8 +48,8 @@ reloaded while the game runs.
   implementation of the general technique (see Credits): the UV shrink the game applies on the block atlas can be
   scaled, the side faces of generated items can be grown and moved inwards, and optionally the side faces are built from
   contiguous pixel runs only.
-- Modes: off, automatic (values chosen by the mod; macOS gets its own values because its drivers bleed without UV shrink)
-  or custom (your values). With "precise spans" the sides are built from more, smaller faces, which is exact but creates
+- Modes: off, automatic (values chosen by the mod: it slightly widens the side faces to close the 1 px corner cracks of
+  generated item models, and macOS gets its own values because its drivers bleed without UV shrink) or custom (your values). With "precise spans" the sides are built from more, smaller faces, which is exact but creates
   many more quads on HD textures; it is off by default.
 - Automatic mode switches itself off when the mod `modelfix` (Model Gap Fix) is installed, because that mod already closes
   the seams. Custom mode still applies next to it, on top of that mod's own changes; precise spans do nothing then. <!-- VERIFY IN GAME: AUTO really stays off with modelfix present; this depends on the T8 wiring, which was not in the source when this was written -->
@@ -116,6 +116,9 @@ Client side only. Do not put it on a server; the mod does nothing there and is d
 ## Compatibility
 
 - **Sodium.** Supported. <!-- VERIFY IN GAME: outlines, glint and gap fix with Sodium 0.8.13; the design expects one Sodium warning in the log about unoptimised vertex writing for outlined items -->
+- **First-person animation mods (Punchy).** The held item keeps its first-person outline and glint rules. Items such as
+  Punchy's bedrock-geometry items, chests and boats are not outlined in first person, and with player-animation-lib or
+  Better Combat in first-person mode the held item is outlined as a third-person item (none under a shader pack).
 - **Iris with no shader pack selected.** Treated like vanilla rendering.
 - **Iris with a shader pack.** World outlines (third person, armor, dropped items, item frames) are turned off, because the
   scene depth they need is not available. Hand outlines are best effort and can be switched off ("Hand with shader

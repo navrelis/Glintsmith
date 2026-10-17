@@ -26,7 +26,7 @@ Glintsmith works on what the game really draws, so there are no item whitelists 
 
 >>> PASTE IMAGE: card_glint_presets.png | Pick your glint <<<
 
-**A fix for gaps in item models.** Some flat item models show thin seams and gaps between their faces (Mojang bug MC-73186), which the vanilla glint leaves visible. Glintsmith scales the UV shrink on the block atlas, grows and moves the side faces of generated items, and can build the sides from contiguous pixel runs only. Set it to off, automatic or custom. Automatic turns itself off when the mod Model Gap Fix (`modelfix`) is installed, because that mod already closes the seams. Custom still applies next to it, on top of that mod's own changes. <!-- VERIFY IN GAME: gap fix visible effect on 16x and HD items; AUTO stays off with modelfix present (depends on the wiring task T8) -->
+**A fix for gaps in item models.** Some flat item models show thin seams and gaps between their faces (Mojang bug MC-73186), which the vanilla glint leaves visible. Glintsmith scales the UV shrink on the block atlas, grows and moves the side faces of generated items, and can build the sides from contiguous pixel runs only. Set it to off, automatic or custom. Automatic slightly widens the side faces to close the corner cracks, and it turns itself off when the mod Model Gap Fix (`modelfix`) is installed, because that mod already closes the seams. Custom still applies next to it, on top of that mod's own changes. <!-- VERIFY IN GAME: gap fix visible effect on 16x and HD items; AUTO stays off with modelfix present (depends on the wiring task T8) -->
 
 >>> PASTE IMAGE: card_gap_fix.png | Seams closed, edges clean <<<
 
@@ -86,6 +86,7 @@ Client side only. Install it on your client; it does nothing on a server.
 
 ## Compatibility notes
 
+- First-person animation mods like Punchy keep the hand outline and the first-person glint rules.
 - A mod that replaces the vanilla glint render types itself can win over Glintsmith's glint, or the other way round. Use one of them.
 - Items that a mod draws without the game's normal item rendering are not outlined.
 - Outlines and glint on items in the GUI work for items drawn by the game's own inventory code. Mods that batch their own GUI items may bypass this.

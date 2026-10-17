@@ -77,3 +77,5 @@
 - 2026-10-17 Session 7 start: repo matches handoff (dev 31806a4, 3 .knowledge files modified, docs/curseforge img/preview untracked); shadow harness present; no lock; baseline build 326 green. Worktree removal blocked by auto-mode (left for owner). T17b re-delegated, Sonnet, S.
 - 2026-10-17 T17b, Sonnet, S, review: AUTO 0.005 + tests OK (327 green); correction sent: macOS-unsafe assert in SideElementBakeTest; CUSTOM default sideExpansion 0.005 (lead decision).
 - 2026-10-17 T17b correction accepted (macOS-safe test, CUSTOM default 0.005); lead build 327 green; committed.
+- 2026-10-17 T10 smoke2 started (player, frozen jar 07d0a97, covers T17b first-person check). T9b-1 docs (DESIGN HAND/Punchy, AUTO values, checklist T8) delegated, Sonnet, S, parallel (docs only).
+- 2026-10-17 T9b-1 docs, Sonnet, S, accepted (DESIGN 3.1 HAND phase/Punchy, G8 glint hook, section 11 AUTO values; README/description/CHANGELOG one-liners; checklist T8 done). Open: Java comment in ItemInHandRendererGlintMixin says G7 (DESIGN G8) -> cleanup task; stale T8 text in 2 VERIFY markers -> T9b-2.

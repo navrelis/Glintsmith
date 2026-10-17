@@ -160,7 +160,7 @@ innermost open phase wins.
 | Phase | Opened by | Closed by | Item targets accepted |
 |---|---|---|---|
 | WORLD | `WorldRenderEvents.START`, if any world target is enabled, no shader pack is active and the failsafe has not tripped | world composite (O6), else `WorldRenderEvents.LAST`, else frame end (discard) | THIRD_PERSON, ARMOR, DROPPED, ITEM_FRAME, OTHER. Any other display context seen in world is treated as OTHER. |
-| HAND | O2 wrap of `renderHandsWithItems`, if FIRST_PERSON is enabled | end of that wrap (vanilla), or `GameRenderer.renderLevel` RETURN (Iris) | FIRST_PERSON |
+| HAND | O2 wrap of `renderHandsWithItems`, if FIRST_PERSON is enabled | end of that wrap (vanilla), or `GameRenderer.renderLevel` RETURN (Iris) | FIRST_PERSON. Both hand pairs count: FIRST_PERSON_* and THIRD_PERSON_* contexts drawn inside the phase (see below). |
 | GUI | O5 wrap of private `GuiGraphics.renderItem(...)`, if GUI is enabled | end of that wrap | GUI |
 
 Display context to target mapping (used by T5, and separately by T6):
@@ -173,10 +173,38 @@ Display context to target mapping (used by T5, and separately by T6):
 * HEAD, NONE → OTHER
 * The armor and elytra hooks always produce ARMOR.
 
+The table above is the context-only mapping. `OutlineContexts.forPhase(phase, context)` then lets the
+phase decide where the context is ambiguous:
+
+* WORLD: FIRST_PERSON and GUI contexts count as OTHER.
+* HAND: the phase, not the context, decides. Everything drawn inside `renderHandsWithItems` is the local
+  player's first-person view, so FIRST_PERSON_* **and** THIRD_PERSON_* hand contexts both map to
+  FIRST_PERSON. Any other context (GUI, GROUND, FIXED, HEAD, NONE) is not captured in the HAND phase.
+* GUI: only the GUI context is captured.
+
+Why HAND accepts THIRD_PERSON_* contexts: first-person animation mods such as Punchy 2.8f cancel the vanilla
+arm rendering and draw the held item themselves, from inside `ItemInHandRenderer.renderHandsWithItems`,
+through `ItemRenderer.render` with `THIRD_PERSON_LEFT_HAND` / `THIRD_PERSON_RIGHT_HAND`, because the item is
+attached to a player-model arm. Without the phase rule those items would be classified as THIRD_PERSON and
+get no first-person outline (or the third-person rules). `OutlineSystem` logs one DEBUG line per session
+(logger `Glintsmith/Outline`) the first time hand items are captured in the HAND phase, so this path can be
+confirmed in a log.
+
+The glint does not use the outline phase. `GlintContext` keeps a depth counter for the hand pass
+(`beginHands` / `endHands` / `inHands`), set by its own hook around `renderHandsWithItems` (G8, section 4)
+and reset every frame in `GlintSystem.onFrameBegin`. `GlintCategories.targetFor` (through
+`GlintContext.targetOf(context, inHands)`) maps THIRD_PERSON_* contexts to FIRST_PERSON while the counter is
+above zero, the same rule as the HAND phase. The glint therefore does not depend on outlines being enabled.
+
 Not covered by design, and documented as such:
 
 * The inventory "paper doll" (an entity rendered in the GUI pass, so no phase is open).
 * First-person filled maps (they are not drawn through `ItemRenderer`).
+* Items that a first-person animation mod draws without `ItemRenderer.render`. Punchy does this for its
+  bedrock-geometry items, chests and boats: they get no first-person outline.
+* With player-animation-lib or Better Combat in first-person mode, the held item is drawn in the world pass
+  (not inside `renderHandsWithItems`) with a THIRD_PERSON context. It is outlined as a third-person item,
+  governed by the THIRD_PERSON switch and rules, and under a shader pack it gets no outline.
 * Geometry that a mod draws with its own Tesselator outside any `MultiBufferSource`.
 * EMI/JEI panels that batch items without `GuiGraphics.renderItem`.
 
@@ -679,6 +707,7 @@ All mixins live in package `navrelis.glintsmith.mixin` (sub-packages `outline`, 
 | G6 | `glint.GameRendererGlintMixin` | `GameRenderer` | `render(Lnet/minecraft/client/DeltaTracker;Z)V` HEAD | `@Inject` | `GlintSystem.onFrameBegin()` | Frame counter is not advanced, so stale slots are never auto-released; `onBatchDrawn` still releases them |
 | GA1 | `glint.BufferSourceAccessor` | `MultiBufferSource$BufferSource` | field `fixedBuffers` | `@Accessor` | Register slot types as fixed buffers | — |
 | GA2 | `glint.RenderBuffersAccessor` | `net.minecraft.client.renderer.RenderBuffers` | field `bufferSource` | `@Accessor` | Get the vanilla main source without going through Iris's `bufferSource()` replacement | — |
+| G8 | `glint.ItemInHandRendererGlintMixin` | `net.minecraft.client.renderer.ItemInHandRenderer` | `renderHandsWithItems(...)` (same descriptor as O2b) | `@WrapMethod`, `require = 0` | `GlintContext.beginHands()`; `endHands()` in `finally`. Held items drawn inside count as FIRST_PERSON for rules, also with a THIRD_PERSON hand context (first-person animation mods). Independent of the outline hook O2b. | Items drawn by a first-person animation mod use the THIRD_PERSON rules; vanilla hands are unaffected |
 | G7 (optional, phase 2) | `compat.IrisFullyBufferedGlintMixin` | `@Pseudo @Mixin(targets = "net.irisshaders.batchedentityrendering.impl.FullyBufferedMultiBufferSource")` | `getBuffer(Lnet/minecraft/client/renderer/RenderType;)Lcom/mojang/blaze3d/vertex/VertexConsumer;` **[UNVERIFIED runtime name; javap of the Iris jar shows the method literally named `getBuffer`]** | `@ModifyVariable(HEAD, argsOnly)` | Glint looks in world and hand while a shader pack is on | Vanilla glint in world and hand under a shader pack (GUI still customised) |
 
 Fabric events for T6: `ClientLifecycleEvents.CLIENT_STARTED` (capture the main source, generate the
@@ -784,7 +813,8 @@ Rule target for the frame:
 
 * GUI → `StyleTarget.GUI`
 * ARMOR → `StyleTarget.ARMOR`
-* otherwise map `f.ctx` with the table in section 3.1
+* otherwise map `f.ctx` with the table in section 3.1, except that while `GlintContext.inHands()` is true the
+  THIRD_PERSON_* contexts map to FIRST_PERSON (hand pass rule, see section 3.1)
 * no frame or an empty stack → no rule lookup (category defaults)
 
 The look is resolved once per frame:
@@ -1008,6 +1038,8 @@ specs. Generation cost at start-up is **[UNVERIFIED, not measured]**.
 | Sodium 0.8.13 | Full. Sodium replaces terrain only. Its item fast path (`ItemRendererMixin`) and `putBulkData` intrinsics fall back to vanilla code for our tee because it is not a `BufferBuilder` or `VertexBufferWriter`. Sodium logs **one** WARN per class (`VertexConsumerTracker`: "does not support optimized vertex writing code paths"). FRAPI models render through the `MultiBufferSource` we pass. | Full | Full | Full |
 | Iris installed, shaders off | Full (Iris batching and hand pathway inactive) | Full | Full | Full |
 | Iris, shader pack on | **Off** (log once per pack activation, at INFO). Main depth is not the scene depth and entities go to Iris gbuffers. The shadow pass is skipped too (phase closed, plus an explicit `isRenderingShadowPass()` check). | **Best effort, default on, option to disable.** The mask is flushed at TAIL of `renderHandsWithItems` with Iris's hand matrices; the composite happens after Iris's final pass at `GameRenderer.renderLevel` RETURN. No occluder test. Packs that move or distort the hand (DOF, hand sway) may misalign it. **[UNVERIFIED in game]** | Full | GUI full. World and hand use the vanilla look unless G7 is on; with G7 our slots go through Iris's glint program (texture and matrix honoured; tint and strength pack-dependent). |
+| First-person animation mods (Punchy 2.8f) | n/a | Full for items drawn through `ItemRenderer.render` inside `renderHandsWithItems`: THIRD_PERSON hand contexts there count as FIRST_PERSON. Not outlined: items Punchy draws without `ItemRenderer.render` (bedrock-geometry items, chests, boats). **[UNVERIFIED in game]** | n/a | Full: the hand pass marker (G8) applies first-person rules to the same items |
+| First-person mode of player-animation-lib / Better Combat | The held item is drawn in the world pass as THIRD_PERSON and is outlined as a third-person item; none under a shader pack | Not applicable (the item is not drawn in the HAND phase) | n/a | THIRD_PERSON rules |
 | Other glint mods | Unaffected | Unaffected | Unaffected | If they replace the `RenderType.glint()` getters, our G5a never sees vanilla types and their look wins. If they also hook `BufferSource.getBuffer`, the last modifier wins. Document as incompatible-by-design. |
 | Mods with a stencil main framebuffer (e.g. portals) | Disabled after the first failed depth blit (one log line) | Vanilla: disabled likewise | Full | Full |
 | Multiple `renderLevel` per frame (portal mods) | The phase opens and composites per call | Unchanged | Unchanged | Unchanged |
@@ -1259,7 +1291,7 @@ the user folder `<configDir>/glintsmith/glints/` is created if missing.
    outline.EmptyTextureStateShardAccessor,
    glint.ItemRendererGlintMixin, glint.HumanoidArmorLayerGlintMixin, glint.ElytraLayerGlintMixin,
    glint.BlockEntityWithoutLevelRendererGlintMixin, glint.BufferSourceGlintMixin, glint.GameRendererGlintMixin,
-   glint.BufferSourceAccessor, glint.RenderBuffersAccessor
+   glint.ItemInHandRendererGlintMixin, glint.BufferSourceAccessor, glint.RenderBuffersAccessor
    (+ compat.IrisFullyBufferedGlintMixin only once G7 is implemented)
    ```
 3. No access widener and no `build.gradle` change are needed. Fabric API's transitive access wideners
@@ -1387,3 +1419,34 @@ Glint:
     breakage, no errors.
 24. Resource reload with a pack that replaces `enchanted_glint_item.png`: the neutral variant is
     rebuilt from the new texture.
+25. Punchy 2.8f installed: an enchanted sword in the main hand has a first-person outline and the
+    first-person glint rules; the log (logger `Glintsmith/Outline`, DEBUG) shows the hand-items line once.
+    Items Punchy draws without `ItemRenderer.render` have no outline (expected).
+26. Gap fix, AUTO on Windows or Linux: the 1 px step-corner cracks of a generated item (for example a
+    dropped diamond sword) are closed and no jagged slivers show along the step edges.
+
+---
+
+## 11. Model gap fix: AUTO values
+
+Package `navrelis.glintsmith.modelfix` (`GapFix`), settings in `config/GlintsmithConfig.java`. The fix
+addresses the hairline gaps between the faces of generated item models (Mojang bug MC-73186). Three
+values act on it: the UV shrink multiplier on the block atlas, the side expansion and the side indent
+(model units, 1/16 block), plus the `preciseSpans` switch.
+
+| Mode | UV shrink multiplier | Side expansion | Side indent | Precise spans |
+|---|---|---|---|---|
+| AUTO, Windows and Linux | 0 | 0.005 | 0.0001 | off |
+| AUTO, macOS | 1.0 (vanilla shrink) | 0 | 0.0099 | off |
+| CUSTOM | stored value, default 0 | stored value, default 0.005 | stored value, default 0.0001 | stored value, default off |
+
+* The CUSTOM defaults mirror AUTO on Windows and Linux.
+* macOS keeps vanilla's UV shrink and a larger indent, because its drivers bleed without the shrink.
+* On the other platforms the side quads grow by 0.005 on both in-plane axes. An in-game sweep showed that
+  0.005 closes the 1 px step-corner cracks of generated item models, while 0.01 and above left jagged
+  slivers along the step edges.
+* Side elements keep vanilla's corner order: `GapFix.adjustSideElement` never sorts `from` and `to`. The
+  `16 - y` flip in vanilla's `createSideElements` makes the baked quads face outwards, and the signs of
+  the expansion and indent depend on that order.
+* AUTO is switched off while the mod `modelfix` is installed; CUSTOM stacks on top of it and precise spans
+  are inactive (README, section Compatibility).

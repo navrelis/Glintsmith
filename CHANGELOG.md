@@ -21,8 +21,9 @@ First release. Client-side only. The jar is `glintsmith-1.0.0.jar`.
 - Rules by item id, tag, mod, wildcard, negation, enchantment, enchanted state and place, with an exception list. A rule
   overrides the outline and the glint; later rules override earlier ones.
 - Model gap fix for flat generated item models: scaling of the UV shrink, side face expansion and indent, optional precise
-  spans. Modes off, automatic and custom. Next to the mod `modelfix`, automatic mode stays off, custom mode stacks on top of it, and only precise
+  spans. Modes off, automatic and custom. Automatic mode slightly widens the side faces and closes the 1 px step-corner cracks of generated item models. Next to the mod `modelfix`, automatic mode stays off, custom mode stacks on top of it, and only precise
   spans are inactive.
+- Compatibility with first-person animation mods such as Punchy: the held item keeps its first-person outline and glint rules.
 - Iris support: world outlines are turned off while a shader pack is active, hand outlines are best effort and have a switch,
   GUI outlines work, and there is an option to turn all outlines off under shaders.
 - Settings screen on vanilla widgets with tabs Outline, Glint, Model fix, Rules and Enchantments, colour picker and tooltips.

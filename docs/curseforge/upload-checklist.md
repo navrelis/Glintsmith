@@ -9,7 +9,7 @@ Paths are relative to the repository root.
 
 | Done | Item | Where |
 |---|---|---|
-| [ ] | The gap fix, glint and outline wiring (task T8) is in the build, so every setting does something. | `.knowledge/plan.md` |
+| [x] | The gap fix, glint and outline wiring (task T8) is in the build, so every setting does something. Done. | `.knowledge/plan.md` |
 | [ ] | The in-game test (T10) is done and every `VERIFY IN GAME` comment in `README.md`, `CHANGELOG.md` and `docs/curseforge/description.md` has been checked and the text corrected. List them with `grep -rn "VERIFY IN GAME" README.md CHANGELOG.md docs/curseforge/description.md` | |
 | [ ] | `fabric.mod.json` is checked: it says `"minecraft": "~1.21.1"`, which in Fabric's version syntax also matches 1.21.2 and later 1.21.x; if the mod is meant for 1.21.1 only, use `"1.21.1"`. It says `"fabricloader": ">=0.16.0"`; the mod was built and run with 0.19.5. | `src/main/resources/fabric.mod.json` |
 | [ ] | The gallery images are built from real captures: `py -B art/gallery/build.py --strict` passes and `py -B art/verify.py` is clean. | `art/README.md` |
