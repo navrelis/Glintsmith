@@ -1,0 +1,1 @@
+Outlines and custom enchantment glints for every item from every mod, plus a fix for gaps in item models. Rules, colours and presets in one in-game screen. Client-side Fabric 1.21.1, works with Sodium and Iris.

@@ -17,3 +17,4 @@
 - 2026-10-17 Gallery images are real in-game captures of the mod, framed like the Lootr cards; hand-drawn pixel-art cards and banner dropped: owner rejected them as fake and ugly.
 - 2026-10-17 Vanilla font/textures are read from the Minecraft jar at image build time and never committed: same practice as the Obscura preview tools.
 - 2026-10-17 Raw in-game captures (`art/captures/**`) stay local and git-ignored; only the composed gallery images are committed: 38 stills + 280 GIF frames would add several hundred MB to the repo.
+- 2026-10-17 Owner: no pixel art anywhere, real renders only (method left to the lead). Logo, icon, banner hero, cards and GIF all come from in-game renders of the mod (narrow-FOV hero close-ups on a dark backdrop); the hand-drawn logo committed in a816b40 is replaced. No Blender: not installed, and a download is not needed.

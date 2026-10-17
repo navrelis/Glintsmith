@@ -924,56 +924,57 @@ Lifecycle:
 
 ### 5.6 Procedural presets (no third-party art)
 
-All presets are 128x128 RGBA8, tileable, generated into `new NativeImage(128, 128, false)`, then
-`new DynamicTexture(img)` (which uploads). `NativeImage.setPixelRGBA(x, y, abgr)` takes **ABGR**:
-`(a << 24) | (b << 16) | (g << 8) | r`, with alpha always 255. Black means "no glint", because the
-blend is additive. Keep peak brightness ≤ 0.9 per channel to avoid clipping on bright items.
-Generation takes a few ms on the render thread at start-up.
+Source: `GlintPresets` (the formulas), `GlintNoise` (the helpers), `GlintTextures` (registration). Everything here describes
+the code as it stands after the T6 brightness correction, and `GlintPresetsTest` enforces the numbers in the budget below.
 
-Helpers (`GlintNoise`, pure Java, deterministic, unit-testable):
+All generated presets are 128x128, tileable, deterministic (same bytes on every run and platform: hashes are integer
+arithmetic, transcendental functions use `StrictMath`), and built as `int[128 * 128]` of ABGR pixels, then uploaded with
+`new NativeImage(128, 128, false)` + `setPixelRGBA` + `new DynamicTexture(img)`. Alpha is always 255. Black means "no
+glint", because the blend is additive. Every channel is capped at `PEAK_BYTE = 229` (0.9 of 255).
+`TextureManager.register` closes the previous texture under the same id.
 
-```java
-static float hash(int x, int y, int seed) {              // [0,1)
-    int h = x * 374761393 + y * 668265263 + seed * 1442695041;
-    h = (h ^ (h >>> 13)) * 1274126177;
-    h ^= h >>> 16;
-    return (h & 0xFFFFFF) / 16777216.0f;
-}
-static float smooth(float t) { return t * t * (3 - 2 * t); }
-// value noise with periods px, py (lattice cells across the 128 px tile); lattice indices wrap mod period
-static float value(float x, float y, int px, int py, int seed) {
-    float cx = x * px / 128f, cy = y * py / 128f;
-    int ix = (int) Math.floor(cx), iy = (int) Math.floor(cy);
-    float fx = smooth(cx - ix), fy = smooth(cy - iy);
-    int x0 = Math.floorMod(ix, px), x1 = Math.floorMod(ix + 1, px), y0 = Math.floorMod(iy, py), y1 = Math.floorMod(iy + 1, py);
-    float a = hash(x0, y0, seed), b = hash(x1, y0, seed), c = hash(x0, y1, seed), d = hash(x1, y1, seed);
-    return lerp(fy, lerp(fx, a, b), lerp(fx, c, d));
-}
-static float fbm(float x, float y, int px, int py, int octaves, int seed) {   // octave o uses periods px<<o, py<<o
-    float sum = 0, amp = 1, norm = 0;
-    for (int o = 0; o < octaves; o++) { sum += amp * value(x, y, px << o, py << o, seed + o * 101); norm += amp; amp *= 0.5f; }
-    return sum / norm;
-}
-// toroidal Worley: one feature point per cell of a g×g grid; returns F1, F2 in cell units
-static void worley(float x, float y, int g, int seed, float[] out2) { ... wrap neighbour cells with floorMod ... }
-static int hsv(float h, float s, float v) { ... standard HSV→RGB, h in [0,1) ... }
-```
+**Brightness budget.** The glint blend is additive (`src * src + dst`), so a texture that is lit everywhere adds light to
+the whole item and washes it out in one colour. An earlier version of the presets was brighter. The
+corrected presets are shaped with `smoothstep` thresholds (no global darkening), so most texels are black and the peaks
+stay bright. The vanilla item glint has a mean luminance of about 0.23; the presets are held near it. With
+`lum = 0.2126 r + 0.7152 g + 0.0722 b` (channels 0..1), each generated preset must satisfy:
 
-Presets (u = x/128, v = y/128; `ramp` = piecewise-linear colour gradient):
+| Property | Bound |
+|---|---|
+| Mean luminance | 0.15 to 0.32 (`sparkle`: 0.03 to 0.32, it is deliberately sparse) |
+| Dark texels (`lum < 0.08`) | at least 30 % of the tile |
+| Peak channel | at least 200 and at most 229 |
+| Spread | brightest minus darkest peak at least 60; at least 1 % of the texels lit; every 32x32 block of the tile has lit texels |
+| Periodicity | `f(x + 128, y) == f(x, y)` in both axes, so it tiles |
+
+**Helpers** (`GlintNoise`, pure Java, `TILE = 128`; `u = x / 128`, `v = y / 128` below):
+
+* `hash(x, y, seed)` returns a float in [0, 1): `h = x * 374761393 + y * 668265263 + seed * 1442695041; h = (h ^ (h >>> 13)) * 1274126177; h ^= h >>> 16; return (h & 0xFFFFFF) / 16777216`.
+* `value(x, y, px, py, seed)` is value noise with `px` by `py` lattice cells across the tile (smooth interpolation, lattice indices wrap with `floorMod`, so it is periodic).
+* `fbm(x, y, px, py, octaves, seed)` sums `octaves` value noises, octave `o` with periods `px << o`, `py << o`, amplitude `0.5^o`, seed `seed + 101 * o`, normalised to [0, 1).
+* `worley(x, y, g, seed, out)` is toroidal Worley noise on a `g` by `g` grid (one feature point per cell, 3x3 wrapped neighbourhood). It returns F1 and F2 in cell units, and the wrapped cell of the nearest point when `out` has four entries.
+* `smoothstep(e0, e1, x)`, `lerp(t, a, b)`, `hsv(h, s, v)` (hue wraps), `frac`.
+* `ramp(t; stops)` is a piecewise-linear colour gradient over `(position, r, g, b)` stops.
+
+**Presets** (`rgb` before the cap at 229):
 
 | Name | Algorithm |
 |---|---|
-| `neutral_item` / `neutral_entity` | Read vanilla `enchanted_glint_item.png` / `_entity.png` from the current `ResourceManager` (`NativeImage.read(resource.open())`). Per pixel `L = 0.2126r + 0.7152g + 0.0722b`; normalise by the image's maximum `L`; output grey `(L, L, L)`. Same size as the source. This is the base for tinting. |
-| `rainbow` | `streak = fbm(x, y, 2, 2, 3, 11)`; `hue = frac(u + v + 0.25 * fbm(x, y, 2, 2, 2, 12))`; `I = 0.9 * smoothstep(0.35, 0.9, streak)`; `rgb = hsv(hue, 0.85, 1) * I`. `u + v` is periodic, so the hue bands run diagonally and tile. |
-| `aurora` | `curtain = 0.5 + 0.5 * sin(2π * (2u + 0.6 * fbm(x, y, 2, 2, 2, 21)))`; `detail = fbm(x, y, 4, 4, 4, 22)`; `I = 0.9 * curtain³ * (0.4 + 0.6 * detail)`; `hue = mix(0.33, 0.78, fbm(x, y, 2, 2, 2, 23))` (green → cyan → violet); `rgb = hsv(hue, 0.7, 1) * I`. |
-| `fire` | Anisotropic: `heat = clamp(pow(fbm(x, y, 4, 2, 4, 31), 1.5) * 1.4, 0, 1)`; `rgb = ramp(heat; 0: (0,0,0), 0.35: (0.55,0.05,0), 0.65: (0.9,0.42,0), 1: (0.9,0.85,0.55))`. |
-| `frost` | `worley(x, y, 8, 41) → F1, F2`; `edge = 1 - smoothstep(0, 0.12, F2 - F1)` (crystal cell borders); `spark = hash(x, y, 42) > 0.996 ? 1 : 0`; `I = max(0.9 * edge, spark) * (0.55 + 0.45 * fbm(x, y, 4, 4, 3, 43))`; `rgb = ramp(I; 0: black, 0.5: (0.22,0.5,0.85), 1: (0.8,0.9,0.9))`. |
-| `sparkle` | `worley(x, y, 16, 51) → F1`, with `cell` = the owning cell; `b = hash(cellX, cellY, 52)`; `I = b > 0.55 ? b * pow(1 - smoothstep(0, 0.18, F1), 3) : 0`; `rgb = (0.9, 0.86, 0.78) * I`. |
+| `neutral_item` / `neutral_entity` (not generated; `preset:neutral`) | Read vanilla `enchanted_glint_item.png` / `_entity.png` from the current `ResourceManager`. Per pixel `L = (0.2126 r + 0.7152 g + 0.0722 b) * alpha`, divided by the image's maximum `L` and multiplied by 0.9; output grey `(L, L, L)`. Same size as the source. Rebuilt on every resource reload. This is the base for tinting. |
+| `rainbow` | `streak = fbm(x, y, 2, 2, 3, 11)`; `hue = frac(u + v + 0.25 * fbm(x, y, 2, 2, 2, 12))`; `I = 0.95 * smoothstep(0.37, 0.70, streak)`; `rgb = hsv(hue, 0.85, 1) * I`. `u + v` is periodic, so the hue bands run diagonally and tile. |
+| `aurora` | `phase = 2u + 0.6 * fbm(x, y, 2, 2, 2, 21)`; `curtain = 0.5 + 0.5 * sin(2π * phase)`; `detail = fbm(x, y, 4, 4, 4, 22)`; `I = 0.95 * curtain² * (0.35 + 0.65 * smoothstep(0.2, 0.7, detail))`; `hue = lerp(fbm(x, y, 2, 2, 2, 23), 0.33, 0.78)` (green through cyan to violet); `rgb = hsv(hue, 0.7, 1) * I`. |
+| `fire` | `heat = smoothstep(0.38, 0.74, fbm(x, y, 4, 2, 4, 31))`; `rgb = ramp(heat; 0: (0, 0, 0), 0.35: (0.55, 0.05, 0), 0.65: (0.9, 0.42, 0), 1: (0.9, 0.85, 0.55))`. Anisotropic (4 by 2 base cells). |
+| `frost` | `F1, F2 = worley(x, y, 8, 41)`; `edge = 1 - smoothstep(0, 0.22, F2 - F1)` (crystal borders); `spark = hash(x mod 128, y mod 128, 42) > 0.996 ? 1 : 0`; `I = max(0.9 * edge, spark) * (0.55 + 0.45 * fbm(x, y, 4, 4, 3, 43))`; `rgb = ramp(I; 0: black, 0.5: (0.22, 0.5, 0.85), 1: (0.8, 0.9, 0.9))`. |
+| `sparkle` | `F1 = worley(x, y, 12, 51)` with the owning cell `(cx, cy)`; `b = hash(cx, cy, 52)`; if `b > 0.35`: `I = b * (1 - smoothstep(0, 0.5, F1))²`, else `I = 0`; `rgb = (0.9, 0.86, 0.78) * I`. |
+| `gold` | Warm diagonal streaks plus rare bright glints. `streak = fbm(x + y, x - y, 10, 2, 3, 61)` (value noise on the sheared coordinates, both periodic in the tile); `grain = fbm(x, y, 16, 16, 2, 62)`; `heat = smoothstep(0.3, 0.85, streak) * (0.7 + 0.3 * grain)`; `rgb = ramp(heat; 0: black, 0.35: (0.45, 0.28, 0.02), 0.75: (0.9, 0.7, 0.2), 1: (0.9, 0.86, 0.6))`. Glints: `F1 = worley(x, y, 12, 63)` with cell `c`; `cell = hash(cx, cy, 64)`; if `cell > 0.8`: `g = cell * (1 - smoothstep(0, 0.15, F1))³` and `rgb = max(rgb, (0.9, 0.86, 0.6) * g)` per channel. |
+| `void` | Deep purple nebula, domain warped by periodic noise (so it still tiles), with sparse single-pixel stars. `wx = fbm(x, y, 2, 2, 3, 72)`, `wy = fbm(x, y, 2, 2, 3, 75)`; `t = fbm(x + 28 (wx - 0.5), y + 28 (wy - 0.5), 3, 3, 5, 73)`; `nebula = smoothstep(0.40, 0.85, t)`; `rgb = ramp(nebula; 0: black, 0.3: (0.12, 0, 0.25), 0.7: (0.45, 0.1, 0.7), 1: (0.75, 0.55, 0.9))`. Star at a texel: `hash(x mod 128, y mod 128, 74) > 0.9985`, brightness `0.6 + 0.4 * hash(x mod 128, y mod 128, 76)`; a texel with no star of its own takes 0.35 of the brightest of its four neighbours' stars (a faint cross). With star brightness `s`: `rgb = max(rgb, (0.9, 0.85, 0.9) * s)` per channel. |
 
-The config and UI list exactly: `default`, `preset:neutral` (this resolves to the item or entity
-variant automatically), `preset:rainbow`, `preset:aurora`, `preset:fire`, `preset:frost`,
-`preset:sparkle`, plus `file:` and resource-pack entries. `preset:neutral_item` and
-`preset:neutral_entity` are internal names.
+Full preset list: `rainbow`, `aurora`, `fire`, `frost`, `sparkle`, `gold`, `void` (generated) and `neutral` (derived from the
+vanilla texture). Together with `vanilla` and `file:` / resource-pack entries this is exactly what the config and the UI
+accept: `vanilla` (alias `default`), `preset:neutral` (this resolves to the item or entity variant automatically),
+`preset:rainbow`, `preset:aurora`, `preset:fire`, `preset:frost`, `preset:sparkle`, `preset:gold`, `preset:void`,
+`file:<name>.png` and `namespace:path`. `preset:neutral_item` and `preset:neutral_entity` are internal names, not valid
+specs. Generation cost at start-up is **[UNVERIFIED, not measured]**.
 
 ### 5.7 Edge cases T6 must handle
 

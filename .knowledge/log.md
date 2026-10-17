@@ -34,3 +34,12 @@
 - 2026-10-17 T6 finish, Sonnet, S, reviewed by lead: 231 tests green, slot pool/shards/render types/mixins match vanilla 1.21.1 glint; afterEndBatch order fix accepted. Correction 1 sent: preset brightness (fire 0.72, void 0.6 mean luminance vs vanilla 0.23 would wash items).
 - 2026-10-17 T6 correction 1, Sonnet, S, accepted (presets mean luminance 0.17-0.24, sparkle 0.05 by design; lead looked at the preset sheet; build 232 green). Committed.
 - 2026-10-17 T12 redo (pipeline + logo), Sonnet, L, accepted: vanilla-font card compositor fed by captures, placeholder when missing, 38-still + 280-frame SHOTLIST, new original logo; lead looked at logo and synthetic cards, verify.py passes. Committed art/** + icon; gallery images wait for captures.
+- 2026-10-17 Owner rejected pixel art again (incl. logo). T10g delegated, Sonnet, S (gallery.json, gallery_iris.json, showcase.json, copy_captures.py) plus addendum: hero/logo render shots.
+- 2026-10-17 T12 follow-up delegated, Sonnet, S (logo/icon/banner built from in-game hero renders, area downscale, gitignore captures).
+- 2026-10-17 Session 3 stopped at the context limit; T5, T10g and T12b agents stopped. State: F:\Coding\handoff.md
+- 2026-10-17 Session 4 start: repo matches handoff; shadow harness present. Lead build of t5 worktree: compiles, 176 tests, 7 failed (MaskTypesTest, MC not bootstrapped).
+- 2026-10-17 T5 finish delegated, Opus, L (fix tests, mixin application test, completeness review, worktree only).
+- 2026-10-17 T10g delegated, Sonnet, S (gallery/gallery_iris/showcase scripts + hero shots, copy_captures.py, dry-run).
+- 2026-10-17 T12b delegated, Sonnet, S (logo/icon/banner from captures, area resample, no drawn sparkles, gitignore captures).
+- 2026-10-17 T9 docs draft delegated, Sonnet, S (README, CHANGELOG, curseforge texts, comparison, DESIGN 5.6; in-game claims marked).
+- 2026-10-17 T9 draft, Sonnet, S, accepted as draft (lead read description/README; 11 VERIFY IN GAME markers; findings for T8: modelfix AUTO-off missing, AUTO tooltip overclaims, thickness Javadoc 0.5..8, fabric.mod.json minecraft range).
