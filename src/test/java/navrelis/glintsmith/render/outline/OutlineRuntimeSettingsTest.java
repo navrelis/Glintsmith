@@ -96,6 +96,7 @@ class OutlineRuntimeSettingsTest {
 	void onlyLocalPlayerCoversHeldItemsAndArmor() {
 		GlintsmithConfig config = config();
 		config.outline.targets.other = true;
+		config.outline.targets.armor = true;
 		config.outline.onlyLocalPlayer = true;
 		OutlineRuntimeSettings s = OutlineRuntimeSettings.from(config);
 		assertFalse(s.accepts(OutlinePhase.WORLD, OutlineTarget.THIRD_PERSON, false));

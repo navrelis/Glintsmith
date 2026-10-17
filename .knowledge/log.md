@@ -55,3 +55,6 @@
 - 2026-10-17 Crash cause confirmed (crash report: modelfix ItemModelMixin merges createOrExpandSpan). Owner asked to remove modelfix: lead moved mods/modelfix-1.21-1.6-fabric.jar from the instance to .dev/removed-mods/. modelfix fix re-delegated, Sonnet, S.
 - 2026-10-17 modelfix fix, Sonnet, S, accepted after 1 small correction (CUSTOM log wording): plugin skips only ItemModelGeneratorSpanMixin (modelfix @Overwrite of createOrExpandSpan); RETURN injectors on createSideElements/uvShrinkRatio coexist; defaultRequire 0; agent build 311 green. No glint/outline overlap.
 - 2026-10-17 T10 smoke run 1b (player, baseline jar, modelfix removed from pack): client started, 'Glintsmith initialised.', no ERROR at startup.
+- 2026-10-17 T10 smoke (player): 188/188 steps ok, no Glintsmith ERROR; GUI outlines + occlusion OK; first-person HAND OUTLINE MISSING; fps on/off/on 362/529/476. Owner saw 'broken textures': long fins on held generated items.
+- 2026-10-17 Fins bisect (mini script): no Glintsmith = normal; gapFix off = normal; CUSTOM shrink 1 + indent 0.0001 = fins. Cause: GapFix.adjustSideElement path (suspect sortCorners on vanilla's inverted LEFT/RIGHT side elements).
+- 2026-10-17 Armor target default off, Sonnet, S, accepted (build 311 green).

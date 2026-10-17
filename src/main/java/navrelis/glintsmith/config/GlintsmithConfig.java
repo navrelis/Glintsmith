@@ -190,7 +190,7 @@ public final class GlintsmithConfig {
 	public static final class Targets {
 		public boolean firstPerson = true;
 		public boolean thirdPerson = true;
-		public boolean armor = true;
+		public boolean armor = false;
 		public boolean dropped = true;
 		public boolean itemFrame = true;
 		public boolean gui = false;

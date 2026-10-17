@@ -46,7 +46,7 @@ class ConfigTest {
 		assertEquals(OutlineCondition.ENCHANTED, c.outline.condition);
 		assertTrue(c.outline.targets.firstPerson);
 		assertTrue(c.outline.targets.thirdPerson);
-		assertTrue(c.outline.targets.armor);
+		assertFalse(c.outline.targets.armor);
 		assertTrue(c.outline.targets.dropped);
 		assertTrue(c.outline.targets.itemFrame);
 		assertFalse(c.outline.targets.gui);
