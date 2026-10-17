@@ -9,8 +9,8 @@ Paths are relative to the repository root.
 
 | Done | Item | Where |
 |---|---|---|
-| [x] | The gap fix, glint and outline wiring (task T8) is in the build, so every setting does something. Done. | `.knowledge/plan.md` |
-| [x] | The in-game test (T10) is done and every `VERIFY IN GAME` comment in `README.md`, `CHANGELOG.md` and `docs/curseforge/description.md` has been checked and the text corrected. The grep `grep -rn "VERIFY IN GAME" README.md CHANGELOG.md docs/curseforge/description.md` finds nothing. One `<!-- PENDING T21 -->` marker is left in `README.md` and one in `docs/curseforge/description.md`, after the sentence about hand outlines under a shader pack; finish that sentence after T21 and remove both markers. | |
+| [x] | The gap fix, glint and outline wiring is in the build, so every setting does something. Done. | `.knowledge/plan.md` |
+| [x] | The in-game test is done, and no open-claim comment is left in `README.md`, `CHANGELOG.md` and `docs/curseforge/description.md`: every one has been checked and the text corrected. The grep `grep -rn "VERIFY IN GAME\|PENDING" README.md CHANGELOG.md docs/curseforge/description.md` finds nothing. | |
 | [x] | `fabric.mod.json` is checked: it says `"minecraft": "1.21.1"` exactly (so it does not match 1.21.2 or later) and `"fabricloader": ">=0.16.0"`; the mod was built and run with 0.19.5. | `src/main/resources/fabric.mod.json` |
 | [ ] | The gallery images are built from real captures: `py -B art/gallery/build.py --strict` passes and `py -B art/verify.py` is clean. | `art/README.md` |
 | [ ] | `py -B docs/curseforge/preview.py --check` passes. | |

@@ -130,14 +130,16 @@ Client side only. Do not put it on a server; the mod does nothing there and is d
   Punchy's bedrock-geometry items, chests and boats are not outlined in first person, and with player-animation-lib or
   Better Combat in first-person mode the held item is outlined as a third-person item (none under a shader pack).
 - **Iris with no shader pack selected.** Treated like vanilla rendering.
-- **Iris with a shader pack.** World outlines (third person, armor, dropped items, item frames) are turned off, because the
-  scene depth they need is not available. Hand outlines are best effort and can be switched off ("Hand with shader
-  pack"). <!-- PENDING T21 --> GUI outlines work. "Off with shader packs" disables all outlines while a pack is active. The glint keeps the vanilla
-  look in the world and in the hand under a shader pack and is customised in the GUI. Checked in game with Iris
-  1.8.14-beta.1 and Complementary Unbound with Euphoria Patches: no crash, one INFO line in the log ("A shader pack is
-  active: world outlines are off, first-person and GUI outlines stay on."), world outlines off, GUI outlines (inventory,
-  hotbar) work, and the settings screen shows a hint about shader packs.
-- **Fabulous graphics.** Should work, but it was not tested in game for 1.0.0.
+- **Iris with a shader pack.** World outlines (third person, armor, dropped items, item frames) are turned off, because
+  the scene depth they need is not available. Hand outlines stay on by default ("Hand with shader pack" switches them
+  off), and the arm hides them correctly. GUI outlines work. "Off with shader packs" disables all outlines while a pack
+  is active. The glint keeps the vanilla look in the world and in the hand under a shader pack and is customised in the
+  GUI. Checked in game with Iris 1.8.14-beta.1 and Complementary Unbound with Euphoria Patches: no crash, one INFO line
+  in the log ("A shader pack is active: world outlines are off, first-person and GUI outlines stay on."), world outlines
+  off, hand outlines on with the arm hiding them (no outline along the sleeve), GUI outlines (inventory, hotbar) work,
+  and the settings screen shows a hint about shader packs.
+- **Fabulous graphics.** Tested in game without a shader pack: held items, item frames, dropped items, occlusion,
+  stained glass (from the front and the side), water, rain and GUI outlines are all correct.
 - **Other glint mods.** A mod that replaces the vanilla glint render types itself can win over Glintsmith's glint, or the
   other way round. Use one of them.
 - **Items drawn without the game's normal item rendering** are not outlined. This means items that never go through

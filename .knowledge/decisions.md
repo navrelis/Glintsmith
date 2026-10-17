@@ -31,3 +31,8 @@
 - 2026-10-17 Outline mask stores the item's own depth and only visible item pixels seed the outline (hand front tolerance 0.03 blocks): hidden item pixels (blade inside the arm, item leaning on a pillar) drew outlines over the occluder.
 - 2026-10-17 Gallery/logo backdrop switched from black to white/cream (owner request); capture rooms use light blocks + night vision + gamma Bright; close-ups use the vanilla FOV option 30 because the Director fov override does not change the world view.
 - 2026-10-17 Under a shader pack the hand phase records every depth-writing render type of the hand pass as depth-only occluders in the mask (arm, sleeve, held items): Iris draws the hand into its own targets, so the main depth cannot hide the outline behind the arm. Rejected: reading Iris's hand depth (pack-specific), turning hand outlines off under shaders.
+- 2026-10-17 Keep the Sodium API compile-only dependency (stated stack, harmless) and the -Dglintsmith.debug.failOutline failsafe test hook (documented). No `* text=auto` (would renormalise every file).
+- 2026-10-17 Fade slider max 256 to match the config clamp and CHANGELOG; resource glint specs need a path with a slash (config:foo.png rejected).
+- 2026-10-17 .knowledge stays tracked (lead rule); before a public push the lead scrubs local paths from its current text; history paths (local drive) are a question for the owner.
+- 2026-10-17 Fabulous is switched by a wrapper editing options.txt graphicsMode (Director cannot); run with shaders off; the chain calls it without --cleanup (quarantine instead of deletes).
+- 2026-10-17 Capture backdrop = full-bright text_display background panel (no directional face shade) behind each subject, not a block wall (max ~0.8 shade = grey); still a real in-game render.

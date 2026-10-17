@@ -43,12 +43,12 @@ Glintsmith works on what the game really draws, so there are no item whitelists 
 Glintsmith is made to run with Sodium and Iris. With Iris and no shader pack selected, outlines and glint work as in vanilla rendering. With a shader pack:
 
 - Outlines in the world are turned off, because they need the scene depth that the shader pack changes.
-- Outlines on the item in your hand are best effort and can be switched off ("Hand with shader pack"). <!-- PENDING T21 -->
+- Outlines on the item in your hand stay on by default, and the arm hides them correctly. They can be switched off ("Hand with shader pack").
 - Outlines in the GUI work.
 - "Off with shader packs" turns all outlines off while a pack is active.
 - The glint keeps the vanilla look in the world and in your hand, and is customised in the GUI.
 
-Checked in game with Sodium 0.8.13 and Iris 1.8.14-beta.1, and with the shader pack Complementary Unbound with Euphoria Patches: no crash, and the settings screen shows a hint about shader packs. Fabulous graphics should work, but it was not tested in game for 1.0.0.
+Checked in game with Sodium 0.8.13 and Iris 1.8.14-beta.1, and with the shader pack Complementary Unbound with Euphoria Patches: no crash, and the settings screen shows a hint about shader packs. Fabulous graphics was tested in game without a shader pack: held items, item frames, dropped items, occlusion, stained glass, water, rain and GUI outlines are all correct.
 
 >>> PASTE IMAGE: card_shaders.png | Sodium and Iris friendly <<<
 
@@ -67,7 +67,7 @@ Checked on 2026-10-17 against the public pages and repositories of each project.
 | Allow and deny | Rules with allow and except lists by id, tag, enchantment, mod | Whitelist; a blacklist is asked for in an open issue | not applicable | not applicable | not applicable |
 | Colours | Static, rainbow, pulse, gradient, per enchantment; per rule | Colour picker, RGB mode; separate settings for tools and totem | not applicable | Rainbow | One fixed colour; the page points to another pack for other colours |
 | Through walls | Hidden by depth test | Not stated on its pages | not applicable | not applicable | not applicable |
-| Shader packs | World outlines off, hand best effort, GUI works | Lists Iris as compatible | not applicable | not stated | Page says compatible with most shader packs |
+| Shader packs | World outlines off, hand and GUI work | Lists Iris as compatible | not applicable | not stated | Page says compatible with most shader packs |
 | Enchantment glint | Presets, own PNG, resource-pack textures, tint, speed, scale, strength, rotation, per layer and per rule | No | No | One look for all enchanted items; the page has no settings | No |
 | Gap fix | Yes: UV shrink, side faces, modes, settings | No | Yes: removes texture zooming; an extra step for 2D items is Forge only, per its page | No | No |
 | Settings | In-game screen, JSON with live reload, commands | In-game screen (F7) | None on its page | None (resource pack) | Resource pack options |

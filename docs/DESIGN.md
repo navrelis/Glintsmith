@@ -311,7 +311,7 @@ RenderType.create("glintsmith_outline_mask", DefaultVertexFormat.POSITION_TEX_CO
     .setShaderState(new RenderStateShard.ShaderStateShard(OutlineShaders::mask))
     .setTextureState(textureShard)    // EmptyTextureStateShard: binds the texture, leaves its filter alone
     .setTransparencyState(RenderStateShard.NO_TRANSPARENCY)
-    .setCullState(RenderStateShard.NO_CULL)
+    .setCullState(depth ? sourceCull : RenderStateShard.NO_CULL)   // sourceCull: the source's cull state, NO_CULL if unreadable
     .setDepthTestState(depth ? RenderStateShard.LEQUAL_DEPTH_TEST : RenderStateShard.NO_DEPTH_TEST)
     .setLayeringState(depth ? sourceLayering : RenderStateShard.NO_LAYERING)
     .setWriteMaskState(depth ? RenderStateShard.COLOR_DEPTH_WRITE : RenderStateShard.COLOR_WRITE)
@@ -326,7 +326,15 @@ RenderType.create("glintsmith_outline_mask", DefaultVertexFormat.POSITION_TEX_CO
   (`sourceLayering`, read through `CompositeStateAccessor`; for example the view offset of armor
   types), so that its depth equals the depth of the item's main draw. There is no polygon offset: the
   mask is not meant to pass against the scene.
-* **Flat type** (GUI). `NO_DEPTH_TEST`, no layering, `COLOR_WRITE`. Unchanged.
+
+  The depth-tested item mask and the first-person occluder repeat the source render type's face culling,
+  as they repeat its layering. Generated item models contain one-sided thin geometry (back quad, inner and
+  merged side quads); drawn double-sided into the mask, its back-facing slivers became isolated seed
+  pixels and stray 1-px rings. The flat GUI mask stays double-sided (in orthographic GUI space back faces
+  only fill pinholes inside the icon). If the cull state cannot be read, the masks fall back to
+  double-sided drawing (`NO_CULL`). The cull state is read through `CompositeStateAccessor`
+  (`outlineCullState`) by `MaskTypes.cullOf`. **[in-game check pending: stray dots]**
+* **Flat type** (GUI). `NO_DEPTH_TEST`, no layering, `COLOR_WRITE`, `NO_CULL` (double-sided).
 * The mask vertex shader uses the exact vanilla expression `ProjMat * ModelViewMat * vec4(Position, 1.0)`,
   the same invariance that vanilla glint relies on for its EQUAL depth test. The seed rule in 3.3
   depends on it.
@@ -389,7 +397,7 @@ Depth handling per phase (`OutlineCompositor.MaskDepth`):
   so the mask accumulates across both calls. The scene depth for this phase is made by the occluder
   mechanism below. The deferred composite uses `UseDepth=1`.
 
-  **Hand occluders (shader pack, T21).** Without a pack, the arm hides the first-person outline
+  **Hand occluders (shader pack).** Without a pack, the arm hides the first-person outline
   because the main depth holds the arm. Under a pack the hand goes into the pack's own targets, so
   the arm has to reach the mask depth another way. Before this mechanism every mask pixel was a seed
   and the outline drew over the arm wherever the item went behind it.
@@ -400,13 +408,13 @@ Depth handling per phase (`OutlineCompositor.MaskDepth`):
      first-person animation mod's arm code injected into the wrapped body, draw into the same source.
   2. `OccluderBufferSource.getBuffer(type)` returns the real buffer, or a `TeeVertexConsumer` that
      also writes into `PhaseState.occluderSource`, for every render type that writes depth itself
-     (depth test on, depth write on; `MaskTypes.occluderFor`): arm, sleeve, armor on the arm, maps and
-     the held items. The occluder type (`glintsmith_outline_occluder`) is `DEPTH_WRITE` only, depth
-     test `LEQUAL`, repeats the source's layering and draws the source's texture through the mask
-     shader, so cutout pixels do not occlude. Style index 0 and no screen bounds: an occluder is never
-     a seed and never widens the region, and occluders alone do not set `hasGeometry` (no composite
-     for an arm without an outlined item). At most 64 (render type, buffer) pairs per pass; more are
-     passed through without occluding.
+     (depth test on, depth write on; `MaskTypes.occluderFor`): arm, sleeve, armor on the arm, maps
+     and the held items. The occluder type (`glintsmith_outline_occluder`) is `DEPTH_WRITE` only,
+     depth test `LEQUAL`, repeats the source's layering and face culling and draws the source's
+     texture through the mask shader, so cutout pixels do not occlude. Style index 0 and no screen
+     bounds: an occluder is never a seed and never widens the region, and occluders alone do not set
+     `hasGeometry` (no composite for an arm without an outlined item). At most 64 (render type,
+     buffer) pairs per pass; more are passed through without occluding.
   3. `drawMask` draws the occluders after the item masks (`occluderSource.endBatch()`). Drawn first, an
      occluder would keep the item pixels behind it out of the mask colour, and an outline on the arm
      could no longer be told from an outline next to the item. After both draws the mask colour holds
@@ -428,12 +436,14 @@ Depth handling per phase (`OutlineCompositor.MaskDepth`):
   Rejected: reading Iris's own hand depth (it is pack-specific and needs Iris internals), and turning
   hand outlines off under a shader pack (the feature stays, with the arm now hiding it).
 
-  Known limits: (a) with both Iris hand passes in one frame the mask depth is shared, so an arm drawn
-  in pass 1 can cover an item drawn in pass 2 that is in front of it in the scene; (b) hand geometry
-  drawn outside the buffer source passed to `renderHandsWithItems` (a direct draw, or a mod drawing
-  its arm elsewhere) does not occlude; (c) a pack that moves or distorts the hand after the pass leaves
-  the occluders where the hand was drawn, like the mask itself. None of this is checked in game:
-  **[in-game check pending: T21]**.
+  Known limits: (a) with both Iris hand passes in one frame the mask depth is shared, so an arm
+  drawn in pass 1 can cover an item drawn in pass 2 that is in front of it in the scene; (b) hand
+  geometry drawn outside the buffer source passed to `renderHandsWithItems` (a direct draw, or a mod
+  drawing its arm elsewhere) does not occlude; (c) a pack that moves or distorts the hand after the
+  pass leaves the occluders where the hand was drawn, like the mask itself. Limits (a) to (c) are
+  not checked in game. Verified in game (Iris 1.8.14-beta.1 + Complementary Unbound with Euphoria
+  Patches): the arm hides the outline, the visible blade is fully outlined and nothing is traced
+  along the sleeve.
 * **GUI** (`NONE`). Scissored clear of the mask colour inside the item's bbox; the mask depth is not
   touched. Mask types use `NO_DEPTH_TEST`. The composite uses `UseDepth=0`: every mask pixel is a seed.
 
@@ -1277,10 +1287,10 @@ specs. Generation cost at start-up is **[UNVERIFIED, not measured]**.
 | Environment | Outlines: world (3rd person, armor, dropped, frames) | Outlines: first person | Outlines: GUI | Glint |
 |---|---|---|---|---|
 | Vanilla (Fast/Fancy) | Full | Full | Full | Full |
-| Fabulous | Full. Composite goes into main before the transparency chain; translucent layers combine over it correctly. `glintTranslucent` / `entityGlint` slots keep `ITEM_ENTITY_TARGET`. | Full | Full | Full |
+| Fabulous | Full. Composite goes into main before the transparency chain; translucent layers combine over it correctly. `glintTranslucent` / `entityGlint` slots keep `ITEM_ENTITY_TARGET`. Outlines tested in game without a shader pack (held items, item frames, dropped items, occlusion, stained glass from the front and side, water, rain, GUI on and off). | Full | Full | Full |
 | Sodium 0.8.13 | Full. Sodium replaces terrain only. Its item fast path (`ItemRendererMixin`) and `putBulkData` intrinsics fall back to vanilla code for our tee because it is not a `BufferBuilder` or `VertexBufferWriter`. Sodium logs **one** WARN per class (`VertexConsumerTracker`: "does not support optimized vertex writing code paths"). FRAPI models render through the `MultiBufferSource` we pass. | Full | Full | Full |
 | Iris installed, shaders off | Full (Iris batching and hand pathway inactive) | Full | Full | Full |
-| Iris, shader pack on | **Off** (log once per pack activation, at INFO). Main depth is not the scene depth and entities go to Iris gbuffers. The shadow pass is skipped too (phase closed, plus an explicit `isRenderingShadowPass()` check). | **Best effort, default on, option to disable.** The mask is flushed at TAIL of `renderHandsWithItems` with Iris's hand matrices; the composite happens after Iris's final pass at `GameRenderer.renderLevel` RETURN. The arm hides the outline through hand occluders: under a pack the hand buffer source is wrapped in an `OccluderBufferSource` that records every depth-writing render type of the hand pass (arm, sleeve, held items, maps) as depth-only geometry (`DEPTH_WRITE`, `LEQUAL`, the source's layering and cutout), drawn into the mask depth after the item masks; the composite runs with `UseDepth=1` and linearises depth from the hand projection terms (`DepthProj`; Iris scales the hand projection by 1/8 in z), see 3.3. Known limits: with both Iris hand passes an arm from pass 1 can cover an item from pass 2; hand geometry drawn outside the passed buffer source does not occlude. Packs that move or distort the hand (DOF, hand sway) may misalign it. **[in-game check pending: T21]** | Full | GUI full. World and hand use the vanilla look unless G7 is on; with G7 our slots go through Iris's glint program (texture and matrix honoured; tint and strength pack-dependent). |
+| Iris, shader pack on | **Off** (log once per pack activation, at INFO). Main depth is not the scene depth and entities go to Iris gbuffers. The shadow pass is skipped too (phase closed, plus an explicit `isRenderingShadowPass()` check). | **Best effort, default on, option to disable.** The mask is flushed at TAIL of `renderHandsWithItems` with Iris's hand matrices; the composite happens after Iris's final pass at `GameRenderer.renderLevel` RETURN. The arm hides the outline through hand occluders: under a pack the hand buffer source is wrapped in an `OccluderBufferSource` that records every depth-writing render type of the hand pass (arm, sleeve, held items, maps) as depth-only geometry (`DEPTH_WRITE`, `LEQUAL`, the source's layering and cutout), drawn into the mask depth after the item masks; the composite runs with `UseDepth=1` and linearises depth from the hand projection terms (`DepthProj`; Iris scales the hand projection by 1/8 in z), see 3.3. Known limits: with both Iris hand passes an arm from pass 1 can cover an item from pass 2; hand geometry drawn outside the passed buffer source does not occlude. Packs that move or distort the hand (DOF, hand sway) may misalign it. Verified in game (Iris 1.8.14-beta.1 + Complementary Unbound): the arm hides the outline, the visible blade is fully outlined. | Full | GUI full. World and hand use the vanilla look unless G7 is on; with G7 our slots go through Iris's glint program (texture and matrix honoured; tint and strength pack-dependent). |
 | First-person animation mods (Punchy 2.8f) | n/a | Full for items drawn through `ItemRenderer.render` inside `renderHandsWithItems`: THIRD_PERSON hand contexts there count as FIRST_PERSON. Not outlined: items Punchy draws without `ItemRenderer.render` (bedrock-geometry items, chests, boats). Verified in game: first-person outlines and glint rules on Punchy-held items drawn through `ItemRenderer.render` (main hand and offhand). | n/a | Full: the hand pass marker (G8) applies first-person rules to the same items |
 | First-person mode of player-animation-lib / Better Combat | The held item is drawn in the world pass as THIRD_PERSON and is outlined as a third-person item; none under a shader pack | Not applicable (the item is not drawn in the HAND phase) | n/a | THIRD_PERSON rules |
 | Other glint mods | Unaffected | Unaffected | Unaffected | If they replace the `RenderType.glint()` getters, our G5a never sees vanilla types and their look wins. If they also hook `BufferSource.getBuffer`, the last modifier wins. Document as incompatible-by-design. |
@@ -1563,8 +1573,13 @@ the user folder `<configDir>/glintsmith/glints/` is created if missing.
    Both are supported by bytecode inspection (HandRenderer sets the projection, calls
    `renderHandsWithItems` with an unflushable wrapper and flushes right after; the hand renders inside
    `LevelRenderer.renderLevel`; `finalizeLevelRendering` runs at its RETURN).
-   *Recommendation:* ship it on by default with `handWithShaderPack` as an off switch; test with
-   Complementary, BSL and a DOF pack.
+   Resolved: the arm hiding the outline is done by hand occluders (3.3), and the feature ships on by
+   default with `handWithShaderPack` as an off switch. Verified in game with Iris 1.8.14-beta.1 and
+   Complementary Unbound with Euphoria Patches: hand outlines stay on, the arm hides them, no outline is
+   traced along the sleeve. Remaining limits: two Iris hand passes share one mask depth, hand geometry
+   drawn outside the passed buffer source does not occlude, and packs that move or distort the hand
+   (DOF, hand sway) may misalign the outline.
+   *Recommendation:* keep as is; test BSL and a DOF pack if users report problems.
 3. **World outlines under shader packs** are off. Making them work would need either rendering the
    mask from Iris's depth texture or an Iris API that 1.21.1 does not have.
    *Recommendation:* accept for v1. Revisit with Iris's depth texture via its internals only if users
@@ -1618,7 +1633,8 @@ the user folder `<configDir>/glintsmith/glints/` is created if missing.
 
 Setup: dev client with Fabric API only. Then repeat the marked rows with Sodium 0.8.13; with Iris
 1.8.14 and shaders off; and with Iris plus Complementary Reimagined (shaders on). Video setting
-Fabulous for the rows marked **F**.
+Fabulous for the rows marked **F**. Fabulous outline rows (7, 14) were tested in game without
+shaders: passed.
 
 Outlines:
 
@@ -1639,7 +1655,7 @@ Outlines:
    (enchanted) is outlined with the "armor" target on, and not outlined with it off.
 7. A dropped enchanted book and a dropped enchanted block item: outlined. Behind a wall: **not**
    visible. Half behind a wall corner: outline only around the visible part, none on the wall. Under
-   water: visible through the water surface (Fast and Fancy) **F**.
+   water: visible through the water surface (Fast and Fancy) **F** (tested in game, passed).
 8. An item frame with an enchanted pickaxe; a glow item frame; a campfire with items (FIXED → frame
    target).
 9. Several outlined items with different rules on screen at once (rainbow, pulse, per-enchantment,
@@ -1650,9 +1666,12 @@ Outlines:
     offset outlines, no errors.
 12. F3+T resource reload and resource-pack change: outlines come back (shaders recreated).
 13. Iris shaders on: world outlines are off (one INFO line), hand outlines on (option off works), GUI
-    outlines on, no errors in the log. Toggle the shader pack while in game.
-14. Fabulous **F**: dropped stained glass block (`itemEntityTarget`), translucent items, rain in front
-    of an outlined item (rain over the outline).
+    outlines on, no errors in the log. Toggle the shader pack while in game. Hand part passed in game
+    (Iris 1.8.14-beta.1 + Complementary Unbound with Euphoria Patches): hand outlines stay on, the arm
+    hides them, world outlines off with one INFO line, GUI outlines work.
+14. Fabulous **F**: dropped stained glass block (`itemEntityTarget`), translucent items, rain in
+    front of an outlined item (rain over the outline). Tested in game, passed (stained glass seen
+    from the front and side).
 15. Performance: an empty world with nothing outlined shows no FPS difference against Glintsmith with
     all features off. With 50 enchanted dropped items on screen, check the F3 frame time.
 16. Failsafe: in a debug build, force an exception in the compositor (system property

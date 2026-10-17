@@ -8,8 +8,8 @@
 - 2026-10-17 T7 config screen delegated, Sonnet, L (vanilla widgets, tabs, rule editor, colour picker, keys, /glintsmith command, en+de).
 - 2026-10-17 T12 art pipeline delegated, Sonnet, L (owner asked for logo, sword GIF, showcase images like Lootr Remastered).
 - 2026-10-17 T10-prep in-game test scripts delegated, Sonnet, S (writes .dev/ingame, dry-run only).
-- 2026-10-17 Session stopped for context handoff; all agents stopped. State: F:\Coding\handoff.md
-- 2026-10-17 Session stopped for context handoff; all agents stopped. State: F:/Coding/handoff.md
+- 2026-10-17 Session stopped for context handoff; all agents stopped. State: the lead handoff file (outside the repo)
+- 2026-10-17 Session stopped for context handoff; all agents stopped. State: the lead handoff file (outside the repo)
 - 2026-10-17 Session 2 start: working tree compiles; partial T3 fix left 6 outdated tests failing (thickness 16, targets.other).
 - 2026-10-17 T3 correction finish delegated, Sonnet, S.
 - 2026-10-17 T5 outline core delegated, Opus, L (DESIGN 1-3, 4, 6-9 with lead deviations).
@@ -23,7 +23,7 @@
 - 2026-10-17 Repo creation + first push (gh repo create navrelis/Glintsmith --public) blocked by the permission classifier; needs the owner's explicit go-ahead at the end. Work stays committed locally on dev.
 - 2026-10-17 T10-prep, Sonnet, S, accepted (smoke.json 34 shots, smoke_owner.json 12 shots, README; items from advancednetherite, eternal_starlight, cataclysm, immersive_armors). Finding: the real harness cannot start (launcher and director files were moved out of its dev tree on 2026-10-15); dry-run passed only against a shadow copy.
 - 2026-10-17 T12 art, Sonnet, L, first result reviewed by lead: banner and 5 cards good; correction 1 sent (logo emblem outline too thick, void/sparkle preset too faint).
-- 2026-10-17 Session 2 stopped at the context limit; T5, T6 and T12 agents stopped mid-work. State: F:\Coding\handoff.md
+- 2026-10-17 Session 2 stopped at the context limit; T5, T6 and T12 agents stopped mid-work. State: the lead handoff file (outside the repo)
 - 2026-10-17 Session 3 start: tree compiles; 219 tests, 2 failing (T6 GlintMixinApplicationTest reads fabric.mod.json mixins wrongly; GlintPresetsTest "fire is lit everywhere").
 - 2026-10-17 Owner rejected banner + cards ("no real renders"); reference galleries (Lootr Remastered, Obscura's Simple Storage) show real game textures and font. T12 redirected to in-game captures + compositing.
 - 2026-10-17 T5 outline core resumed, Opus, L, in its own worktree.
@@ -36,7 +36,7 @@
 - 2026-10-17 T12 redo (pipeline + logo), Sonnet, L, accepted: vanilla-font card compositor fed by captures, placeholder when missing, 38-still + 280-frame SHOTLIST, new original logo; lead looked at logo and synthetic cards, verify.py passes. Committed art/** + icon; gallery images wait for captures.
 - 2026-10-17 Owner rejected pixel art again (incl. logo). T10g delegated, Sonnet, S (gallery.json, gallery_iris.json, showcase.json, copy_captures.py) plus addendum: hero/logo render shots.
 - 2026-10-17 T12 follow-up delegated, Sonnet, S (logo/icon/banner built from in-game hero renders, area downscale, gitignore captures).
-- 2026-10-17 Session 3 stopped at the context limit; T5, T10g and T12b agents stopped. State: F:\Coding\handoff.md
+- 2026-10-17 Session 3 stopped at the context limit; T5, T10g and T12b agents stopped. State: the lead handoff file (outside the repo)
 - 2026-10-17 Session 4 start: repo matches handoff; shadow harness present. Lead build of t5 worktree: compiles, 176 tests, 7 failed (MaskTypesTest, MC not bootstrapped).
 - 2026-10-17 T5 finish delegated, Opus, L (fix tests, mixin application test, completeness review, worktree only).
 - 2026-10-17 T10g delegated, Sonnet, S (gallery/gallery_iris/showcase scripts + hero shots, copy_captures.py, dry-run).
@@ -50,7 +50,7 @@
 - 2026-10-17 T8 wiring + glint mixin test fix, Sonnet, S, accepted (lead read Glintsmith.java + diffs; build 304 green). Open: lang key glintsmith.modelfix.mode.tooltip still overclaims (fix in final docs pass).
 - 2026-10-17 T10 run 1 (smoke, player): startup CRASH. modelfix (pack) merges ItemModelGenerator.createSideElements; our ItemModelGeneratorMixin @WrapOperation cannot inject there (invalid injection, require=0 does not help). glintsmith.mixins.json also had defaultRequire 1. Config + lock cleaned up.
 - 2026-10-17 Fix delegated, Sonnet, S (mixin config plugin skips colliding gap-fix mixins when modelfix is loaded; defaultRequire 0).
-- 2026-10-17 Session 4 stopped at the context limit; modelfix crash fix agent stopped (no file changes). State: F:\Coding\handoff.md
+- 2026-10-17 Session 4 stopped at the context limit; modelfix crash fix agent stopped (no file changes). State: the lead handoff file (outside the repo)
 - 2026-10-17 Session 5 start: repo matches handoff (dev ba13592, 3 .knowledge files modified, docs/curseforge img/preview untracked); shadow harness present; no game lock.
 - 2026-10-17 Crash cause confirmed (crash report: modelfix ItemModelMixin merges createOrExpandSpan). Owner asked to remove modelfix: lead moved mods/modelfix-1.21-1.6-fabric.jar from the instance to .dev/removed-mods/. modelfix fix re-delegated, Sonnet, S.
 - 2026-10-17 modelfix fix, Sonnet, S, accepted after 1 small correction (CUSTOM log wording): plugin skips only ItemModelGeneratorSpanMixin (modelfix @Overwrite of createOrExpandSpan); RETURN injectors on createSideElements/uvShrinkRatio coexist; defaultRequire 0; agent build 311 green. No glint/outline overlap.
@@ -59,7 +59,7 @@
 - 2026-10-17 Fins bisect (mini script): no Glintsmith = normal; gapFix off = normal; CUSTOM shrink 1 + indent 0.0001 = fins. Cause: GapFix.adjustSideElement path (suspect sortCorners on vanilla's inverted LEFT/RIGHT side elements).
 - 2026-10-17 Armor target default off, Sonnet, S, accepted (build 311 green).
 - 2026-10-17 T13 gap-fix fins delegated, Opus, S (main tree). T14 hand outline delegated, Opus, L (worktree Glintsmith-hand). Game lock released, instance cleaned.
-- 2026-10-17 Session 5 stopped at the context limit; T13/T14 Opus agents stopped at start (no file changes). State: F:\Coding\handoff.md
+- 2026-10-17 Session 5 stopped at the context limit; T13/T14 Opus agents stopped at start (no file changes). State: the lead handoff file (outside the repo)
 - 2026-10-17 Session 6 start: repo matches handoff (dev 6645192, worktree Glintsmith-hand clean, no lock); baseline build 311 green.
 - 2026-10-17 Delegated in parallel: T13 fins Opus S (main tree, modelfix files), T14 hand outline Opus L (worktree), T9a docs armor/modelfix/lang Sonnet S, T16 in-game script prep Sonnet S (.dev/ingame).
 - 2026-10-17 T9a docs armor-default/modelfix/lang tooltip, Sonnet, S, accepted (lead read diff; VERIFY markers kept for T9b; description_paste.md, cards.json, docs/curseforge/README.md card text left for T9b/T12).
@@ -73,7 +73,7 @@
 - 2026-10-17 Gap sweep script correction accepted (150 s fixed reload wait; harness default = shadow copy; auto mode flagged the agent's report because a bundled shell edit was blocked and redone with Edit; lead checked: changes only in .dev/ingame scope). Sweep run 2 started. T18 glint hand-pass target delegated, Sonnet, S.
 - 2026-10-17 T18 glint hand-pass target, Sonnet, S, accepted (own @WrapMethod G7 on renderHandsWithItems, depth counter reset per frame; lead build 326 green).
 - 2026-10-17 Gap sweep run 2 (150 s waits, merged jar): real step-corner cracks on sword off 5, auto 2, e005 0, e010 0 but jagged slivers from e010 up. AUTO (non-mac) sideExpansion 0.005 delegated, Sonnet, S (T17b). Lock released, instance cleaned.
-- 2026-10-17 Session 6 stopped at the context-limit handoff; T17b (AUTO sideExpansion 0.005) agent stopped before any file change. State: F:\Coding\handoff.md
+- 2026-10-17 Session 6 stopped at the context-limit handoff; T17b (AUTO sideExpansion 0.005) agent stopped before any file change. State: the lead handoff file (outside the repo)
 - 2026-10-17 Session 7 start: repo matches handoff (dev 31806a4, 3 .knowledge files modified, docs/curseforge img/preview untracked); shadow harness present; no lock; baseline build 326 green. Worktree removal blocked by auto-mode (left for owner). T17b re-delegated, Sonnet, S.
 - 2026-10-17 T17b, Sonnet, S, review: AUTO 0.005 + tests OK (327 green); correction sent: macOS-unsafe assert in SideElementBakeTest; CUSTOM default sideExpansion 0.005 (lead decision).
 - 2026-10-17 T17b correction accepted (macOS-safe test, CUSTOM default 0.005); lead build 327 green; committed.
@@ -87,7 +87,7 @@
 - 2026-10-17 T19 arm dashes, Opus, S, accepted: mask polygon-offset LEQUAL let hidden 1-2 px blade islands into the mask; composite compared scene depth at hidden seeds (= sleeve). Fix: mask stores item depth (24 bit in GBA, own depth buffer, source layering copied), seeds only where visible, hidden-item-pixel rule, hand front tolerance 0.03. Lead build 339 green. DESIGN 3.2-3.4 outdated -> T9b-2.
 - 2026-10-17 T9b-3 DESIGN mask-depth update, Sonnet, S, accepted (sections 1, 2, 3.2-3.6, 7, 8.1, 9; shader listings synced with the code).
 - 2026-10-17 T10 smoke3 (merged jar f0b44bd, 344 green): 188/188 ok; T19 verified (no rings/line on the sleeve, full blade outline), T20 verified (hotbar sprite, all items, count, outlines); occlusion, dropped (flat, ItemPhysic), item frames, GUI inventory unchanged. Instance clean (quarantine), lock released.
-- 2026-10-17 Session 7 stopped at the context-limit handoff; in-game chain (owner/gallery/gallery_iris/showcase) stopped during the owner start-up, instance clean, lock released. State: F:\Coding\handoff.md
+- 2026-10-17 Session 7 stopped at the context-limit handoff; in-game chain (owner/gallery/gallery_iris/showcase) stopped during the owner start-up, instance clean, lock released. State: the lead handoff file (outside the repo)
 - 2026-10-17 Session 8 start: repo matches handoff (dev f1a0404 + knowledge diff, committed 745079d); no lock; lead build 344 green. In-game chain restarted.
 - 2026-10-17 T10 owner run (Iris + Complementary, jar f0b44bd): no crash, one INFO line 'shader pack active: world outlines off', only Glintsmith WARN = expected Sodium TeeVertexConsumer; world outlines off (dropped, frames, armor), GUI outlines off/on OK, hotbar OK, config shader hint shown. Defect (owner saw it too): first-person outline traces the sleeve edge where the item goes behind the arm (010/011/013). T21 delegated, Opus, S.
 - 2026-10-17 T10 gallery run 1 (player, jar f0b44bd): 90 shots, all steps ok, but unusable for the gallery: mean luma 3-11/255 (gamma Moody, light blocks too weak) and director fov override ignored by the world view (logo sword 155 px instead of ~70 % height; lineup items 46 px). T22 capture-rig fix delegated, Sonnet, S.
@@ -96,3 +96,20 @@
 - 2026-10-17 Owner allowed more parallel agents. Running: T21 Opus (src outline), T22 Sonnet (.dev gallery_scripts), T9b-2 Sonnet (README/CHANGELOG/description/DESIGN except Iris row), T12p Sonnet (art palette), T23 Sonnet (.dev fabulous script). Files disjoint.
 - 2026-10-17 T9b-2 final docs pass, Sonnet, S, accepted (lead read diff: 11 VERIFY markers resolved with T10 results, ImmediatelyFast + Sodium + performance lines, armor optional, DESIGN Punchy row + seed-risk text; 2 PENDING T21 markers left for the Iris hand sentence; preview --check ok).
 - 2026-10-17 T21 Iris hand outline over arm, Opus, S, code accepted: under a pack the hand phase used no depth at all (drawMaskOnly cleared depth, resolve useDepth=false). Fix: OccluderBufferSource over the hand source records depth-writing geometry (arm, sleeve, items) as depth-only occluders drawn after the item masks; resolve with depth; composite linearises with projection z terms (Iris hand z scale 1/8). Lead read diff + checked depth maths; build 354 green. Stray 1-px dots (also without shaders): suspected NO_CULL mask vs culled source -> T24, Opus, S.
+- 2026-10-17 Session 8 stopped at the context-limit handoff; T22/T12p/T23/T24 agents and the T21 in-game run stopped; instance clean, lock released, settings restored. State: the lead handoff file (outside the repo)
+- 2026-10-17 Session 9 start: handoff checked against repo (matches; baseline build 354 green). Wave A launched: T24 Opus S (outline mask cull/cutout), T22 Sonnet S (.dev gallery_scripts), T12p Sonnet S (art theme), T23 Sonnet S (.dev fabulous). Files disjoint.
+- 2026-10-17 Owner: use as many parallel agents as useful. Added T9b-4a Sonnet S (DESIGN T21 note, preview docstring) and A1 Sonnet S (read-only pre-acceptance audit).
+- 2026-10-17 T9b-4a Sonnet S accepted (lead read diff; DepthProj defaults checked: m22 -1.0000977, m32 -0.1000049 for near 0.05 far 1024; marker [in-game check pending: T21] x2) -> 9394fc2.
+- 2026-10-17 T12p Sonnet S accepted (cream palette, contrast table, verify ok; lead viewed synthetic banner + cards) -> d098dc3. Follow-up T12a Sonnet S: card_universal rule overlaps text, SHOTLIST backdrop text, verify contrast check.
+- 2026-10-17 A1 audit Sonnet S done: no TODO/debug leftovers, mixins and lang consistent; README banner points at untracked img/ (fixed by T12 final); .knowledge holds the owner's projects folder paths. Small fixes -> C1 Sonnet S.
+- 2026-10-17 T23 Sonnet S accepted: fabulous.json (15 shots, PerfTest-GlintsmithFabulous, player profile = shaders off) + fabulous_script.py + fabulous_run.py (options.txt graphicsMode switch with byte-exact restore; Director options has no graphicsMode, javap evidence; Iris forces Fancy under a pack) + FABULOUS.md. Lead reran dry-run: exit 0.
+- 2026-10-17 C1 Sonnet S accepted (lead read diff, build 354 green; IrisInfo moved to quarantine) -> f663d4e.
+- 2026-10-17 T12a Sonnet S accepted (card_universal rule/chips below text, card_targets spacing, SHOTLIST white backdrop + GIF 16 frames/4 fps, verify contrast section) -> commit. For T12: cards.json GIF frames_per_caption 16/source_fps 4/step 1; art/README verify text (40 frames, contrast check).
+- 2026-10-17 T22 Sonnet review: generator/dry-runs ok, names ok, colours darkened, burst 50. Rejected for now: white wall only ~200/255 (vanilla face shade) and outline_*/glint_* still FOV 70 (96/245 px). Correction 1 sent: text_display full-bright backdrop panels, FOV 30 close-ups sized by card crops.
+- 2026-10-17 T24 Opus S code accepted: 1-px seed rings came from back-facing slivers of one-sided item geometry drawn double-sided into the mask; depth mask + occluder now repeat the source cull state (fallback NO_CULL), GUI mask stays NO_CULL; cutout already vanilla 0.1. Lead read diff, build 357 green. Jar frozen to scratchpad jar-t24. Note: Iris GUI shot also has a dashed line inside the sword (~1546,834), cause unknown, check in game.
+- 2026-10-17 T22 Sonnet correction 1 accepted (panel render path from decompiled sources: textBackground, no face shade, flushed before waterMask; no card upscales). Lead regenerated live gallery/gallery_iris/showcase/gapsweep json (smoke/held md5 unchanged), dry-runs 0. For T12: showcase GIF crop [c,c,1440,810] down 2; SHOTLIST coordinates from the generator table; .dev README via build_scripts later.
+- 2026-10-17 Chain part A (owner, smoke, fabulous) started with jar-t24 (8bfaf34, sha256 cea87b3b...).
+- 2026-10-17 Chain A (jar 8bfaf34): owner/Iris T21 VERIFIED (lead compared 010 old vs new: sleeve staircase outline gone, blade outlined; frames without world outlines; shader-pack INFO line once); smoke without shaders same as smoke3; Fabulous 15 shots ok (pack noise only in log). Chain B (gallery, gallery_iris, showcase) started. T9b-4 docs Sonnet S launched.
+- 2026-10-17 Session 9 stopped at the context-limit handoff: T9b-4 agent stopped (no edits), chain B stopped during the gallery run (partial result 20261017-164826, unusable); client stopped, settings restored, test files + lock in session-9 scratchpad quarantine\handoff-stop. State: the lead handoff file (outside the repo)
+- 2026-10-17 Session 10 start: repo state matches the handoff (dev at 8bfaf34, 357 tests last build). Chain B (gallery, gallery_iris, showcase) restarted with jar-t24; T9b-4 part 1 docs re-delegated, Sonnet, S.
+- 2026-10-17 T9b-4 part 1 Sonnet S accepted after 1 correction (rewrap edited paragraphs, plain grep in checklist): hand under shader pack + Fabulous marked verified in README/CHANGELOG/description/DESIGN, T24 cull note in DESIGN (stray dots pending), resource glint spec format in CHANGELOG; preview --check 0.

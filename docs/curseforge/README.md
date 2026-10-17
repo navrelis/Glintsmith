@@ -2,7 +2,7 @@
 
 | File | What |
 |---|---|
-| `description.md` | The project description (Markdown), with one paste marker line for each image and HTML comments for claims that are not final yet (at the moment one `PENDING T21` comment) |
+| `description.md` | The project description (Markdown), with one paste marker line for each image and HTML comments for claims that are not final yet (at the moment there are none) |
 | `summary.txt` | The short summary for the project form (one line, at most 250 characters) |
 | `upload-checklist.md` | The fields of the CurseForge forms and what to enter |
 | `preview.html` | The description with the images inline, for a browser; works offline when opened from this folder |
@@ -31,7 +31,7 @@ The image names are the `out` fields of `art/gallery/cards.json`. They are compo
 
 ## Putting the description on CurseForge
 
-1. Remove the HTML comments, or use `description_paste.md`, which already has none. Do this only after every comment has been resolved (the `PENDING T21` comment included) and the text has been corrected where it was wrong.
+1. Remove the HTML comments, or use `description_paste.md`, which already has none. Do this only after every comment has been resolved and the text has been corrected where it was wrong.
 2. Open the project's description editor, switch to the Markdown editor and paste the content.
 3. At every line that reads `>>> PASTE IMAGE: file_name.png | Alt text <<<`, upload `img/file_name.png` with the editor's image button, use the text after the `|` as the alt text, and delete the marker line.
 4. Check the preview. The comparison is a Markdown table; if the editor does not render tables, rebuild it in the rich text editor or replace it with a list.

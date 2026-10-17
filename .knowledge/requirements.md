@@ -1,7 +1,7 @@
 # Requirements (Glintsmith, session 2026-10-17)
 
 ## Owner task (2026-10-17)
-Build one new Fabric 1.21.1 mod in a new folder in `F:\Coding` with a name that can become popular. It must customize item outlines, the enchantment glint (texture and colours) and fix gaps in item models. Study three sources, take what is allowed, otherwise write our own code. Better than the originals in every aspect: more versatile, optimised, without their bugs.
+Build one new Fabric 1.21.1 mod in a new folder in the owner's projects folder with a name that can become popular. It must customize item outlines, the enchantment glint (texture and colours) and fix gaps in item models. Study three sources, take what is allowed, otherwise write our own code. Better than the originals in every aspect: more versatile, optimised, without their bugs.
 
 Sources studied (reference only, clones live in the session scratchpad, never in the repo):
 - MoubaEZPZ/custom-glow-enchantment-outline, branch `mc1.21.1/dev`: All Rights Reserved. No code reuse.
@@ -12,7 +12,7 @@ Sources studied (reference only, clones live in the session scratchpad, never in
 ## Owner answers (2026-10-17)
 - **Universal:** must work with all mods and all items, not fixed to specific items or tools. Default target: any enchanted item, from any mod, any model type (flat, 3D, custom renderer).
 - The owner replied to the question list without changes, so the lead's defaults stand:
-  - Name **Glintsmith**, folder `F:\Coding\Glintsmith`, mod id `glintsmith`, package `navrelis.glintsmith`.
+  - Name **Glintsmith**, folder `Glintsmith` next to the other projects, mod id `glintsmith`, package `navrelis.glintsmith`.
   - Licence MIT, all code our own.
   - Scope v1.0.0:
     - outlines on held items (first and third person), worn armor, dropped items, item frames, optional GUI items
@@ -36,7 +36,7 @@ Sources studied (reference only, clones live in the session scratchpad, never in
 
 ## Environment facts (verified 2026-10-17)
 - Java 21.0.10 (Microsoft), gh logged in as `navrelis`, Gradle only via wrapper.
-- Template project with the same stack: `F:\Coding\DynamicLighting` (Loom plugin `net.fabricmc.fabric-loom-remap`, Gradle 9.5.0, JUnit with fabric-loader-junit).
+- Template project with the same stack: the sibling project DynamicLighting (Loom plugin `net.fabricmc.fabric-loom-remap`, Gradle 9.5.0, JUnit with fabric-loader-junit).
 - Nytheria pack: Sodium 0.8.13, Iris 1.8.14-beta.1, Mod Menu 11.0.5.
 
 - 2026-10-17 (session 8) Owner: logo and image showcase on a white / cream-white background (in-game backdrop for the hero/logo/showcase captures, light card panels), not black.
