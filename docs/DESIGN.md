@@ -958,11 +958,12 @@ All mixins live in package `navrelis.glintsmith.mixin` (sub-packages `outline`, 
 | G4 | `glint.BlockEntityWithoutLevelRendererGlintMixin` | `net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer` | `renderByItem(Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/ItemDisplayContext;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;II)V` | `@WrapMethod` | `pushBewlr(stack, ctx)`. Fabric's builtin item renderers run inside, because Fabric injects at HEAD of this method. | Shield, trident and BEWLR glints use the ITEM category |
 | G5a | `glint.BufferSourceGlintMixin` | `MultiBufferSource$BufferSource` | `getBuffer(Lnet/minecraft/client/renderer/RenderType;)Lcom/mojang/blaze3d/vertex/VertexConsumer;` | `@ModifyVariable(at = @At("HEAD"), argsOnly = true)` | Substitute vanilla glint types with slot or off types (main source only) | Vanilla glint everywhere; the feature is effectively off |
 | G5b | same | same | `endBatch(Lnet/minecraft/client/renderer/RenderType;)V` TAIL | `@Inject` | When `this == main && type == vanilla entityGlintDirect`, flush every registered slot and off type | Slot glints are flushed by the later `endBatch()`. In non-Fabulous mode that is after water, so items seen through water lose their glint. |
-| G5c | same | same | `endBatch(Lnet/minecraft/client/renderer/RenderType;Lcom/mojang/blaze3d/vertex/BufferBuilder;)V` (private) TAIL | `@Inject` | `GlintSystem.onBatchDrawn(type)` releases the slot | Slots are released only at frame start, so at most 32 distinct looks per kind per frame |
+| G5c | same | same | `endBatch(Lnet/minecraft/client/renderer/RenderType;Lcom/mojang/blaze3d/vertex/BufferBuilder;)V` (private) TAIL | `@Inject` | `GlintSystem.onBatchDrawn(this, type)` releases the slot; for a subclassed main source (ImmediatelyFast, G9) it also does the G5b flush after the vanilla `entityGlintDirect` | Slots are released only at frame start, so at most 32 distinct looks per kind per frame |
 | G6 | `glint.GameRendererGlintMixin` | `GameRenderer` | `render(Lnet/minecraft/client/DeltaTracker;Z)V` HEAD | `@Inject` | `GlintSystem.onFrameBegin()` | Frame counter is not advanced, so stale slots are never auto-released; `onBatchDrawn` still releases them, and G7 stays off (its shader-pack flag starts as "pack in use" and is only refreshed here), so with Iris the world keeps the vanilla glint |
 | GA1 | `glint.BufferSourceAccessor` | `MultiBufferSource$BufferSource` | field `fixedBuffers` | `@Accessor` | Register slot types as fixed buffers | — |
 | GA2 | `glint.RenderBuffersAccessor` | `net.minecraft.client.renderer.RenderBuffers` | field `bufferSource` | `@Accessor` | Get the vanilla main source without going through Iris's `bufferSource()` replacement | — |
 | G8 | `glint.ItemInHandRendererGlintMixin` | `net.minecraft.client.renderer.ItemInHandRenderer` | `renderHandsWithItems(...)` (same descriptor as O2b) | `@WrapMethod`, `require = 0` | `GlintContext.beginHands()`; `endHands()` in `finally`. Held items drawn inside count as FIRST_PERSON for rules, also with a THIRD_PERSON hand context (first-person animation mods). Independent of the outline hook O2b. | Items drawn by a first-person animation mod use the THIRD_PERSON rules; vanilla hands are unaffected |
+| G9 | `glint.compat.ImmediatelyFastBufferSourceGlintMixin` | `@Pseudo @Mixin(targets = "net.raphimc.immediatelyfast.feature.core.BatchableBufferSource", remap = false)` | `getBuffer` by bare name (verified in the ImmediatelyFast 1.6.15+1.21.1 jar: `public class_4588 getBuffer(class_1921)`, the only `getBuffer` of the class; same naming argument as G7) | `@ModifyVariable(HEAD, argsOnly, require = 0, remap = false)` | `GlintSystem.substitute(this, requested)`: G5a for ImmediatelyFast's main source (5.2, point 7). The G5b flush for it runs in G5c. Not verified in game yet. | With ImmediatelyFast installed, glints of the main source (first-person hand; the world without Iris) keep the vanilla look |
 | G7 | `glint.compat.IrisFullyBufferedGlintMixin` | `@Pseudo @Mixin(targets = "net.irisshaders.batchedentityrendering.impl.FullyBufferedMultiBufferSource", remap = false)` | `getBuffer` by bare name. Verified in the shipped Iris 1.8.14-beta.1 jar: `public class_4588 getBuffer(class_1921)`, the only `getBuffer` of the class; vanilla does not obfuscate `MultiBufferSource.getBuffer` (no intermediary entry), so the name is the same in dev and production while the descriptor is not. | `@ModifyVariable(HEAD, argsOnly, require = 0, remap = false)` | `GlintSystem.substituteBuffered`: the G5a swap for Iris's world buffer source, with pinned slots (5.2, point 6). Off while a shader pack is in use. Verified in game (Iris 1.8.14-beta.1, shaders off): preset glints on armor stands and on the showcase stand show their own colours; under Complementary Unbound the world glint stays vanilla. | With Iris installed (shaders on or off), world glints (armor, entity-held items, item frames, dropped items, armor stands) keep the vanilla look; hand and GUI unaffected |
 
 Fabric events for T6: `ClientLifecycleEvents.CLIENT_STARTED` (capture the main source, generate the
@@ -1033,6 +1034,21 @@ presets) and the reload listener `glintsmith:glint_textures`.
   `RenderType.draw(MeshData)`, ordered by transparency class (`OPAQUE`, `OPAQUE_DECAL`,
   `GENERAL_TRANSPARENT`, `DECAL`, ...), so G5b and G5c never run for it either. The hand and the GUI
   render outside `renderLevel` (shaders off) and keep using the vanilla main source. G7 covers the world.
+* **ImmediatelyFast main buffer source (verified in the ImmediatelyFast 1.6.15+1.21.1 bytecode).**
+  `core.MixinVertexConsumerProvider` `@Overwrite`s `MultiBufferSource.immediateWithBuffers`, which
+  `RenderBuffers` uses to build its `bufferSource`, and returns a `BatchableBufferSource` (unless its
+  debug option `disable_universal_batching` is set). So with ImmediatelyFast installed the main source
+  that GA2 captures **is** that subclass. Its `getBuffer`, `endBatch()`, `endLastBatch()` and
+  `endBatch(RenderType)` are overrides that never call the vanilla bodies: G5a and G5b never run for
+  the main source. It keeps the vanilla `fixedBuffers` semantics (a fixed type gets its own builder on
+  the fixed `ByteBufferBuilder`; `endBatch()` draws the non-fixed layers, then every fixed type in map
+  order) and draws each batch through the vanilla private `endBatch(RenderType, BufferBuilder)`, so G5c
+  still runs. Without G9 every glint of the main source keeps the vanilla look, whatever the config
+  says: the first-person hand (any setup with ImmediatelyFast), and the world when Iris is not
+  installed. G9 (5.2, point 7) fixes this. ImmediatelyFast's GUI sources are not covered: `GameRenderer.render`
+  hands `GuiGraphics` its own non-batching `BufferSource` (a plain vanilla instance, not main) and the
+  HUD uses its `HudBatchingBufferSource`, so with ImmediatelyFast the GUI glint stays vanilla (G5a's
+  `source == main` rule; a known limit, see the compatibility matrix in section 6).
 
 ### 5.2 Strategy
 
@@ -1064,6 +1080,18 @@ presets) and the reload listener `glintsmith:glint_textures`.
    vanilla `BufferSource` instances other than main still get the vanilla glint. Verified in game
    (Iris 1.8.14-beta.1, shaders off): armor on armor stands showed every preset in its colour against
    the purple vanilla glint, and the 7-look showcase stand showed a different colour per look.
+7. **ImmediatelyFast's main source** (G9). When the main source is ImmediatelyFast's
+   `BatchableBufferSource` (5.1), G9 calls `substitute` from its `getBuffer` with the unchanged G5a
+   rules (`source == main`, slot registered as a fixed buffer of main). The subclass honours the fixed
+   map, so registration, ordering (slots after the vanilla fixed types in `endBatch()`) and release
+   (G5c) work as in vanilla. G5b's flush after the vanilla `entityGlintDirect` batch is done from G5c
+   instead, because the public `endBatch(RenderType)` is overridden: `onBatchDrawn(source, type)` flushes
+   when `source == main`, the type is the vanilla `entityGlintDirect` and the source's class is not the
+   plain vanilla `BufferSource` (for that class G5b keeps doing it, so the vanilla path is unchanged).
+   Note on the T10/T12 captures: `hero_firstperson` (rainbow look) shows a uniform purple wash on the
+   held sword while the same look in an item frame (`hero_sword_rainbow`, G7) shows the rainbow, i.e.
+   the first-person capture was the vanilla glint; the hand was never verified with a custom look
+   before G9.
 
 ### 5.3 Categories, context and resolution
 
@@ -1329,7 +1357,7 @@ specs. Generation cost at start-up is **[UNVERIFIED, not measured]**.
 | Vanilla (Fast/Fancy) | Full | Full | Full | Full |
 | Fabulous | Full. Composite goes into main before the transparency chain; translucent layers combine over it correctly. `glintTranslucent` / `entityGlint` slots keep `ITEM_ENTITY_TARGET`. Outlines tested in game without a shader pack (held items, item frames, dropped items, occlusion, stained glass from the front and side, water, rain, GUI on and off). | Full | Full | Full |
 | Sodium 0.8.13 | Full. Sodium replaces terrain only. Its item fast path (`ItemRendererMixin`) and `putBulkData` intrinsics fall back to vanilla code for our tee because it is not a `BufferBuilder` or `VertexBufferWriter`. Sodium logs **one** WARN per class (`VertexConsumerTracker`: "does not support optimized vertex writing code paths"). FRAPI models render through the `MultiBufferSource` we pass. | Full | Full | Full |
-| Iris installed, shaders off | Full (Iris hand pathway inactive) | Full | Full | Full. Iris's batching is active even without a pack: the world draws through its `FullyBufferedMultiBufferSource`, which G7 covers (5.2, point 6); hand and GUI through the main source (G5a). Verified in game (Iris 1.8.14-beta.1, shaders off): preset glints on armor stands and the showcase stand show their colours. |
+| Iris installed, shaders off | Full (Iris hand pathway inactive) | Full | Full | Full. Iris's batching is active even without a pack: the world draws through its `FullyBufferedMultiBufferSource`, which G7 covers (5.2, point 6); hand and GUI through the main source (G5a; with ImmediatelyFast see its row). Verified in game (Iris 1.8.14-beta.1, shaders off): preset glints on armor stands and the showcase stand show their colours. |
 | Iris, shader pack on | **Off** (log once per pack activation, at INFO). Main depth is not the scene depth and entities go to Iris gbuffers. The shadow pass is skipped too (phase closed, plus an explicit `isRenderingShadowPass()` check). | **Best effort, default on, option to disable.** The mask is flushed at TAIL of `renderHandsWithItems` with Iris's hand matrices; the composite happens after Iris's final pass at `GameRenderer.renderLevel` RETURN. The arm hides the outline through hand occluders: under a pack the hand buffer source is wrapped in an `OccluderBufferSource` that records every depth-writing render type of the hand pass (arm, sleeve, held items, maps) as depth-only geometry (`DEPTH_WRITE`, `LEQUAL`, the source's layering and cutout), drawn into the mask depth after the item masks; the composite runs with `UseDepth=1` and linearises depth from the hand projection terms (`DepthProj`; Iris scales the hand projection by 1/8 in z), see 3.3. Known limits: with both Iris hand passes an arm from pass 1 can cover an item from pass 2; hand geometry drawn outside the passed buffer source does not occlude. Packs that move or distort the hand (DOF, hand sway) may misalign it. Verified in game (Iris 1.8.14-beta.1 + Complementary Unbound): the arm hides the outline, the visible blade is fully outlined. | Full | GUI full. World and hand use the vanilla look: G7 is a no-op while a shader pack is in use. Allowing it there would send our slots through Iris's glint program (texture and matrix honoured; tint and strength pack-dependent), not done yet (9, point 4). |
 | First-person animation mods (Punchy 2.8f) | n/a | Full for items drawn through `ItemRenderer.render` inside `renderHandsWithItems`: THIRD_PERSON hand contexts there count as FIRST_PERSON. Not outlined: items Punchy draws without `ItemRenderer.render` (bedrock-geometry items, chests, boats). Verified in game: first-person outlines and glint rules on Punchy-held items drawn through `ItemRenderer.render` (main hand and offhand). | n/a | Full: the hand pass marker (G8) applies first-person rules to the same items |
 | First-person mode of player-animation-lib / Better Combat | The held item is drawn in the world pass as THIRD_PERSON and is outlined as a third-person item; none under a shader pack | Not applicable (the item is not drawn in the HAND phase) | n/a | THIRD_PERSON rules |
@@ -1337,7 +1365,7 @@ specs. Generation cost at start-up is **[UNVERIFIED, not measured]**.
 | Mods with a stencil main framebuffer (e.g. portals) | Disabled after the first failed depth blit (one log line) | Vanilla: disabled likewise | Full | Full |
 | Multiple `renderLevel` per frame (portal mods) | The phase opens and composites per call | Unchanged | Unchanged | Unchanged |
 | Mods drawing items without `MultiBufferSource`, or GUI items without `GuiGraphics.renderItem` (EMI batching) | Not outlined | Not outlined | Not outlined | Vanilla glint if not on the main source |
-| ImmediatelyFast HUD batching (1.6.x) | Unaffected | Unaffected | Full. IF swaps the `GuiGraphics` buffer source for its `HudBatchingBufferSource`, skips the flush inside `renderItem` and draws its batch at the end of each HUD layer, or earlier when anything calls `BufferUploader.draw` / `_drawWithShader` (its `tryForceDrawHudBuffers`). Our mask draw is such a call, made with the mask target bound and scissored; without a flush first, the batch so far (hotbar sprite, earlier slots, counts) would be drawn into the mask and lost. Therefore, when `ItemRenderer.render` of an outlined GUI item ends (O1, the point where vanilla flushes, still with the item's lighting), its buffer source is flushed (depth test off as in `GuiGraphics.flush()`, then restored), which draws the batch onto main in order before the composite; non-outlined items keep batching. The same applies to IF screen batching (`experimental_screen_batching`, off by default). | Unaffected |
+| ImmediatelyFast HUD batching (1.6.x) | Unaffected | Unaffected | Full. IF swaps the `GuiGraphics` buffer source for its `HudBatchingBufferSource`, skips the flush inside `renderItem` and draws its batch at the end of each HUD layer, or earlier when anything calls `BufferUploader.draw` / `_drawWithShader` (its `tryForceDrawHudBuffers`). Our mask draw is such a call, made with the mask target bound and scissored; without a flush first, the batch so far (hotbar sprite, earlier slots, counts) would be drawn into the mask and lost. Therefore, when `ItemRenderer.render` of an outlined GUI item ends (O1, the point where vanilla flushes, still with the item's lighting), its buffer source is flushed (depth test off as in `GuiGraphics.flush()`, then restored), which draws the batch onto main in order before the composite; non-outlined items keep batching. The same applies to IF screen batching (`experimental_screen_batching`, off by default). | Glint: ImmediatelyFast's `BatchableBufferSource` is the main source and bypasses G5a/G5b (5.1); G9 covers it, so the first-person hand (and the world without Iris) get the custom look (not yet verified in game). GUI glints stay vanilla with ImmediatelyFast: its non-batching GUI `BufferSource` and `HudBatchingBufferSource` are not the main source (known limit). |
 
 Detection (`navrelis.glintsmith.render.outline.compat.IrisCompat`, T5):
 
@@ -1506,7 +1534,7 @@ public final class GlintSystem {
     public static void init();                                                         // T8 calls once
     public static RenderType substitute(MultiBufferSource.BufferSource source, RenderType requested); // G5a
     public static void afterEndBatch(MultiBufferSource.BufferSource source, RenderType type);         // G5b
-    public static void onBatchDrawn(RenderType type);                                                 // G5c
+    public static void onBatchDrawn(MultiBufferSource.BufferSource source, RenderType type);          // G5c (+ G5b for G9)
     public static void onFrameBegin();                                                                // G6
 }
 public final class GlintContext {
@@ -1599,6 +1627,7 @@ the user folder `<configDir>/glintsmith/glints/` is created if missing.
    glint.BlockEntityWithoutLevelRendererGlintMixin, glint.BufferSourceGlintMixin, glint.GameRendererGlintMixin,
    glint.ItemInHandRendererGlintMixin, glint.BufferSourceAccessor, glint.RenderBuffersAccessor
    glint.compat.IrisFullyBufferedGlintMixin (G7; @Pseudo, so it is skipped without Iris)
+   glint.compat.ImmediatelyFastBufferSourceGlintMixin (G9; @Pseudo, skipped without ImmediatelyFast)
    ```
 3. No access widener and no `build.gradle` change are needed. Fabric API's transitive access wideners
    cover the render-state classes, and the accessors cover the rest.
@@ -1762,6 +1791,11 @@ Glint:
     preset shows in its colour against the purple vanilla glint. Under Complementary Unbound the world
     glint stays vanilla, GUI and hand outlines work, world outlines stay off. Not checked: zombie or
     player held items, item frames, dropped items.
+28. ImmediatelyFast 1.6.15 installed (G9), shaders off, Item layer with a preset at Scale 0.13 and a
+    RAINBOW tint: the enchanted sword in the first-person hand shows the custom look (the same colours
+    as that look in an item frame, not the uniform purple vanilla wash), also with Punchy; the GUI glint
+    stays vanilla (known limit). Without Iris, armor stands and item frames show the custom look too.
+    Pending.
 
 ---
 

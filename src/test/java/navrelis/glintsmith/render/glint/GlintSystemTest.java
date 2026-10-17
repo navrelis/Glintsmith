@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import net.minecraft.client.renderer.MultiBufferSource;
 
 /**
@@ -59,7 +60,38 @@ class GlintSystemTest {
 
 	@Test
 	void unknownBatchesAreIgnored() {
-		assertDoesNotThrow(() -> GlintSystem.onBatchDrawn(null));
+		assertDoesNotThrow(() -> GlintSystem.onBatchDrawn(null, null));
+		assertFalse(GlintFailsafe.tripped());
+	}
+
+	/**
+	 * ImmediatelyFast's main source is a subclass whose public {@code endBatch(RenderType)} never runs the vanilla body,
+	 * so G5b cannot flush the slots there; drawing the vanilla entityGlintDirect batch must do it instead. A plain
+	 * vanilla source keeps the G5b flush alone (no change of the vanilla path), and foreign sources never flush.
+	 */
+	@Test
+	void drawingEntityGlintDirectFlushesOnlyForASubclassedMainSource() {
+		try (ByteBufferBuilder a = new ByteBufferBuilder(256); ByteBufferBuilder b = new ByteBufferBuilder(256)) {
+			MultiBufferSource.BufferSource vanilla = MultiBufferSource.immediate(a);
+			MultiBufferSource.BufferSource subclass = new MultiBufferSource.BufferSource(b, new Object2ObjectLinkedOpenHashMap<>()) {
+			};
+
+			assertTrue(GlintSystem.flushesFromDraw(subclass, subclass, true), "subclassed main source (ImmediatelyFast)");
+			assertFalse(GlintSystem.flushesFromDraw(subclass, subclass, false), "only after the vanilla entityGlintDirect");
+			assertFalse(GlintSystem.flushesFromDraw(vanilla, vanilla, true), "vanilla class: G5b flushes");
+			assertFalse(GlintSystem.flushesFromDraw(subclass, vanilla, true), "not the main source");
+			assertFalse(GlintSystem.flushesFromDraw(subclass, null, true), "main source not captured yet");
+			assertFalse(GlintSystem.flushesFromDraw(null, null, true));
+		}
+	}
+
+	@Test
+	void drawnBatchesOfForeignSourcesAreIgnoredBeforeTheMainSourceExists() {
+		try (ByteBufferBuilder bytes = new ByteBufferBuilder(256)) {
+			MultiBufferSource.BufferSource other = new MultiBufferSource.BufferSource(bytes, new Object2ObjectLinkedOpenHashMap<>()) {
+			};
+			assertDoesNotThrow(() -> GlintSystem.onBatchDrawn(other, null));
+		}
 		assertFalse(GlintFailsafe.tripped());
 	}
 

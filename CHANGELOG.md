@@ -41,6 +41,13 @@ First release. Client-side only. The jar is `glintsmith-1.0.0.jar`.
 - Failsafes: an error in the outline, glint or gap fix code turns that feature off for the session and logs it once.
 - Unit tests for the config, rules, colours, glint presets and slot pool, and the gap fix math.
 
+### Fixed
+
+- With ImmediatelyFast installed, custom glints were never applied to the first-person hand (and, without Iris, to the
+  world): ImmediatelyFast replaces the game's main buffer source with its own, which bypassed Glintsmith's glint swap, so
+  the held item kept the vanilla glint whatever the Glint tab said. The swap now also hooks ImmediatelyFast's buffer
+  source.
+
 ### Notes
 
 - Written from scratch under the MIT licence. No code, texture or data of Custom Glow Enchantment Outline, Model Gap Fix or

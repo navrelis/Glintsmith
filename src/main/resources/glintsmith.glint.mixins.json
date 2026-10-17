@@ -13,7 +13,8 @@
 		"glint.ItemInHandRendererGlintMixin",
 		"glint.BufferSourceAccessor",
 		"glint.RenderBuffersAccessor",
-		"glint.compat.IrisFullyBufferedGlintMixin"
+		"glint.compat.IrisFullyBufferedGlintMixin",
+		"glint.compat.ImmediatelyFastBufferSourceGlintMixin"
 	],
 	"injectors": {
 		"defaultRequire": 0

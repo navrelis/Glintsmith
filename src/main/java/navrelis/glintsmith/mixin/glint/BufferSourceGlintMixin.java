@@ -12,7 +12,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * G5a to G5c: swaps the vanilla glint render types of the main buffer source for pooled ones, draws them right after
- * the vanilla glint, and frees them once drawn.
+ * the vanilla glint, and frees them once drawn. G5c also does the flush of G5b for subclasses of the main source that
+ * override the public {@code endBatch(RenderType)} without calling it (ImmediatelyFast, see G9): they still draw
+ * through the private {@code endBatch(RenderType, BufferBuilder)}.
  */
 @Mixin(MultiBufferSource.BufferSource.class)
 public abstract class BufferSourceGlintMixin {
@@ -30,6 +32,6 @@ public abstract class BufferSourceGlintMixin {
 	@Inject(method = "endBatch(Lnet/minecraft/client/renderer/RenderType;Lcom/mojang/blaze3d/vertex/BufferBuilder;)V",
 		at = @At("TAIL"), require = 0)
 	private void glintsmith$releaseGlintSlot(RenderType type, BufferBuilder builder, CallbackInfo ci) {
-		GlintSystem.onBatchDrawn(type);
+		GlintSystem.onBatchDrawn((MultiBufferSource.BufferSource) (Object) this, type);
 	}
 }

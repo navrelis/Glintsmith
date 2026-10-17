@@ -36,6 +36,10 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * With Iris installed, the world pass requests its glint from Iris's fully buffered source instead of the main one;
  * {@link #substituteBuffered} (G7) swaps the types there, with pinned slots that live until the next frame.
+ * <p>
+ * With ImmediatelyFast installed, the main source itself is ImmediatelyFast's {@code BatchableBufferSource}, which
+ * overrides {@code getBuffer} and {@code endBatch(RenderType)} without calling the vanilla bodies: G9 runs
+ * {@link #substitute} from its {@code getBuffer}, and {@link #onBatchDrawn} does the G5b flush for it.
  */
 public final class GlintSystem {
 	private static final ResourceLocation RELOAD_ID = ResourceLocation.fromNamespaceAndPath(Glintsmith.MOD_ID, "glint_textures");
@@ -181,14 +185,35 @@ public final class GlintSystem {
 	}
 
 	/**
-	 * G5c: a batch of {@code type} has been drawn; frees its slot.
+	 * G5c: a batch of {@code type} has been drawn by {@code source}; frees its slot. When the main source is a subclass
+	 * (ImmediatelyFast's {@code BatchableBufferSource}, G9) whose public {@code endBatch(RenderType)} does not run the
+	 * vanilla body, G5b never fires; the subclass still draws through the vanilla private method this hook sits in, so
+	 * the G5b flush is done from here for it.
 	 */
-	public static void onBatchDrawn(RenderType type) {
+	public static void onBatchDrawn(MultiBufferSource.BufferSource source, RenderType type) {
 		try {
 			POOL.release(type);
+			// The source is compared first, as in G5b: it keeps the vanilla types untouched until main is captured.
+			if (source == main && main != null && flushesFromDraw(source, main, type == GlintKind.Vanilla.ENTITY_GLINT_DIRECT)) {
+				afterEndBatch(source, type);
+			}
 		} catch (Throwable t) {
 			GlintFailsafe.trip("onBatchDrawn", t);
 		}
+	}
+
+	/**
+	 * Pure decision of G5c: whether drawing a batch must also do the G5b flush. Only for the main source, only for the
+	 * vanilla {@code entityGlintDirect} batch, and only when the source is not a plain vanilla {@code BufferSource}
+	 * (for that class G5b runs at the end of the public {@code endBatch(RenderType)}).
+	 *
+	 * @param source             the source that drew the batch
+	 * @param main               the captured main source, null before the client has started
+	 * @param entityGlintDirect  whether the drawn type is the vanilla {@code entityGlintDirect}
+	 */
+	static boolean flushesFromDraw(@Nullable MultiBufferSource.BufferSource source,
+		@Nullable MultiBufferSource.BufferSource main, boolean entityGlintDirect) {
+		return entityGlintDirect && main != null && source == main && source.getClass() != MultiBufferSource.BufferSource.class;
 	}
 
 	/**

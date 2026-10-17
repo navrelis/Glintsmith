@@ -59,9 +59,10 @@ class GlintMixinApplicationTest {
 		"glint.BlockEntityWithoutLevelRendererGlintMixin", "glint.BufferSourceGlintMixin", "glint.GameRendererGlintMixin",
 		"glint.ItemInHandRendererGlintMixin",
 		"glint.BufferSourceAccessor", "glint.RenderBuffersAccessor",
-		"glint.compat.IrisFullyBufferedGlintMixin"));
+		"glint.compat.IrisFullyBufferedGlintMixin", "glint.compat.ImmediatelyFastBufferSourceGlintMixin"));
 
 	private static final String IRIS_MIXIN = "/navrelis/glintsmith/mixin/glint/compat/IrisFullyBufferedGlintMixin.class";
+	private static final String IF_MIXIN = "/navrelis/glintsmith/mixin/glint/compat/ImmediatelyFastBufferSourceGlintMixin.class";
 
 	/** The transformed bytecode of a class. */
 	private static ClassNode transformed(String name) throws Exception {
@@ -247,8 +248,8 @@ class GlintMixinApplicationTest {
 				}
 			}
 		}
-		assertEquals(10, injectors,
-			"expected G1 to G4 and G8 (WrapMethod), G5a and G7 (ModifyVariable), G5b, G5c and G6 (Inject)");
+		assertEquals(11, injectors,
+			"expected G1 to G4 and G8 (WrapMethod), G5a, G7 and G9 (ModifyVariable), G5b, G5c and G6 (Inject)");
 	}
 
 	/**
@@ -259,9 +260,25 @@ class GlintMixinApplicationTest {
 	 */
 	@Test
 	void irisFullyBufferedMixinTargetsGetBufferByBareNameWithoutRemapping() throws IOException {
+		assertPseudoGetBufferSwap(IRIS_MIXIN, "net.irisshaders.batchedentityrendering.impl.FullyBufferedMultiBufferSource");
+	}
+
+	/**
+	 * G9, same rules as G7: ImmediatelyFast is not on the test class path either. Its {@code BatchableBufferSource} (the
+	 * main source when ImmediatelyFast is installed) overrides {@code getBuffer} without calling the vanilla body, so
+	 * without this mixin G5a never runs for the main source (first-person hand; world without Iris). Verified in the
+	 * ImmediatelyFast 1.6.15+1.21.1 jar: {@code public class_4588 getBuffer(class_1921)}, the only {@code getBuffer} of
+	 * the class.
+	 */
+	@Test
+	void immediatelyFastMixinTargetsGetBufferByBareNameWithoutRemapping() throws IOException {
+		assertPseudoGetBufferSwap(IF_MIXIN, "net.raphimc.immediatelyfast.feature.core.BatchableBufferSource");
+	}
+
+	private static void assertPseudoGetBufferSwap(String mixinResource, String target) throws IOException {
 		ClassNode node = new ClassNode();
-		try (InputStream in = GlintMixinApplicationTest.class.getResourceAsStream(IRIS_MIXIN)) {
-			assertNotNull(in, "missing " + IRIS_MIXIN);
+		try (InputStream in = GlintMixinApplicationTest.class.getResourceAsStream(mixinResource)) {
+			assertNotNull(in, "missing " + mixinResource);
 			new ClassReader(in).accept(node, 0);
 		}
 		List<AnnotationNode> classAnnotations = new ArrayList<>();
@@ -275,7 +292,7 @@ class GlintMixinApplicationTest {
 		AnnotationNode mixin = classAnnotations.stream().filter(a -> a.desc.equals("Lorg/spongepowered/asm/mixin/Mixin;"))
 			.findFirst().orElse(null);
 		assertNotNull(mixin, "@Mixin missing");
-		assertEquals(List.of("net.irisshaders.batchedentityrendering.impl.FullyBufferedMultiBufferSource"), annotationValue(mixin, "targets"));
+		assertEquals(List.of(target), annotationValue(mixin, "targets"));
 		assertEquals(Boolean.FALSE, annotationValue(mixin, "remap"));
 
 		MethodNode handler = node.methods.stream().filter(m -> m.name.equals("glintsmith$swapGlint")).findFirst().orElse(null);

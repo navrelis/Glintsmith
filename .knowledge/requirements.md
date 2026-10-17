@@ -40,3 +40,10 @@ Sources studied (reference only, clones live in the session scratchpad, never in
 - Nytheria pack: Sodium 0.8.13, Iris 1.8.14-beta.1, Mod Menu 11.0.5.
 
 - 2026-10-17 (session 8) Owner: logo and image showcase on a white / cream-white background (in-game backdrop for the hero/logo/showcase captures, light card panels), not black.
+
+## Session 12 owner additions (2026-10-18)
+- The GIFs (showcase, animated logo) are "very bad": flat front view, 4 fps, dull light, floor seam. Wanted: Blockbench/Blender-like turntables with controlled light and camera.
+- Owner choices: studio mode inside the mod (dev-only source set, never in the released jar, real Glintsmith render pipeline); content = hero sword turntable, item lineup turntable, armor stand turntable, and redo the still cards from studio renders; captures run in the Loom dev client (own run folder, may run while the owner's game is open); GIF encoder stays our own standard-library code (better palettes/dither, about 8 MB per GIF).
+- CurseForge: owner creates the project from build/curseforge-package and sends the id; release type Release. Upload after the new art is in.
+- 2026-10-18 Owner asked for a 1.1.0 with outline "see-through" control, then dropped it after hearing that the Opacity slider (Outline tab and per rule) already exists. No 1.1.0 planned.
+- 2026-10-18 Owner: new version 2.0.0 with a live preview window in the settings screen: the item in the hand rendered with the current settings, updating live while settings change. Release order: 1.0.0 upload once the CurseForge project exists, then 2.0.0 when finished.
