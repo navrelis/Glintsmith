@@ -18,6 +18,9 @@
 	"entrypoints": {
 		"client": [
 			"navrelis.glintsmith.Glintsmith"
+		],
+		"modmenu": [
+			"navrelis.glintsmith.integration.ModMenuIntegration"
 		]
 	},
 	"mixins": [

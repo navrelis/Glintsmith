@@ -19,3 +19,4 @@
 - 2026-10-17 T7 first pass read by lead (screen, tabs, rows, rule editor, keys, commands): structure fine; update round queued (texture grammar, new outline rows, Iris info line, toggle message from saved state, reload shows warnings).
 - 2026-10-17 T3 correction, Sonnet, S, accepted (RuleEngine mutable lookup keys, copy on insert; 129 tests reported green; lead read diff).
 - 2026-10-17 T7 update round delegated, Sonnet, S (texture grammar, preset cycling, 5 outline rows, IrisInfo, review fixes).
+- 2026-10-17 T7 update round, Sonnet, S, accepted (lead build: 131 tests green). Committed T2 design, T3 correction, T7 GUI on branch dev.
