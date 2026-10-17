@@ -136,3 +136,4 @@
 - 2026-10-18 Session 12: T12f closed by the lead: pulse crop already re-centred (865,459 = frame bbox centre) and card_shaders text already corrected; rebuilt gallery/logo/verify/preview --check/gradle (366 green, jar icon = source icon); cards look right. Accepted.
 - 2026-10-18 T9b-7 Sonnet S accepted (diff read): upload-checklist SHA-256 = final jar hash (168d49fb..., commit 2b902ff), gallery + preview rows ticked; preview --check 0.
 - 2026-10-18 Graphify update (PowerShell; Git Bash segfaults): 2351 nodes, 7012 edges, built from 2b902ff; no local paths; tool backup folder moved to the scratchpad quarantine.
+- 2026-10-18 T11 final acceptance by the lead: build 366 green, art + preview checks 0, no TODO/debug leftovers, Graphify committed, report.md written. Push and CurseForge upload wait for the owner (confirmation, CurseForge project id).
