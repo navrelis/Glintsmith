@@ -63,3 +63,4 @@
 - 2026-10-17 Session 6 start: repo matches handoff (dev 6645192, worktree Glintsmith-hand clean, no lock); baseline build 311 green.
 - 2026-10-17 Delegated in parallel: T13 fins Opus S (main tree, modelfix files), T14 hand outline Opus L (worktree), T9a docs armor/modelfix/lang Sonnet S, T16 in-game script prep Sonnet S (.dev/ingame).
 - 2026-10-17 T9a docs armor-default/modelfix/lang tooltip, Sonnet, S, accepted (lead read diff; VERIFY markers kept for T9b; description_paste.md, cards.json, docs/curseforge/README.md card text left for T9b/T12).
+- 2026-10-17 T16 in-game script prep, Sonnet, S, accepted (held.json 11 first-person shots via shared generator; ARMOR_ON in hero_armor, shaders, showcase looks 2-7; README expectations; all dry-runs exit 0).

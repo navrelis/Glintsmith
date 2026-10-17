@@ -21,7 +21,7 @@ Status: open / in progress / in review / done. Size S = short (1 unit), L = long
 | T11 | Final acceptance | Full build/tests, Graphify, report, push | T10 | Lead | - | open |
 | T13 | Gap fix fins | Root cause + failing test + fix in GapFix; held items normal in game with AUTO | T10 | Opus | S | in progress (session 6, main tree) |
 | T14 | Hand outline missing | Root cause + fix in worktree Glintsmith-hand (branch fix-hand-outline); first-person outlines visible in game | T10 | Opus | L | in progress (session 6, worktree) |
-| T16 | In-game script prep | held.json (first-person check) + gallery/showcase configs enable targets.armor where armor is shown; README expectations; dry-runs pass | - | Sonnet | S | in progress (session 6) |
+| T16 | In-game script prep | held.json (first-person check) + gallery/showcase configs enable targets.armor where armor is shown; README expectations; dry-runs pass | - | Sonnet | S | done (session 6; .dev is git-ignored, SHOTLIST committed) |
 | T15 | Armor outline default off (owner) | targets.armor = false, tests | - | Sonnet | S | done (6645192); docs in T9 final |
 
 Parallel: T2 (Opus) with T3 + T4 (Sonnet) after T1. T5 (Opus) with T6/T7 (Sonnet), files disjoint.

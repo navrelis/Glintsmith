@@ -151,6 +151,7 @@ settings screen. Every shot lists a profile; write the whole profile (deep merge
 | `OUT(mode, colors, speed)` | `{"outline": {"color": {"mode": mode, "colors": colors, "speed": speed}}}` |
 | `GL(p)` | `{"glint": {"enabled": true, "item": {"texture": "preset:p"}, "armor": {"texture": "preset:p"}, "entity": {"texture": "preset:p"}, "gui": {"texture": "preset:p"}}}` (all four layers) |
 | `GUION` | `{"outline": {"targets": {"gui": true}}}` |
+| `ARMOR_ON` | `{"outline": {"targets": {"armor": true}}}` (worn armor and the elytra are outlined only with this; the default is `false`. Item frames are not the armor target, they follow `itemFrame`) |
 
 Colours: violet `#D088FC` (default), amber `#FF8A1F`, ice `#7DE8FF`, gold `#FFD36B`, red `#FF4D4D`.
 
@@ -183,7 +184,7 @@ height 102.5 (feet 100.88), d about 1.8 blocks: `tp 12.5 100.88 67.3 180 0`. Mov
 | `hero_sword_void.png` | the same sword, same camera, same framing as `hero_sword_rainbow` (no camera move between the shots) | same | BASE + `GL("void")` + `T(3)` + `OUT("ENCHANTMENT", [], 1)`. Second look of `logo_animated.gif` |
 | `hero_sword_fire.png` | the same sword, same camera, same framing | same | BASE + `GL("fire")` + `T(4)` + `OUT("PULSE", ["#FF8A1F"], 1)`, shot at the bright phase of the pulse. Third look of `logo_animated.gif` |
 | `logo_sword.png` | **the logo**: the sword exactly centred on the picture centre, blade diagonal about 70 percent of the height. The centred 1080 x 1080 square must read on its own at 128 px and 32 px, so keep the silhouette simple and nothing else in frame (square framing) | same frame and camera as the three above | BASE + `GL("aurora")` + `T(3)` + `OUT("GRADIENT", ["#7DFFB2", "#7D9BFF", "#D088FC"], 1)`. The icon is the area-filtered square crop of this picture. If one of the three shots above is already exactly centred and strong, it may be saved a second time as `logo_sword.png` |
-| `hero_armor.png` | the armor stand's netherite helmet and chestplate, head and chest centred, black behind. The card crops the middle 1480 x 800 | room H: `/summon minecraft:armor_stand 12.5 100 66.5 {Rotation:[0f,0f],ShowArms:1b,NoBasePlate:1b,Invulnerable:1b,NoGravity:1b,Pose:{LeftArm:[0f,0f,-12f],RightArm:[-18f,0f,12f]},ArmorItems:[{boots},{leggings},{chestplate},{helmet}],HandItems:[{netherite_sword},{}]}` (armor and sword as in section 1). Spectator, `tp 12.5 99.83 69.4 180 0`, d about 2.9 | BASE + `GL("rainbow")` + `T(3)` + `OUT("RAINBOW", [], 1)` |
+| `hero_armor.png` | the armor stand's netherite helmet and chestplate, head and chest centred, black behind. The card crops the middle 1480 x 800 | room H: `/summon minecraft:armor_stand 12.5 100 66.5 {Rotation:[0f,0f],ShowArms:1b,NoBasePlate:1b,Invulnerable:1b,NoGravity:1b,Pose:{LeftArm:[0f,0f,-12f],RightArm:[-18f,0f,12f]},ArmorItems:[{boots},{leggings},{chestplate},{helmet}],HandItems:[{netherite_sword},{}]}` (armor and sword as in section 1). Spectator, `tp 12.5 99.83 69.4 180 0`, d about 2.9 | BASE + `GL("rainbow")` + `T(3)` + `OUT("RAINBOW", [], 1)` + `ARMOR_ON` |
 | `hero_lineup.png` | six enchanted items in a row, evenly spaced, vertically centred, each about 150 px high; the row spans the middle 1832 px of the width and the middle 200 px of the height (the banner strip) | six invisible frames at Y 102, X 6..11 on the north wall of room H (frame blocks at `z = 65`): `diamond_sword[ench]`, `bow[ench]`, `shield[ench]`, `cataclysm:black_steel_targe[glint]`, `eternal_starlight:glistering_morning_star[glint]`, `immersive_armors:warrior_chestplate[glint]`. Spectator, `tp 9.0 100.88 73.5 180 0`, d about 8 | BASE + `GL("aurora")` + `T(3)` + `OUT("RAINBOW", [], 1)` |
 | `hero_firstperson.png` | first person, the netherite sword in the right hand, blade pointing up and left across the picture, whole blade in frame, hand at the lower right, the black wall behind. The card crops the full width at 1920 x 1038 | room H, **creative, hand visible**, F1, FOV 25 (30 at most). `/item replace entity @s weapon.mainhand with minecraft:netherite_sword[ench]`, `tp 12.5 100 71.0 180 10` (about 6 blocks from the north wall) | BASE + `GL("rainbow")` + `T(3)` + `OUT("RAINBOW", [], 1)` |
 
@@ -286,7 +287,7 @@ The four rules (`"rules"` value):
 
 ### Sodium and Iris (4)
 
-Same scene and config for all four so they compare: BASE + `T(3)` + `OUT("RAINBOW", [], 1)` + `GL("aurora")` + `GUION`
+Same scene and config for all four so they compare: BASE + `T(3)` + `OUT("RAINBOW", [], 1)` + `GL("aurora")` + `GUION` + `ARMOR_ON`
 (`handWithShaderPack` true, `disableWithShaders` false). Capture what the game really does and tell the lead if the card text
 ("glint keeps working, outlines in the inventory work, hand outlines best effort, world outlines step aside") is not true.
 The shader pack is any one popular pack that is installed (Complementary Reimagined or BSL, for instance); note its name.
@@ -305,7 +306,7 @@ other capture. One camera for the whole clip, no mouse or key input between fram
 
 * Scene: room B stand, spectator, F1, `tp 18.5 99.38 43.1 180 0` (d about 4.6): the whole stand fits the middle 720 x 405 of the screen.
   The builder crops `[c,c,720,405]`, adds a 36 px caption bar and keeps every second frame (10 fps, same length). It raises the step by itself if the file would pass 8 MB.
-* For each look: write the profile, wait 0.5 s for the reload, then record 40 frames at 20 fps. Profiles are BASE plus:
+* For each look: write the profile, wait 0.5 s for the reload, then record 40 frames at 20 fps. Profiles are BASE plus (for every look except Vanilla also `ARMOR_ON`, so the stand's armor is outlined):
 
 | Frames | Caption (in the GIF) | Config |
 | --- | --- | --- |
