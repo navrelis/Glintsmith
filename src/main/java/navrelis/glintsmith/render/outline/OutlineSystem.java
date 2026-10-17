@@ -77,6 +77,9 @@ public final class OutlineSystem {
 	private static double timeSeconds;
 	private static boolean handPending;
 	private static long handMaskFrame = -1L;
+	private static int handRenders;
+	private static int handCaptures;
+	private static boolean handPhaseLogged;
 	private static boolean targetsReleasedAfterTrip;
 
 	private OutlineSystem() {
@@ -144,10 +147,14 @@ public final class OutlineSystem {
 				return source;
 			}
 			OutlineTarget target = OutlineContexts.forPhase(phase.phase, context);
-			if (target == null) {
-				return source;
+			MultiBufferSource result = target == null ? source : capture(phase, stack, target, source, topHolder());
+			if (phase.phase == OutlinePhase.HAND) {
+				handRenders++;
+				if (result != source) {
+					handCaptures++;
+				}
 			}
-			return capture(phase, stack, target, source, topHolder());
+			return result;
 		} catch (Throwable t) {
 			OutlineFailsafe.trip("outline item capture", t);
 			return source;
@@ -214,6 +221,8 @@ public final class OutlineSystem {
 			if (!handPending) {
 				phase.discard();
 			}
+			handRenders = 0;
+			handCaptures = 0;
 			open(phase);
 		} catch (Throwable t) {
 			OutlineFailsafe.trip("outline hand begin", t);
@@ -234,6 +243,7 @@ public final class OutlineSystem {
 			if (OutlineFailsafe.tripped()) {
 				return;
 			}
+			logHandPhaseOnce(phase);
 			if (shaderPack) {
 				boolean firstFlush = handMaskFrame != frame;
 				if (OutlineCompositor.drawMaskOnly(phase, firstFlush)) {
@@ -246,6 +256,20 @@ public final class OutlineSystem {
 		} catch (Throwable t) {
 			OutlineFailsafe.trip("outline hand composite", t);
 		}
+	}
+
+	/**
+	 * Once per session, at DEBUG: the first HAND phase that captured an item, so the first-person path can be
+	 * confirmed in game.
+	 */
+	private static void logHandPhaseOnce(PhaseState phase) {
+		if (handPhaseLogged || handCaptures == 0) {
+			return;
+		}
+		handPhaseLogged = true;
+		LOGGER.debug("[Glintsmith] First-person outline phase: captured {} of {} item renders, mask geometry {}, {}.",
+			handCaptures, handRenders, phase.hasGeometry ? "present" : "missing",
+			shaderPack ? "composite deferred to the end of the level (shader pack)" : "composited now");
 	}
 
 	// ---- O3, O4: armor and elytra
