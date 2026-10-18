@@ -57,3 +57,4 @@
 - s17: B1 into dev by pushing the merged branch as a fast-forward to origin/dev; the main checkout F:\Coding\Glintsmith is not touched, so its local dev must `git pull --ff-only` before new commits.
 - s17: B2 stays with the gap-fix session (Opus, has the experiment context); 2.0.1 stays unreleased, main untouched (owner).
 - s17: tag v2.0.1 on the final release-docs commit; the uploaded jar is the in-game-tested b86b290e built from 8529521 (later commits change only docs/.knowledge, the build is reproducible).
+- 2026-10-18 s18: versioning = semver MAJOR.MINOR.PATCH: PATCH = bug fixes only, MINOR = new features that keep old configs/behaviour working, MAJOR = breaking change (config not readable as is, feature removed/changed, Minecraft version dropped). Highest kind of change in a release wins. Trident preview fix -> 2.0.2 (owner asked; this rule explained).
