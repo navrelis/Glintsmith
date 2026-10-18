@@ -1,0 +1,124 @@
+{
+	"scene": "stills_wide",
+	"type": "still",
+	"width": 1200,
+	"height": 400,
+	"supersample": 2,
+	"fps": 30,
+	"time_offset": 5.0,
+	"camera": {
+		"projection": "orthographic",
+		"pitch": 15,
+		"distance": 6,
+		"view_height": 1.55
+	},
+	"lights": {
+		"key": [-0.45, 0.75, 0.6],
+		"fill": [0.65, 0.2, 0.45]
+	},
+	"layout": {
+		"type": "row",
+		"spacing": 0.9
+	},
+	"subjects": [
+		{
+			"type": "item",
+			"item": {
+				"item": "minecraft:diamond_sword",
+				"enchantments": { "minecraft:sharpness": 5 }
+			},
+			"rotation": [0, 0, 45]
+		}
+	],
+	"looks": [
+		{
+			"id": "universal",
+			"caption": "Aurora glint + gradient outline",
+			"outline": {
+				"color": { "mode": "gradient", "colors": ["#3CFFB4", "#4B7BFF", "#C05CFF"], "speed": 1.0 },
+				"thickness": 3
+			},
+			"glint": { "texture": "preset:aurora", "scale": 0.14 },
+			"gap_fix": "auto"
+		}
+	],
+	"shots": [
+		{
+			"name": "universal_vanilla",
+			"look": "universal",
+			"yaw": 20,
+			"time": 1.0,
+			"subjects": [
+				{
+					"type": "item",
+					"item": {
+						"item": "minecraft:diamond_sword",
+						"enchantments": { "minecraft:sharpness": 5 }
+					},
+					"rotation": [0, 0, 45]
+				},
+				{
+					"type": "item",
+					"item": {
+						"item": "minecraft:bow",
+						"enchantments": { "minecraft:power": 5 }
+					},
+					"rotation": [0, 0, 45]
+				},
+				{
+					"type": "item",
+					"item": {
+						"item": "minecraft:trident",
+						"enchantments": { "minecraft:loyalty": 3 }
+					},
+					"rotation": [0, 0, 45]
+				},
+				{
+					"type": "item",
+					"item": {
+						"item": "minecraft:shield",
+						"enchantments": { "minecraft:unbreaking": 3 }
+					},
+					"pivot": [-0.08, 0, -0.48]
+				},
+				{
+					"type": "item",
+					"item": {
+						"item": "minecraft:elytra",
+						"enchantments": { "minecraft:unbreaking": 3 }
+					}
+				}
+			]
+		},
+		{
+			"name": "universal_modded",
+			"look": "universal",
+			"yaw": 20,
+			"time": 1.0,
+			"subjects": [
+				{
+					"type": "item",
+					"item": { "item": "advancednetherite:netherite_diamond_ingot", "glint": true },
+					"pos": [-1.65, 0, 0],
+					"rotation": [0, 0, 0]
+				},
+				{
+					"type": "item",
+					"item": { "item": "eternal_starlight:glistering_morning_star", "glint": true },
+					"pos": [-0.55, 0, 0],
+					"rotation": [0, 0, 45]
+				},
+				{
+					"type": "item",
+					"item": { "item": "immersive_armors:warrior_helmet", "glint": true },
+					"pos": [0.55, 0, 0]
+				},
+				{
+					"type": "item",
+					"item": { "item": "immersive_armors:warrior_chestplate", "glint": true },
+					"pos": [1.65, 0, 0]
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,52 @@
+{
+	"scene": "stills_hero",
+	"type": "still",
+	"width": 1024,
+	"height": 1024,
+	"supersample": 2,
+	"fps": 30,
+	"time_offset": 5.0,
+	"camera": {
+		"projection": "orthographic",
+		"pitch": 20,
+		"distance": 4,
+		"view_height": 1.7
+	},
+	"lights": {
+		"key": [-0.45, 0.75, 0.6],
+		"fill": [0.65, 0.2, 0.45]
+	},
+	"subjects": [
+		{
+			"type": "item",
+			"item": {
+				"item": "minecraft:netherite_sword",
+				"enchantments": { "minecraft:sharpness": 5, "minecraft:unbreaking": 3, "minecraft:mending": 1 }
+			},
+			"rotation": [0, 0, 45]
+		}
+	],
+	"looks": [
+		{
+			"id": "hero_rainbow",
+			"caption": "Rainbow glint + rainbow outline",
+			"outline": {
+				"color": { "mode": "rainbow", "speed": 1.0 },
+				"thickness": 6
+			},
+			"glint": { "texture": "preset:rainbow", "scale": 0.12 },
+			"gap_fix": "auto"
+		},
+		{
+			"id": "logo",
+			"caption": "Aurora glint + purple outline",
+			"outline": { "color": "#B05CFF", "thickness": 7 },
+			"glint": { "texture": "preset:aurora", "scale": 0.12 },
+			"gap_fix": "auto"
+		}
+	],
+	"shots": [
+		{ "name": "banner_hero", "look": "hero_rainbow", "yaw": 28, "pitch": 22, "time": 1.0 },
+		{ "name": "logo", "look": "logo", "yaw": 0, "pitch": 6, "time": 2.0 }
+	]
+}

@@ -5,12 +5,13 @@
 	"height": 512,
 	"supersample": 2,
 	"fps": 30,
-	"seconds_per_look": 3.0,
+	"seconds_per_look": 2.5,
 	"turns_per_look": 1,
+	"swing": 55,
 	"time_offset": 5.0,
 	"camera": {
 		"projection": "orthographic",
-		"pitch": 25,
+		"pitch": 22,
 		"distance": 4,
 		"view_height": 1.7
 	},
@@ -25,16 +26,11 @@
 				"item": "minecraft:netherite_sword",
 				"enchantments": { "minecraft:sharpness": 5, "minecraft:unbreaking": 3, "minecraft:mending": 1 }
 			},
-			"rotation": [0, 0, 45],
-			"scale": 1.0
+			"rotation": [0, 0, 45]
 		}
 	],
 	"looks": [
-		{
-			"id": "vanilla",
-			"caption": "Vanilla",
-			"vanilla": true
-		},
+		{ "id": "vanilla", "caption": "Vanilla", "vanilla": true },
 		{
 			"id": "purple_outline",
 			"caption": "Static purple outline",
@@ -44,29 +40,38 @@
 		{
 			"id": "rainbow",
 			"caption": "Rainbow glint + rainbow outline",
-			"outline": { "color": { "mode": "rainbow", "speed": 1.0 }, "thickness": 3 },
-			"glint": { "texture": "preset:rainbow" },
+			"outline": {
+				"color": { "mode": "rainbow", "speed": 1.0 },
+				"thickness": 3
+			},
+			"glint": { "texture": "preset:rainbow", "scale": 0.12 },
 			"gap_fix": "auto"
 		},
 		{
 			"id": "fire",
 			"caption": "Fire glint + pulse outline",
-			"outline": { "color": { "mode": "pulse", "colors": ["#FF4A00", "#FFD23F"], "speed": 1.5 }, "thickness": 3 },
-			"glint": { "texture": "preset:fire" },
+			"outline": {
+				"color": { "mode": "pulse", "colors": ["#FF4A00", "#FFD23F"], "speed": 1.5 },
+				"thickness": 3
+			},
+			"glint": { "texture": "preset:fire", "scale": 0.12 },
 			"gap_fix": "auto"
 		},
 		{
 			"id": "aurora",
 			"caption": "Aurora glint + gradient outline",
-			"outline": { "color": { "mode": "gradient", "colors": ["#3CFFB4", "#4B7BFF", "#C05CFF"], "speed": 1.0 }, "thickness": 3 },
-			"glint": { "texture": "preset:aurora" },
+			"outline": {
+				"color": { "mode": "gradient", "colors": ["#3CFFB4", "#4B7BFF", "#C05CFF"], "speed": 1.0 },
+				"thickness": 3
+			},
+			"glint": { "texture": "preset:aurora", "scale": 0.12 },
 			"gap_fix": "auto"
 		},
 		{
 			"id": "void_glow",
 			"caption": "Void glint + soft glow",
 			"outline": { "color": "#9B4DFF", "thickness": 6, "softness": 0.85, "opacity": 0.9 },
-			"glint": { "texture": "preset:void" },
+			"glint": { "texture": "preset:void", "scale": 0.12 },
 			"gap_fix": "auto"
 		}
 	]

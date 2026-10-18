@@ -206,7 +206,8 @@ final class StudioScreen extends Screen {
 			for (String lookId : scene.sequence) {
 				Scene.Look look = scene.looks.get(lookId);
 				for (int f = 0; f < scene.framesPerLook; f++) {
-					float angle = (float) (360.0 * scene.turnsPerLook * f / scene.framesPerLook);
+					double turn = scene.turnsPerLook * f / scene.framesPerLook;
+					float angle = (float) (scene.swing == 0.0 ? 360.0 * turn : scene.swing * Math.sin(2.0 * Math.PI * turn));
 					list.add(new Job(index, look, angle, scene.camera, props, time(index), null));
 					index++;
 				}

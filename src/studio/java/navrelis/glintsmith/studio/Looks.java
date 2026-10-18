@@ -9,15 +9,21 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import navrelis.glintsmith.config.ConfigManager;
+import navrelis.glintsmith.config.GapFixMode;
 import navrelis.glintsmith.config.GlintsmithConfig;
+import navrelis.glintsmith.config.OutlineCondition;
+import navrelis.glintsmith.style.ColorStyle;
 import navrelis.glintsmith.style.Rule;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Turns a scene look into a complete Glintsmith config. Nothing here touches the config file.
  * <p>
- * Base: the Glintsmith defaults, with every outline target on, "only local player" off, resolution scaling off (the
- * studio scales by the supersample factor itself), no distance fade and no rules. The look's keys are merged over it
+ * Base: an explicit vanilla-like baseline that does not depend on the built-in defaults of the mod (those change
+ * between versions): outline on for enchanted items, static {@code #D088FC}, thickness 2, opacity 1, softness 0, all
+ * four glint layers at the vanilla values, gap fix on (auto), no durability alert and no enchantment colours. On top
+ * of it every outline target is on, "only local player" off, resolution scaling off (the studio scales by the
+ * supersample factor itself), no distance fade and no rules. The look's keys are merged over it
  * in this order: {@code vanilla}, {@code outline}, {@code glint} (all four layers), {@code glint_layers},
  * {@code gap_fix}, {@code rules}, {@code config} (a raw partial {@code glintsmith.json}). Finally every outline
  * thickness is multiplied by the supersample factor.
@@ -35,7 +41,28 @@ final class Looks {
 	static GlintsmithConfig build(Scene.Look look, int supersample, @Nullable GlintsmithConfig.GapFix gapFixOverride) {
 		GlintsmithConfig base = new GlintsmithConfig();
 		base.rules.clear();
+		base.enchantmentColors.clear();
+		base.durabilityAlert.enabled = false;
 		GlintsmithConfig.Outline o = base.outline;
+		o.enabled = true;
+		o.condition = OutlineCondition.ENCHANTED;
+		o.color = ColorStyle.of("#D088FC");
+		o.thickness = 2.0f;
+		o.softness = 0.0f;
+		o.opacity = 1.0f;
+		base.glint.enabled = true;
+		for (GlintsmithConfig.GlintCategorySettings g : new GlintsmithConfig.GlintCategorySettings[] {
+			base.glint.item, base.glint.armor, base.glint.entity, base.glint.gui}) {
+			g.enabled = true;
+			g.texture = null;
+			g.tint = null;
+			g.speed = 1.0f;
+			g.scale = 1.0f;
+			g.strength = 1.0f;
+			g.rotation = 10.0f;
+		}
+		base.gapFix.enabled = true;
+		base.gapFix.mode = GapFixMode.AUTO;
 		o.onlyLocalPlayer = false;
 		o.scaleWithResolution = false;
 		o.disableWithShaders = false;

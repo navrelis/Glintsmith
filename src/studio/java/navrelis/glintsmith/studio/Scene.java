@@ -74,6 +74,7 @@ final class Scene {
 	final int fps;
 	final int framesPerLook;
 	final double turnsPerLook;
+	final double swing;
 	final double timeOffset;
 	final Camera camera;
 	final Vector3f keyLight;
@@ -99,6 +100,7 @@ final class Scene {
 		double seconds = number(root, "seconds_per_look", 3.0);
 		framesPerLook = positive(integer(root, "frames_per_look", (int) Math.round(seconds * fps)), "frames_per_look");
 		turnsPerLook = number(root, "turns_per_look", 1.0);
+		swing = number(root, "swing", 0.0);
 		timeOffset = number(root, "time_offset", 0.0);
 		settleFrames = range(integer(root, "settle_frames", 3), 1, 600, "settle_frames");
 		output = root.has("output") ? string(root, "output", null) : null;
