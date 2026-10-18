@@ -96,6 +96,40 @@ class GlintSystemTest {
 	}
 
 	@Test
+	void guiSubstituteLeavesTheRequestedTypeAloneWhileEverythingIsVanilla() {
+		assertNull(GlintSystem.substituteGui(null, null));
+		try (ByteBufferBuilder bytes = new ByteBufferBuilder(256)) {
+			MultiBufferSource.BufferSource gui = MultiBufferSource.immediate(bytes);
+			assertNull(GlintSystem.substituteGui(gui, null));
+		}
+		assertFalse(GlintFailsafe.tripped());
+	}
+
+	/**
+	 * G5a hands a request to the GUI path only for the one source ImmediatelyFast reported (G11); every other plain
+	 * source keeps the G5a path, which leaves it vanilla.
+	 */
+	@Test
+	void onlyTheReportedImmediatelyFastSourceIsAGuiSource() {
+		try (ByteBufferBuilder a = new ByteBufferBuilder(256); ByteBufferBuilder b = new ByteBufferBuilder(256)) {
+			MultiBufferSource.BufferSource gui = MultiBufferSource.immediate(a);
+			MultiBufferSource.BufferSource other = MultiBufferSource.immediate(b);
+			assertFalse(GlintSystem.isGuiSource(gui), "nothing reported yet (no ImmediatelyFast)");
+			GlintSystem.onGuiSource(null);
+			assertFalse(GlintSystem.isGuiSource(gui));
+
+			GlintSystem.onGuiSource(gui);
+			assertTrue(GlintSystem.isGuiSource(gui));
+			assertFalse(GlintSystem.isGuiSource(other));
+			assertFalse(GlintSystem.isGuiSource(null));
+			GlintSystem.onGuiSource(null);
+			assertTrue(GlintSystem.isGuiSource(gui), "a null report keeps the known source");
+		} finally {
+			GlintSystem.resetGuiSourceForTests();
+		}
+	}
+
+	@Test
 	void contextBalanceSurvivesTheEntryPoints() {
 		GlintContext.pushItem(null, null);
 		GlintSystem.substitute(null, null);

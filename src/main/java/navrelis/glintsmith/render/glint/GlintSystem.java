@@ -1,5 +1,7 @@
 package navrelis.glintsmith.render.glint;
 
+import java.util.SequencedMap;
+
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import navrelis.glintsmith.Glintsmith;
@@ -19,9 +21,12 @@ import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.texture.SpriteLoader;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,7 +44,11 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * With ImmediatelyFast installed, the main source itself is ImmediatelyFast's {@code BatchableBufferSource}, which
  * overrides {@code getBuffer} and {@code endBatch(RenderType)} without calling the vanilla bodies: G9 runs
- * {@link #substitute} from its {@code getBuffer}, and {@link #onBatchDrawn} does the G5b flush for it.
+ * {@link #substitute} from its {@code getBuffer}, and {@link #onBatchDrawn} does the G5b flush for it. The GUI and HUD
+ * draw into two other ImmediatelyFast sources, which {@link #substituteGui} (G11, G12) covers.
+ * <p>
+ * Customised glints drawn with block-atlas UVs get the atlas factor of {@link GlintAtlasScale}, read from the block
+ * atlas after every resource reload (G10).
  */
 public final class GlintSystem {
 	private static final ResourceLocation RELOAD_ID = ResourceLocation.fromNamespaceAndPath(Glintsmith.MOD_ID, "glint_textures");
@@ -50,6 +59,9 @@ public final class GlintSystem {
 	private static volatile GlintRuntimeSettings settings = GlintRuntimeSettings.VANILLA;
 	@Nullable
 	private static MultiBufferSource.BufferSource main;
+	/** ImmediatelyFast's non-batching GUI source (a plain vanilla {@code BufferSource}), captured by G11; null without it. */
+	@Nullable
+	private static MultiBufferSource.BufferSource guiSource;
 	private static boolean initialized;
 	private static boolean started;
 	private static long frame;
@@ -151,6 +163,83 @@ public final class GlintSystem {
 	}
 
 	/**
+	 * G11/G12: the render type to use instead of {@code requested} when it is requested from one of ImmediatelyFast's
+	 * GUI sources. With ImmediatelyFast, {@code GuiGraphics} draws into those instead of the main source: in
+	 * {@code GameRenderer.render} it gets the non-batching {@code BufferSource} of {@code BatchingBuffers} (a plain
+	 * vanilla instance, so G5a runs for it and hands it here, see {@link #isGuiSource}), and while a HUD layer is batched
+	 * that is swapped for the {@code HudBatchingBufferSource} (G12). Neither is the main source, so G5a and G9 leave
+	 * their glints vanilla.
+	 * <p>
+	 * Same rules as G5a, with {@code source} in the role of main (DESIGN 5.2, point 8): the slot type is registered as a
+	 * fixed buffer of {@code source} itself, so it never goes through the shared buffer and is drawn after the vanilla
+	 * fixed types (the vanilla glint and the item sheets) by that source's own {@code endBatch()}: per item for the
+	 * non-batching source, at the end of the HUD layer (or when ImmediatelyFast force-draws the HUD batch) for the HUD
+	 * source. Nothing here draws or flushes. Both draw through the vanilla private {@code endBatch(RenderType,
+	 * BufferBuilder)}, so G5c releases the slots.
+	 *
+	 * @return {@code requested} unless it is a vanilla glint type that has a custom look
+	 */
+	public static RenderType substituteGui(MultiBufferSource.BufferSource source, RenderType requested) {
+		try {
+			GlintRuntimeSettings s = settings;
+			if (!s.anyCustom() || main == null || source == main || GlintFailsafe.tripped()) {
+				return requested;
+			}
+			GlintKind kind = GlintKind.of(requested);
+			if (kind == null || !RenderSystem.isOnRenderThread()) {
+				return requested;
+			}
+			return pick(s, kind, requested, source, false);
+		} catch (Throwable t) {
+			GlintFailsafe.trip("substituteGui", t);
+			return requested;
+		}
+	}
+
+	/**
+	 * @return whether G5a must hand a request of {@code source} to {@link #substituteGui} instead of {@link #substitute}:
+	 *         only for ImmediatelyFast's non-batching GUI source captured by G11 (one identity compare)
+	 */
+	public static boolean isGuiSource(MultiBufferSource.BufferSource source) {
+		return source == guiSource && source != null;
+	}
+
+	/**
+	 * G11: ImmediatelyFast handed out its non-batching GUI source (once per frame). Never throws.
+	 */
+	public static void onGuiSource(@Nullable MultiBufferSource.BufferSource source) {
+		if (source != null && source != main) {
+			guiSource = source;
+		}
+	}
+
+	/** Test hook. */
+	static void resetGuiSourceForTests() {
+		guiSource = null;
+	}
+
+	/**
+	 * G10: a texture atlas has been uploaded (after it was stitched, on every resource reload). For the block atlas,
+	 * stores its size and the size of the reference sprite for the atlas factor.
+	 */
+	public static void onAtlasUploaded(ResourceLocation atlas, SpriteLoader.Preparations preparations) {
+		try {
+			if (!InventoryMenu.BLOCK_ATLAS.equals(atlas)) {
+				return;
+			}
+			TextureAtlasSprite sprite = preparations.regions().get(GlintAtlasScale.REFERENCE_SPRITE_ID);
+			int spriteWidth = sprite == null ? 0 : sprite.contents().width();
+			int spriteHeight = sprite == null ? 0 : sprite.contents().height();
+			if (GlintAtlasScale.update(preparations.width(), preparations.height(), spriteWidth, spriteHeight)) {
+				Glintsmith.LOGGER.info("Glint atlas factor {} x {} (block atlas {}x{}, reference sprite {}x{}).",
+					GlintAtlasScale.u(), GlintAtlasScale.v(), preparations.width(), preparations.height(), spriteWidth, spriteHeight);
+			}
+		} catch (Throwable t) {
+			GlintFailsafe.trip("atlas size", t);
+		}
+	}
+
+	/**
 	 * Pure decision of G7 before the render type is looked at.
 	 *
 	 * @param anyCustom  whether any category or rule has a non-vanilla look
@@ -242,6 +331,16 @@ public final class GlintSystem {
 	 *                 source; false for the main source (G5a): the slot is registered as a fixed buffer of main
 	 */
 	private static RenderType pick(GlintRuntimeSettings s, GlintKind kind, RenderType requested, boolean buffered) {
+		return pick(s, kind, requested, buffered ? null : main, buffered);
+	}
+
+	/**
+	 * @param registerIn the source whose fixed buffers get the slot type: main (G5a), an ImmediatelyFast GUI source
+	 *                   (G11/G12), or null for Iris's fully buffered source (G7)
+	 * @param pin        whether the slot is acquired pinned (G7)
+	 */
+	private static RenderType pick(GlintRuntimeSettings s, GlintKind kind, RenderType requested,
+		@Nullable MultiBufferSource.BufferSource registerIn, boolean pin) {
 		GlintContext.Frame f = GlintContext.top();
 		GlintCategory category = GlintCategories.decide(kind, f);
 
@@ -262,20 +361,43 @@ public final class GlintSystem {
 		if (!look.enabled()) {
 			// The off type has no params to protect (fixed texture, no colour or depth writes), so it is never pinned.
 			GlintSlot<RenderType> off = POOL.acquireOff(kind, frame);
-			return buffered ? off.type : ensureRegistered(off);
+			return register(off, registerIn);
 		}
 		boolean tinted = look.tint() != null;
 		int tint = tinted ? RuleEngine.glintTint(stack, look, timeSeconds) | 0xFF000000 : GlintParams.NO_TINT;
 		SCRATCH.set(GlintTextures.resolve(look.texture(), kind.entityFamily, tinted), tint,
 			look.speed(), look.scale(), look.strength(), look.rotation());
+		// Checked before the atlas factor: a look that is vanilla stays the vanilla type, whatever the atlas.
 		if (SCRATCH.isVanilla(kind)) {
 			return requested;
 		}
-		GlintSlot<RenderType> slot = POOL.acquire(kind, SCRATCH, frame, buffered);
+		if (s.atlasScale() && GlintCategories.blockAtlasUvs(kind, f, GlintContext.isDecalFoil(stack))) {
+			SCRATCH.setAtlas(GlintAtlasScale.u(), GlintAtlasScale.v());
+		}
+		GlintSlot<RenderType> slot = POOL.acquire(kind, SCRATCH, frame, pin);
 		if (slot == null) {
 			return requested;
 		}
-		return buffered ? slot.type : ensureRegistered(slot);
+		return register(slot, registerIn);
+	}
+
+	/**
+	 * Registers a slot type as a fixed buffer of {@code source} if it is not one yet. For main the slot keeps a flag
+	 * (G5b flushes only those slots); the ImmediatelyFast GUI sources are asked directly, which also covers types they
+	 * copied from main's fixed map when ImmediatelyFast created them. Null (Iris) registers nothing.
+	 */
+	private static RenderType register(GlintSlot<RenderType> slot, @Nullable MultiBufferSource.BufferSource source) {
+		if (source == null) {
+			return slot.type;
+		}
+		if (source == main) {
+			return ensureRegistered(slot);
+		}
+		SequencedMap<RenderType, ByteBufferBuilder> fixed = ((BufferSourceAccessor) source).glintsmith$getFixedBuffers();
+		if (!fixed.containsKey(slot.type)) {
+			fixed.put(slot.type, new ByteBufferBuilder(slot.type.bufferSize()));
+		}
+		return slot.type;
 	}
 
 	@Nullable

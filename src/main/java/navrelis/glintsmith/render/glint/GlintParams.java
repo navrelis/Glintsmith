@@ -16,6 +16,9 @@ final class GlintParams {
 	float scale = 1.0f;
 	float strength = 1.0f;
 	float rotationDeg = VANILLA_ROTATION;
+	/** Atlas factor of the scale along u and v ({@link GlintAtlasScale}); 1 = none. */
+	float atlasU = 1.0f;
+	float atlasV = 1.0f;
 
 	/**
 	 * @return true if both describe the same look. Floats compare with {@code ==}; textures by value (the resolver hands
@@ -28,6 +31,8 @@ final class GlintParams {
 			&& scale == o.scale
 			&& strength == o.strength
 			&& rotationDeg == o.rotationDeg
+			&& atlasU == o.atlasU
+			&& atlasV == o.atlasV
 			&& (texture == o.texture || (texture != null && texture.equals(o.texture)));
 	}
 
@@ -38,8 +43,13 @@ final class GlintParams {
 		scale = o.scale;
 		strength = o.strength;
 		rotationDeg = o.rotationDeg;
+		atlasU = o.atlasU;
+		atlasV = o.atlasV;
 	}
 
+	/**
+	 * Sets the look and resets the atlas factor to 1 (see {@link #setAtlas}).
+	 */
 	void set(ResourceLocation texture, int tintArgb, float speed, float scale, float strength, float rotationDeg) {
 		this.texture = texture;
 		this.tintArgb = tintArgb;
@@ -47,6 +57,13 @@ final class GlintParams {
 		this.scale = scale;
 		this.strength = strength;
 		this.rotationDeg = rotationDeg;
+		this.atlasU = 1.0f;
+		this.atlasV = 1.0f;
+	}
+
+	void setAtlas(float atlasU, float atlasV) {
+		this.atlasU = atlasU;
+		this.atlasV = atlasV;
 	}
 
 	/**
@@ -58,6 +75,8 @@ final class GlintParams {
 			&& scale == 1.0f
 			&& strength == 1.0f
 			&& rotationDeg == VANILLA_ROTATION
+			&& atlasU == 1.0f
+			&& atlasV == 1.0f
 			&& texture != null
 			&& texture.equals(kind.vanillaTexture());
 	}

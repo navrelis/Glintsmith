@@ -956,7 +956,7 @@ All mixins live in package `navrelis.glintsmith.mixin` (sub-packages `outline`, 
 | G2 | `glint.HumanoidArmorLayerGlintMixin` | `HumanoidArmorLayer` | `renderArmorPiece(...)` (same as O3) | `@WrapMethod` | `pushArmor(entity.getItemBySlot(slot))` | Armor uses ARMOR category defaults (the `armorEntityGlint` kind already maps to ARMOR), but no per-rule looks |
 | G3 | `glint.ElytraLayerGlintMixin` | `ElytraLayer` | `render(...)` (same as O4) | `@WrapMethod` | `pushArmor(entity.getItemBySlot(EquipmentSlot.CHEST))` | Same as G2 |
 | G4 | `glint.BlockEntityWithoutLevelRendererGlintMixin` | `net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer` | `renderByItem(Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/ItemDisplayContext;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;II)V` | `@WrapMethod` | `pushBewlr(stack, ctx)`. Fabric's builtin item renderers run inside, because Fabric injects at HEAD of this method. | Shield, trident and BEWLR glints use the ITEM category |
-| G5a | `glint.BufferSourceGlintMixin` | `MultiBufferSource$BufferSource` | `getBuffer(Lnet/minecraft/client/renderer/RenderType;)Lcom/mojang/blaze3d/vertex/VertexConsumer;` | `@ModifyVariable(at = @At("HEAD"), argsOnly = true)` | Substitute vanilla glint types with slot or off types (main source only) | Vanilla glint everywhere; the feature is effectively off |
+| G5a | `glint.BufferSourceGlintMixin` | `MultiBufferSource$BufferSource` | `getBuffer(Lnet/minecraft/client/renderer/RenderType;)Lcom/mojang/blaze3d/vertex/VertexConsumer;` | `@ModifyVariable(at = @At("HEAD"), argsOnly = true)` | Substitute vanilla glint types with slot or off types (main source only); a request of ImmediatelyFast's non-batching GUI source (G11) goes to `substituteGui` instead | Vanilla glint everywhere; the feature is effectively off |
 | G5b | same | same | `endBatch(Lnet/minecraft/client/renderer/RenderType;)V` TAIL | `@Inject` | When `this == main && type == vanilla entityGlintDirect`, flush every registered slot and off type | Slot glints are flushed by the later `endBatch()`. In non-Fabulous mode that is after water, so items seen through water lose their glint. |
 | G5c | same | same | `endBatch(Lnet/minecraft/client/renderer/RenderType;Lcom/mojang/blaze3d/vertex/BufferBuilder;)V` (private) TAIL | `@Inject` | `GlintSystem.onBatchDrawn(this, type)` releases the slot; for a subclassed main source (ImmediatelyFast, G9) it also does the G5b flush after the vanilla `entityGlintDirect` | Slots are released only at frame start, so at most 32 distinct looks per kind per frame |
 | G6 | `glint.GameRendererGlintMixin` | `GameRenderer` | `render(Lnet/minecraft/client/DeltaTracker;Z)V` HEAD | `@Inject` | `GlintSystem.onFrameBegin()` | Frame counter is not advanced, so stale slots are never auto-released; `onBatchDrawn` still releases them, and G7 stays off (its shader-pack flag starts as "pack in use" and is only refreshed here), so with Iris the world keeps the vanilla glint |
@@ -964,6 +964,9 @@ All mixins live in package `navrelis.glintsmith.mixin` (sub-packages `outline`, 
 | GA2 | `glint.RenderBuffersAccessor` | `net.minecraft.client.renderer.RenderBuffers` | field `bufferSource` | `@Accessor` | Get the vanilla main source without going through Iris's `bufferSource()` replacement | — |
 | G8 | `glint.ItemInHandRendererGlintMixin` | `net.minecraft.client.renderer.ItemInHandRenderer` | `renderHandsWithItems(...)` (same descriptor as O2b) | `@WrapMethod`, `require = 0` | `GlintContext.beginHands()`; `endHands()` in `finally`. Held items drawn inside count as FIRST_PERSON for rules, also with a THIRD_PERSON hand context (first-person animation mods). Independent of the outline hook O2b. | Items drawn by a first-person animation mod use the THIRD_PERSON rules; vanilla hands are unaffected |
 | G9 | `glint.compat.ImmediatelyFastBufferSourceGlintMixin` | `@Pseudo @Mixin(targets = "net.raphimc.immediatelyfast.feature.core.BatchableBufferSource", remap = false)` | `getBuffer` by bare name (verified in the ImmediatelyFast 1.6.15+1.21.1 jar: `public class_4588 getBuffer(class_1921)`, the only `getBuffer` of the class; same naming argument as G7) | `@ModifyVariable(HEAD, argsOnly, require = 0, remap = false)` | `GlintSystem.substitute(this, requested)`: G5a for ImmediatelyFast's main source (5.2, point 7). The G5b flush for it runs in G5c. Not verified in game yet. | With ImmediatelyFast installed, glints of the main source (first-person hand; the world without Iris) keep the vanilla look |
+| G10 | `glint.TextureAtlasGlintMixin` | `net.minecraft.client.renderer.texture.TextureAtlas` | `upload(Lnet/minecraft/client/renderer/texture/SpriteLoader$Preparations;)V` TAIL | `@Inject` | `GlintSystem.onAtlasUploaded(location(), preparations)`: for the block atlas, stores the atlas size and the size of the reference sprite for the atlas factor (5.4.1). Runs after every stitch (every resource reload). | The atlas factor stays 1: item glints are atlas dependent as in 1.0.0 |
+| G11 | `glint.compat.ImmediatelyFastGuiSourceGlintMixin` | `@Pseudo @Mixin(targets = "net.raphimc.immediatelyfast.feature.batching.BatchingBuffers", remap = false)` | `getNonBatchingEntityVertexConsumers` by bare name, RETURN (verified in the ImmediatelyFast 1.6.15+1.21.1 jar: `public static class_4597$class_4598 getNonBatchingEntityVertexConsumers()`, the only method of that name) | static `@Inject(RETURN, require = 0, remap = false)` | `GlintSystem.onGuiSource(returned)`: remembers ImmediatelyFast's non-batching GUI source. G5a then hands that source's requests to `substituteGui` (5.2, point 8). Not verified in game yet. | With ImmediatelyFast, GUI glints outside batched HUD layers (inventories, menus) keep the vanilla look |
+| G12 | `glint.compat.ImmediatelyFastHudGlintMixin` | `@Pseudo @Mixin(targets = "net.raphimc.immediatelyfast.feature.batching.HudBatchingBufferSource", remap = false)` | `getBuffer` by bare name (verified in the same jar: `public class_4588 getBuffer(class_1921)`, the only `getBuffer` of the class; same naming argument as G7) | `@ModifyVariable(HEAD, argsOnly, require = 0, remap = false)` | `GlintSystem.substituteGui(this, requested)` for the HUD batch (hotbar, offhand slot; also ImmediatelyFast's experimental screen batching), 5.2, point 8. Not verified in game yet. | With ImmediatelyFast HUD batching, HUD item glints keep the vanilla look |
 | G7 | `glint.compat.IrisFullyBufferedGlintMixin` | `@Pseudo @Mixin(targets = "net.irisshaders.batchedentityrendering.impl.FullyBufferedMultiBufferSource", remap = false)` | `getBuffer` by bare name. Verified in the shipped Iris 1.8.14-beta.1 jar: `public class_4588 getBuffer(class_1921)`, the only `getBuffer` of the class; vanilla does not obfuscate `MultiBufferSource.getBuffer` (no intermediary entry), so the name is the same in dev and production while the descriptor is not. | `@ModifyVariable(HEAD, argsOnly, require = 0, remap = false)` | `GlintSystem.substituteBuffered`: the G5a swap for Iris's world buffer source, with pinned slots (5.2, point 6). Off while a shader pack is in use. Verified in game (Iris 1.8.14-beta.1, shaders off): preset glints on armor stands and on the showcase stand show their own colours; under Complementary Unbound the world glint stays vanilla. | With Iris installed (shaders on or off), world glints (armor, entity-held items, item frames, dropped items, armor stands) keep the vanilla look; hand and GUI unaffected |
 
 Fabric events for T6: `ClientLifecycleEvents.CLIENT_STARTED` (capture the main source, generate the
@@ -1045,10 +1048,24 @@ presets) and the reload listener `glintsmith:glint_textures`.
   order) and draws each batch through the vanilla private `endBatch(RenderType, BufferBuilder)`, so G5c
   still runs. Without G9 every glint of the main source keeps the vanilla look, whatever the config
   says: the first-person hand (any setup with ImmediatelyFast), and the world when Iris is not
-  installed. G9 (5.2, point 7) fixes this. ImmediatelyFast's GUI sources are not covered: `GameRenderer.render`
-  hands `GuiGraphics` its own non-batching `BufferSource` (a plain vanilla instance, not main) and the
-  HUD uses its `HudBatchingBufferSource`, so with ImmediatelyFast the GUI glint stays vanilla (G5a's
-  `source == main` rule; a known limit, see the compatibility matrix in section 6).
+  installed. G9 (5.2, point 7) fixes this.
+* **ImmediatelyFast GUI buffer sources (verified in the same bytecode).** `core.MixinGameRenderer`
+  redirects the `renderBuffers.bufferSource()` call of `GameRenderer.render` that builds the frame's
+  `GuiGraphics` to `BatchingBuffers.getNonBatchingEntityVertexConsumers()`: a plain vanilla
+  `BufferSource` (built with the constructor, not `immediateWithBuffers`), created once with fresh
+  builders for the key set of main's fixed map at that moment. Inventories and menus draw into it,
+  `GuiGraphics.renderItem` flushes it per item. While a HUD layer is batched (`hud_batching`, on by
+  default; also `experimental_screen_batching`), `BatchingBuffers.runBatched` / `beginHudBatching` swap
+  `GuiGraphics.bufferSource` for the `HudBatchingBufferSource` (a `BatchableBufferSource` subclass built
+  the same way). Its `getBuffer` sends every type whose name contains `glint` straight to the parent;
+  other types requested while `renderingItem` is set (inside `ItemRenderer.render`) are wrapped into
+  per-lighting `WrappedRenderLayer`s, which are not fixed. `renderItem` does not flush; the batch is drawn
+  at the end of each layer (`MixinLayeredDrawer`), or earlier by `tryForceDrawHudBuffers` (on
+  `BufferUploader` draws, a render target call, and model-view and projection matrix changes).
+  `BatchableBufferSource.endBatch()` draws the non-fixed layers first (sorted by its layer order, stable),
+  then every fixed type in map order, each through the vanilla private `endBatch(RenderType,
+  BufferBuilder)`, so G5c runs. Neither source is main, so before 2.0.0 the GUI glint stayed vanilla with
+  ImmediatelyFast. G11 and G12 (5.2, point 8) fix this.
 
 ### 5.2 Strategy
 
@@ -1092,6 +1109,25 @@ presets) and the reload listener `glintsmith:glint_textures`.
    held sword while the same look in an item frame (`hero_sword_rainbow`, G7) shows the rainbow, i.e.
    the first-person capture was the vanilla glint; the hand was never verified with a custom look
    before G9.
+8. **ImmediatelyFast's GUI sources** (G11, G12; `GlintSystem.substituteGui`). Point 2's hazard is
+   about non-fixed glint types in someone else's source, so the same remedy works there: the GUI source
+   itself plays the role of main. Same checks as G5a (custom looks, known kind, render thread, failsafe,
+   client started) with `source != main`; the slot type is registered as a fixed buffer **of that
+   source** (`fixedBuffers.containsKey` first, because ImmediatelyFast copies main's fixed keys when it
+   creates the source, so types registered in main before that are already there). Fixed types come
+   after the vanilla fixed entries (the vanilla glint, the item sheets) in insertion order, and in the
+   HUD source after all non-fixed layers (the lighting-wrapped item bases), so our glint is drawn after
+   its base like the vanilla glint. Our types are named `glintsmith_*glint*`, so the HUD source treats
+   them like the vanilla glint (no lighting wrapping). The slots are not pinned: only one source holds
+   their geometry at a time (the world and the hand are flushed before the GUI), and they are released by
+   G5c when that source draws them (per item for the non-batching source, at the end of the HUD layer for
+   the HUD source; up to 32 looks per kind per HUD layer). Nothing in this path draws or flushes, so the
+   HUD batch is still drawn only when ImmediatelyFast draws it (the T20 hotbar rule in section 6 is not
+   touched). Which source is which: G11 reports the non-batching instance (G5a compares one reference and
+   calls `substituteGui` for it, `substitute` otherwise, so the main path of `substitute` is unchanged);
+   G12 calls `substituteGui` from the HUD class's own `getBuffer`. A plain `BufferSource` of anybody else
+   still gets the vanilla glint (no per-source registration in transient sources, which would leak
+   native buffers).
 
 ### 5.3 Categories, context and resolution
 
@@ -1209,15 +1245,8 @@ void clearTexturing() {
 The vanilla accessibility sliders "Glint Speed" and "Glint Strength" stay respected as multipliers.
 Rotation is in degrees (vanilla = 10).
 
-Known limit: preset glints in packs with a very large block atlas. Item glints are textured through the
-item's own UVs on the block atlas, like vanilla. In a pack whose block atlas is very large (for example
-8192 x 4096 px), each item covers only a tiny part of the atlas, so at the default Scale 1.00 an item
-shows only a few texels of a preset's pattern and the preset looks like a flat colour wash instead of its
-bands or sparkles. Vanilla's own glint has the same atlas dependence; it is less visible there because
-the vanilla texture is smooth. Workaround: lower the glint Scale (smaller values make the pattern denser;
-the matrix scale is `baseScale / scale`). About 0.13 for held and dropped items and about 0.2 for armor
-worked in such a pack (the gallery captures use item 0.13, armor and entity 0.22, the sparkle preset 0.1).
-Armor textures are not on the block atlas, so armor is affected far less.
+Large block atlases: item glints depend on the size of the block atlas; since 2.0.0 the atlas factor
+corrects that (5.4.1). The matrix above is the 1.0.0 one; with the factor the scale is per axis.
 
 Slot acquire (`GlintSlotPool.acquire(kind, scratch)`), on the render thread:
 
@@ -1233,8 +1262,82 @@ resolver map), the int tint, and the floats with `==`. Release: `onBatchDrawn(ty
 `byType.get(type)` (an `IdentityHashMap`) → `inUse = false`.
 
 Why this bounds everything: GUI items flush per item, so slots recycle per item. World and hand flush
-once, so up to 32 distinct looks per kind per frame. Animated tints change their ARGB every frame but
-reuse the same slots. Memory and the render-type count are constant.
+once, so up to 32 distinct looks per kind per frame; the same holds for one ImmediatelyFast HUD layer,
+which is drawn once at its end. Animated tints change their ARGB every frame but reuse the same slots.
+Memory and the render-type count are constant.
+
+#### 5.4.1 Atlas-independent scale (2.0.0)
+
+Problem. Item glints are textured through the item's own UVs on the block atlas, like vanilla
+(`texCoord0 = TextureMat * UV0`). How much of the glint texture lands on an item therefore depends on the
+UV range the item's sprite covers: in a pack whose block atlas is very large (the owner's Nytheria pack:
+8192 x 4096 px with 16 px item textures), each item covers an eighth of the vanilla UV range per axis, so
+at Scale 1.00 it shows only a few texels of the pattern and a preset becomes a flat colour wash instead of
+bands or sparkles. Vanilla's own glint has the same dependence (less visible because its texture is
+smooth). The 1.0.0 workaround was a lower Scale: about 0.13 for items.
+
+Factor. `GlintAtlasScale` keeps one factor per axis,
+
+```
+f_u = (REFERENCE_WIDTH  / atlasWidth)  * (spriteWidth  / 16)
+f_v = (REFERENCE_HEIGHT / atlasHeight) * (spriteHeight / 16)
+```
+
+clamped to 1/64..64, 1 for any non-positive size. The first term is the atlas ratio; the second is the
+size of a reference sprite (`minecraft:item/diamond_sword`) in the current atlas against its vanilla 16
+px, so high-resolution packs stay neutral: a 32x pack doubles the atlas and the sprites, the UV range of an
+item and so the vanilla look do not change, and the atlas ratio alone (0.5) would make the glint twice as
+dense there. When the reference sprite is missing the second term is 1. For the owner's pack both factors
+are 0.125, which matches the manual 0.13. The glint scale is multiplied by the factor (the matrix divides
+by it).
+
+Reference size. The vanilla 1.21.1 block atlas at the default mipmap level 4 is **1024 x 512**. Determined
+by running the vanilla `Stitcher` (`new Stitcher<>(max, max, 4)`, as `SpriteLoader.stitch` does) over
+exactly what `assets/minecraft/atlases/blocks.json` of the 1.21.1 client jar lists: the `block`, `item`
+and `entity/conduit` folders, the single sprites `entity/bell/bell_body`,
+`entity/decorated_pot/decorated_pot_side` and `entity/enchanting_table_book`, the 4 x 14 armor trim item
+permutations and `missingno`, 1684 sprites, with animated sprites at their frame size. Development runs
+with Fabric API and small mods log the same `Created: 1024x512x4 minecraft:textures/atlas/blocks.png-atlas`.
+`GlintAtlasScaleTest.referenceIsTheStitchedVanillaBlockAtlas` repeats the computation from the client jar on
+the test class path, so the constants cannot drift. The atlas is not square, so u and v are kept apart.
+
+Reading the actual size (G10). `TextureAtlas.upload(SpriteLoader.Preparations)` is where vanilla takes the
+size of a freshly stitched atlas (the model manager's apply step, on the render thread, after every
+resource reload). G10 injects at its TAIL; `GlintSystem.onAtlasUploaded` ignores every atlas but
+`InventoryMenu.BLOCK_ATLAS`, reads `preparations.width()` / `height()` and the reference sprite from
+`preparations.regions()`, and logs one INFO line when a factor changes. A reload listener would not do:
+Fabric's listeners have no defined order against the model manager's apply step. Before the first upload
+both factors are 1.
+
+Where it applies (`GlintCategories.blockAtlasUvs`). By the UV source, not by the category:
+
+| Draw | UVs | Factor |
+|---|---|---|
+| `glint` / `glint_translucent` requested while the innermost frame is an item frame (G1): held, dropped, framed and GUI items, block items, the GUI/ground/frame trident and spyglass models | the baked model's block-atlas UVs | yes, in every category (GUI included) |
+| compass and clock with foil (`ItemRenderer.hasAnimatedTexture`) | `SheetedDecalTextureGenerator`, from the position | no |
+| innermost frame BEWLR (G4): shield, trident in hand, banners, chests, skulls, mod renderers | entity textures or other atlases (shield patterns, banners, chests) | no |
+| armor and elytra (G2, G3, `armor_entity_glint`) | 0..1 UVs of the armor layer or elytra texture | no |
+| `entity_glint`, `entity_glint_direct` (thrown trident and other entity models) | the entity texture | no |
+| no frame | unknown drawer | no |
+
+So armor is not corrected: its UVs do not depend on the block atlas (the 0.2 armor Scale of the gallery
+captures is a taste for denser patterns, not an atlas correction). The other atlases (shield patterns,
+banners) can also grow with mods; that is not corrected (small atlases, out of scope).
+
+Only when customised. The factor is set after the vanilla-equivalence check of `pick`
+(`SCRATCH.isVanilla(kind)` runs on the unscaled params), so a stack whose look is vanilla keeps the
+requested vanilla type; with `anyCustom` false nothing runs at all. The switch reaches the renderer only
+through `GlintRuntimeSettings.atlasScale` (the config listener's snapshot of `glint.atlasIndependentScale`,
+default on; configs without the field keep the Gson default, i.e. on), never through
+`ConfigManager.current()`. `substitute`'s `source == main` path is unchanged.
+
+Matrix. The factor is part of the slot params (`atlasU`, `atlasV`; `sameAs` compares them, so two looks
+that differ only by it never share a slot). `setupTexturing` scales u and v before the rotation, in atlas
+UV space: `translation(-g, h, 0).rotateZ(rotation).scale(s / atlasU, s / atlasV, s)` with
+`s = baseScale / max(0.05, scale)`; with factor 1 this is the 1.0.0 `scale(s)`.
+
+Users who lowered Scale for a large atlas in 1.0.0 should set it back to 1.00 (the factor and the manual
+value would multiply).
 
 ### 5.5 Texture management (`GlintTextures`)
 
@@ -1365,7 +1468,7 @@ specs. Generation cost at start-up is **[UNVERIFIED, not measured]**.
 | Mods with a stencil main framebuffer (e.g. portals) | Disabled after the first failed depth blit (one log line) | Vanilla: disabled likewise | Full | Full |
 | Multiple `renderLevel` per frame (portal mods) | The phase opens and composites per call | Unchanged | Unchanged | Unchanged |
 | Mods drawing items without `MultiBufferSource`, or GUI items without `GuiGraphics.renderItem` (EMI batching) | Not outlined | Not outlined | Not outlined | Vanilla glint if not on the main source |
-| ImmediatelyFast HUD batching (1.6.x) | Unaffected | Unaffected | Full. IF swaps the `GuiGraphics` buffer source for its `HudBatchingBufferSource`, skips the flush inside `renderItem` and draws its batch at the end of each HUD layer, or earlier when anything calls `BufferUploader.draw` / `_drawWithShader` (its `tryForceDrawHudBuffers`). Our mask draw is such a call, made with the mask target bound and scissored; without a flush first, the batch so far (hotbar sprite, earlier slots, counts) would be drawn into the mask and lost. Therefore, when `ItemRenderer.render` of an outlined GUI item ends (O1, the point where vanilla flushes, still with the item's lighting), its buffer source is flushed (depth test off as in `GuiGraphics.flush()`, then restored), which draws the batch onto main in order before the composite; non-outlined items keep batching. The same applies to IF screen batching (`experimental_screen_batching`, off by default). | Glint: ImmediatelyFast's `BatchableBufferSource` is the main source and bypasses G5a/G5b (5.1); G9 covers it, so the first-person hand (and the world without Iris) get the custom look (not yet verified in game). GUI glints stay vanilla with ImmediatelyFast: its non-batching GUI `BufferSource` and `HudBatchingBufferSource` are not the main source (known limit). |
+| ImmediatelyFast HUD batching (1.6.x) | Unaffected | Unaffected | Full. IF swaps the `GuiGraphics` buffer source for its `HudBatchingBufferSource`, skips the flush inside `renderItem` and draws its batch at the end of each HUD layer, or earlier when anything calls `BufferUploader.draw` / `_drawWithShader` (its `tryForceDrawHudBuffers`). Our mask draw is such a call, made with the mask target bound and scissored; without a flush first, the batch so far (hotbar sprite, earlier slots, counts) would be drawn into the mask and lost. Therefore, when `ItemRenderer.render` of an outlined GUI item ends (O1, the point where vanilla flushes, still with the item's lighting), its buffer source is flushed (depth test off as in `GuiGraphics.flush()`, then restored), which draws the batch onto main in order before the composite; non-outlined items keep batching. The same applies to IF screen batching (`experimental_screen_batching`, off by default). | Glint: ImmediatelyFast's `BatchableBufferSource` is the main source and bypasses G5a/G5b (5.1); G9 covers it, so the first-person hand (and the world without Iris) get the custom look (not yet verified in game). GUI glints: its non-batching GUI `BufferSource` and `HudBatchingBufferSource` are not the main source; G11 and G12 (5.2, point 8, since 2.0.0) register the slot types as fixed buffers of those sources, so inventories, menus and the batched hotbar get the custom look too (not yet verified in game). They never draw or flush the HUD batch themselves, so the hotbar flush rule above is unchanged. |
 
 Detection (`navrelis.glintsmith.render.outline.compat.IrisCompat`, T5):
 
@@ -1536,7 +1639,14 @@ public final class GlintSystem {
     public static void afterEndBatch(MultiBufferSource.BufferSource source, RenderType type);         // G5b
     public static void onBatchDrawn(MultiBufferSource.BufferSource source, RenderType type);          // G5c (+ G5b for G9)
     public static void onFrameBegin();                                                                // G6
+    public static RenderType substituteBuffered(RenderType requested);                                // G7
+    public static void onAtlasUploaded(ResourceLocation atlas, SpriteLoader.Preparations p);          // G10
+    public static void onGuiSource(MultiBufferSource.BufferSource source);                            // G11
+    public static boolean isGuiSource(MultiBufferSource.BufferSource source);                         // G5a dispatch
+    public static RenderType substituteGui(MultiBufferSource.BufferSource source, RenderType requested); // G11, G12
 }
+final class GlintAtlasScale { static float factor(int refAtlas, int atlas, int refSprite, int sprite);  // 5.4.1
+                              static boolean update(int w, int h, int spriteW, int spriteH); static float u(), v(); }
 public final class GlintContext {
     public static void pushItem(ItemStack stack, ItemDisplayContext ctx);   // G1
     public static void pushArmor(ItemStack stack);                          // G2, G3
@@ -1555,7 +1665,7 @@ enum GlintKind {
     static @Nullable GlintKind of(RenderType t);      // 5 identity compares, cheapest-first
 }
 enum GlintCategory { ITEM, ARMOR, ENTITY, GUI }
-final class GlintParams { ResourceLocation texture; int tintArgb; float speed, scale, strength, rotationDeg;
+final class GlintParams { ResourceLocation texture; int tintArgb; float speed, scale, strength, rotationDeg, atlasU, atlasV;
                           boolean sameAs(GlintParams o); void copyFrom(GlintParams o); boolean isVanilla(GlintKind k); }
 final class GlintSlot { final GlintKind kind; final int index; final RenderType type; final GlintParams params;
                         boolean inUse, registered; long frame;
@@ -1600,8 +1710,14 @@ T6 data flow, step by step:
    thread; then the same resolution as G5a step 2, with `pool.acquire(..., pin = true)` and without
    registering the slot in `main`.
 8. Every public entry point catches Throwable → `GlintFailsafe.trip` → vanilla behaviour.
+9. G10 `onAtlasUploaded` (block atlas only) → `GlintAtlasScale.update(width, height, reference sprite)`.
+   In step 3.2, after the vanilla-equivalence check, `settings.atlasScale && blockAtlasUvs(kind, frame,
+   decalFoil)` → `scratch.setAtlas(u, v)` (5.4.1).
+10. G11 `onGuiSource` keeps ImmediatelyFast's non-batching GUI source; G5a calls `substituteGui` for it,
+    G12 for the HUD source: step 3 with `source` instead of main (registration in its fixed map,
+    `containsKey` first), not pinned (5.2, point 8).
 
-Mixins (T6): G1–G8, GA1, GA2. Resources (T6): none. Presets are generated at run time;
+Mixins (T6): G1–G8, GA1, GA2. Later: G9 (1.0.0), G10–G12 (2.0.0). Resources (T6): none. Presets are generated at run time;
 the user folder `<configDir>/glintsmith/glints/` is created if missing.
 
 ### 8.3 T8: exact wiring
@@ -1625,9 +1741,12 @@ the user folder `<configDir>/glintsmith/glints/` is created if missing.
    outline.EmptyTextureStateShardAccessor,
    glint.ItemRendererGlintMixin, glint.HumanoidArmorLayerGlintMixin, glint.ElytraLayerGlintMixin,
    glint.BlockEntityWithoutLevelRendererGlintMixin, glint.BufferSourceGlintMixin, glint.GameRendererGlintMixin,
-   glint.ItemInHandRendererGlintMixin, glint.BufferSourceAccessor, glint.RenderBuffersAccessor
+   glint.ItemInHandRendererGlintMixin, glint.BufferSourceAccessor, glint.RenderBuffersAccessor,
+   glint.TextureAtlasGlintMixin (G10)
    glint.compat.IrisFullyBufferedGlintMixin (G7; @Pseudo, so it is skipped without Iris)
    glint.compat.ImmediatelyFastBufferSourceGlintMixin (G9; @Pseudo, skipped without ImmediatelyFast)
+   glint.compat.ImmediatelyFastGuiSourceGlintMixin, glint.compat.ImmediatelyFastHudGlintMixin
+   (G11, G12; @Pseudo, skipped without ImmediatelyFast)
    ```
 3. No access widener and no `build.gradle` change are needed. Fabric API's transitive access wideners
    cover the render-state classes, and the accessors cover the rest.
@@ -1793,9 +1912,19 @@ Glint:
     player held items, item frames, dropped items.
 28. ImmediatelyFast 1.6.15 installed (G9), shaders off, Item layer with a preset at Scale 0.13 and a
     RAINBOW tint: the enchanted sword in the first-person hand shows the custom look (the same colours
-    as that look in an item frame, not the uniform purple vanilla wash), also with Punchy; the GUI glint
-    stays vanilla (known limit). Without Iris, armor stands and item frames show the custom look too.
-    Pending.
+    as that look in an item frame, not the uniform purple vanilla wash), also with Punchy. Without Iris,
+    armor stands and item frames show the custom look too. Pending. (Before 2.0.0 the GUI glint stayed
+    vanilla here; see 30.)
+29. Atlas-independent scale (2.0.0, 5.4.1), in a pack with a large block atlas (the log line
+    `Glint atlas factor 0.125 x 0.125 (block atlas 8192x4096, ...)` after loading and after F3+T), Item layer
+    `preset:rainbow` at Scale 1.00: with the option on, the held, dropped and framed sword shows the
+    rainbow bands as densely as in a vanilla-size atlas; off, the 1.0.0 flat wash. Armor (F5) looks the
+    same on and off. With every layer at its defaults and no rule glint, the glint is vanilla whatever the
+    option. Pending.
+30. ImmediatelyFast 1.6.15 (G11, G12), GUI layer with a preset: enchanted items in the inventory, a chest,
+    the creative tabs and the hotbar show the custom look; the hotbar sprite, item counts and durability
+    bars stay intact (no erased hotbar, the T20 rule), also with GUI outlines on. Without
+    ImmediatelyFast the GUI glint is unchanged. Pending.
 
 ---
 

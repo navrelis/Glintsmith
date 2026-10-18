@@ -60,9 +60,12 @@ final class GlintShards {
 			long shifted = (long) (Util.getMillis() * options.glintSpeed().get() * 8.0 * p.speed);
 			float g = (float) (shifted % 110000L) / 110000.0F;
 			float h = (float) (shifted % 30000L) / 30000.0F;
+			float s = slot.kind.baseScale / Math.max(0.05F, p.scale); // scale 2 = the pattern is twice as large
+			// The atlas factor divides u and v before the rotation, i.e. in atlas UV space (it may differ per axis);
+			// with factor 1 this is the uniform scale(s).
 			MATRIX.translation(-g, h, 0.0F)
 				.rotateZ(p.rotationDeg * Mth.DEG_TO_RAD)
-				.scale(slot.kind.baseScale / Math.max(0.05F, p.scale)); // scale 2 = the pattern is twice as large
+				.scale(s / p.atlasU, s / p.atlasV, s);
 			RenderSystem.setTextureMatrix(MATRIX);
 
 			float[] current = RenderSystem.getShaderColor();

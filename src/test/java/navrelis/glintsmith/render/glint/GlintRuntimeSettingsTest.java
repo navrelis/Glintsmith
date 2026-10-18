@@ -318,4 +318,23 @@ class GlintRuntimeSettingsTest {
 		assertNull(lookOf(STICK, GlintCategory.ITEM, config), "the other categories stay vanilla");
 		assertTrue(GlintRuntimeSettings.from(config).anyCustom());
 	}
+
+	@Test
+	void atlasScaleFollowsTheConfigAndNeverMakesTheGlintCustom() {
+		GlintsmithConfig config = defaults();
+		GlintRuntimeSettings on = GlintRuntimeSettings.from(config);
+		assertTrue(on.atlasScale(), "on by default");
+		assertFalse(on.anyCustom(), "the atlas factor alone keeps everything vanilla");
+		assertTrue(GlintRuntimeSettings.VANILLA.atlasScale());
+		assertTrue(GlintRuntimeSettings.from(null).atlasScale());
+
+		config.glint.atlasIndependentScale = false;
+		GlintRuntimeSettings off = GlintRuntimeSettings.from(config);
+		assertFalse(off.atlasScale());
+		assertFalse(off.anyCustom());
+
+		config.glint.item.texture = "preset:rainbow";
+		assertTrue(GlintRuntimeSettings.from(config).anyCustom());
+		assertFalse(GlintRuntimeSettings.from(config).atlasScale());
+	}
 }

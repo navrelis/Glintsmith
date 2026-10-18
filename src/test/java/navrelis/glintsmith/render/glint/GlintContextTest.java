@@ -13,7 +13,11 @@ import org.junit.jupiter.api.Test;
 
 import navrelis.glintsmith.style.GlintCategory;
 import navrelis.glintsmith.style.OutlineTarget;
+import net.minecraft.SharedConstants;
+import net.minecraft.server.Bootstrap;
 import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 /**
  * The category decision table (design 5.3), the context stack and the display context mapping.
@@ -76,6 +80,42 @@ class GlintContextTest {
 		assertEquals(GlintCategory.ITEM, decide(GlintKind.GLINT));
 		assertEquals(GlintCategory.ITEM, decide(GlintKind.GLINT_TRANSLUCENT));
 		assertEquals(GlintCategory.ENTITY, decide(GlintKind.ENTITY_GLINT_DIRECT));
+	}
+
+	@Test
+	void onlyItemKindsBelowAnItemFrameHaveBlockAtlasUvs() {
+		assertFalse(GlintCategories.blockAtlasUvs(GlintKind.GLINT, null, false), "no frame: unknown drawer");
+
+		GlintContext.pushItem(null, ItemDisplayContext.FIRST_PERSON_RIGHT_HAND);
+		assertTrue(GlintCategories.blockAtlasUvs(GlintKind.GLINT, GlintContext.top(), false));
+		assertTrue(GlintCategories.blockAtlasUvs(GlintKind.GLINT_TRANSLUCENT, GlintContext.top(), false));
+		assertFalse(GlintCategories.blockAtlasUvs(GlintKind.GLINT, GlintContext.top(), true), "compass and clock: decal UVs");
+		assertFalse(GlintCategories.blockAtlasUvs(GlintKind.ENTITY_GLINT, GlintContext.top(), false));
+		assertFalse(GlintCategories.blockAtlasUvs(GlintKind.ENTITY_GLINT_DIRECT, GlintContext.top(), false));
+		assertFalse(GlintCategories.blockAtlasUvs(GlintKind.ARMOR_ENTITY_GLINT, GlintContext.top(), false));
+
+		GlintContext.pushBewlr(null, ItemDisplayContext.FIRST_PERSON_RIGHT_HAND);
+		assertFalse(GlintCategories.blockAtlasUvs(GlintKind.GLINT, GlintContext.top(), false), "BEWLR: entity textures, other atlases");
+		GlintContext.pushItem(null, ItemDisplayContext.FIXED); // an item model drawn by a block entity item renderer
+		assertTrue(GlintCategories.blockAtlasUvs(GlintKind.GLINT, GlintContext.top(), false));
+		GlintContext.reset();
+
+		GlintContext.pushArmor(null);
+		assertFalse(GlintCategories.blockAtlasUvs(GlintKind.GLINT, GlintContext.top(), false), "armor: own texture UVs");
+		assertFalse(GlintCategories.blockAtlasUvs(GlintKind.ARMOR_ENTITY_GLINT, GlintContext.top(), false));
+		GlintContext.reset();
+
+		GlintContext.pushItem(null, ItemDisplayContext.GUI);
+		assertTrue(GlintCategories.blockAtlasUvs(GlintKind.GLINT, GlintContext.top(), false), "GUI items too");
+	}
+
+	@Test
+	void compassesAndClocksDrawTheirGlintAsADecal() {
+		SharedConstants.tryDetectVersion();
+		Bootstrap.bootStrap(); // idempotent; Items needs the registries
+		assertTrue(GlintContext.isDecalFoil(new ItemStack(Items.CLOCK)));
+		assertFalse(GlintContext.isDecalFoil(new ItemStack(Items.DIAMOND_SWORD)));
+		assertFalse(GlintContext.isDecalFoil(ItemStack.EMPTY));
 	}
 
 	@Test

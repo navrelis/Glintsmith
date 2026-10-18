@@ -603,6 +603,42 @@ class ConfigTest {
 		assertEquals(2.0f, m.get().outline.thickness);
 	}
 
+	// ---- atlas-independent glint scale (2.0.0) ----
+
+	@Test
+	void atlasIndependentScaleIsOnByDefault() {
+		assertTrue(new GlintsmithConfig().sanitize().glint.atlasIndependentScale);
+		assertTrue(new GlintsmithConfig.Glint().atlasIndependentScale);
+	}
+
+	@Test
+	void configsWithoutTheFieldGetItOn() throws IOException {
+		// A 1.0.0 file: a full glint section, but no atlasIndependentScale.
+		String old = "{\"version\": 1, \"glint\": {\"enabled\": true, \"item\": {\"texture\": \"preset:rainbow\", \"scale\": 0.13},"
+			+ " \"armor\": {}, \"entity\": {}, \"gui\": {}}}";
+		assertTrue(ConfigManager.fromJson(old).sanitize().glint.atlasIndependentScale);
+		assertTrue(ConfigManager.fromJson("{}").sanitize().glint.atlasIndependentScale, "no glint section at all");
+		assertTrue(ConfigManager.fromJson("{\"glint\": null}").sanitize().glint.atlasIndependentScale);
+
+		Files.writeString(file(), old);
+		ConfigManager m = ConfigManager.forPath(file());
+		GlintsmithConfig loaded = m.load();
+		assertTrue(loaded.glint.atlasIndependentScale);
+		assertEquals(0.13f, loaded.glint.item.scale, 1e-6f, "other values are kept");
+		assertTrue(m.save(loaded));
+		assertTrue(Files.readString(file()).contains("\"atlasIndependentScale\": true"), "written back on the next save");
+	}
+
+	@Test
+	void atlasIndependentScaleOffIsKept() {
+		GlintsmithConfig c = new GlintsmithConfig();
+		c.glint.atlasIndependentScale = false;
+		GlintsmithConfig back = ConfigManager.fromJson(ConfigManager.toJson(c)).sanitize();
+		assertFalse(back.glint.atlasIndependentScale);
+		assertFalse(c.copy().glint.atlasIndependentScale);
+		assertFalse(ConfigManager.fromJson("{\"glint\": {\"atlasIndependentScale\": false}}").sanitize().glint.atlasIndependentScale);
+	}
+
 	@Test
 	void textureDirIsUnderTheConfigFolder() {
 		ConfigManager m = ConfigManager.forPath(file());

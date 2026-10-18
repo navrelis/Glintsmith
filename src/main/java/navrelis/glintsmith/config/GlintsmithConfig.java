@@ -222,6 +222,12 @@ public final class GlintsmithConfig {
 	public static final class Glint {
 		/** Master switch; off leaves every glint untouched (vanilla). */
 		public boolean enabled = true;
+		/**
+		 * Corrects the scale of customised item glints for the size of the block texture atlas, so that Scale 1.00 looks
+		 * like vanilla in packs with a large atlas. Configs written before 2.0.0 lack the field, so Gson keeps this
+		 * default: they get it on.
+		 */
+		public boolean atlasIndependentScale = true;
 		public GlintCategorySettings item = new GlintCategorySettings();
 		public GlintCategorySettings armor = new GlintCategorySettings();
 		public GlintCategorySettings entity = new GlintCategorySettings();

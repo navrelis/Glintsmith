@@ -13,8 +13,11 @@
 		"glint.ItemInHandRendererGlintMixin",
 		"glint.BufferSourceAccessor",
 		"glint.RenderBuffersAccessor",
+		"glint.TextureAtlasGlintMixin",
 		"glint.compat.IrisFullyBufferedGlintMixin",
-		"glint.compat.ImmediatelyFastBufferSourceGlintMixin"
+		"glint.compat.ImmediatelyFastBufferSourceGlintMixin",
+		"glint.compat.ImmediatelyFastGuiSourceGlintMixin",
+		"glint.compat.ImmediatelyFastHudGlintMixin"
 	],
 	"injectors": {
 		"defaultRequire": 0

@@ -47,6 +47,12 @@ class GlintParamsTest {
 		p = params();
 		p.rotationDeg = 31.0f;
 		assertFalse(base.sameAs(p));
+		p = params();
+		p.atlasU = 0.125f;
+		assertFalse(base.sameAs(p));
+		p = params();
+		p.atlasV = 0.25f;
+		assertFalse(base.sameAs(p));
 		assertFalse(base.sameAs(null));
 	}
 
@@ -67,6 +73,13 @@ class GlintParamsTest {
 		assertTrue(copy.sameAs(params()));
 		assertEquals(A, copy.texture);
 		assertEquals(0xFF336699, copy.tintArgb);
+
+		GlintParams scaled = params();
+		scaled.setAtlas(0.125f, 0.25f);
+		copy.copyFrom(scaled);
+		assertEquals(0.125f, copy.atlasU);
+		assertEquals(0.25f, copy.atlasV);
+		assertTrue(copy.sameAs(scaled));
 	}
 
 	@Test
@@ -95,11 +108,28 @@ class GlintParamsTest {
 			p.strength = 0.9f;
 			assertFalse(p.isVanilla(kind));
 			p.strength = 1.0f;
+			p.setAtlas(0.125f, 1.0f);
+			assertFalse(p.isVanilla(kind), "atlas factor u");
+			p.setAtlas(1.0f, 0.5f);
+			assertFalse(p.isVanilla(kind), "atlas factor v");
+			p.setAtlas(1.0f, 1.0f);
+			assertTrue(p.isVanilla(kind));
 			p.texture = A;
 			assertFalse(p.isVanilla(kind));
 			p.texture = null;
 			assertFalse(p.isVanilla(kind));
 		}
+	}
+
+	@Test
+	void setResetsTheAtlasFactor() {
+		GlintParams p = params();
+		assertEquals(1.0f, p.atlasU);
+		assertEquals(1.0f, p.atlasV);
+		p.setAtlas(0.125f, 0.25f);
+		p.set(A, 0xFF336699, 2.0f, 1.5f, 0.5f, 30.0f);
+		assertEquals(1.0f, p.atlasU, "the scratch params of one request must not leak the factor into the next");
+		assertEquals(1.0f, p.atlasV);
 	}
 
 	@Test

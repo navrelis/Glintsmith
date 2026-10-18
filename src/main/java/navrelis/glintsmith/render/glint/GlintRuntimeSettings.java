@@ -20,13 +20,16 @@ import org.jetbrains.annotations.Nullable;
  * @param gui defaults of the GUI layer
  * @param anyCustom false when the master switch is off, or when every category is at its defaults and no rule has a
  *                  glint override: the renderer then leaves all glints vanilla without any work
+ * @param atlasScale whether customised glints drawn with block-atlas UVs get the atlas factor of {@link GlintAtlasScale};
+ *                   it never makes a glint custom by itself
  */
 public record GlintRuntimeSettings(
 	GlintCategoryRuntime item,
 	GlintCategoryRuntime armor,
 	GlintCategoryRuntime entity,
 	GlintCategoryRuntime gui,
-	boolean anyCustom
+	boolean anyCustom,
+	boolean atlasScale
 ) {
 	/** Everything vanilla. */
 	public static final GlintRuntimeSettings VANILLA = from(new GlintsmithConfig().sanitize());
@@ -83,7 +86,7 @@ public record GlintRuntimeSettings(
 		if (glint == null) {
 			GlintsmithConfig.GlintCategorySettings defaults = new GlintsmithConfig.GlintCategorySettings();
 			GlintCategoryRuntime d = GlintCategoryRuntime.of(defaults);
-			return new GlintRuntimeSettings(d, d, d, d, false);
+			return new GlintRuntimeSettings(d, d, d, d, false, true);
 		}
 		GlintCategoryRuntime item = GlintCategoryRuntime.of(orDefault(glint.item));
 		GlintCategoryRuntime armor = GlintCategoryRuntime.of(orDefault(glint.armor));
@@ -102,7 +105,7 @@ public record GlintRuntimeSettings(
 				}
 			}
 		}
-		return new GlintRuntimeSettings(item, armor, entity, gui, custom);
+		return new GlintRuntimeSettings(item, armor, entity, gui, custom, glint.atlasIndependentScale);
 	}
 
 	private static GlintsmithConfig.GlintCategorySettings orDefault(@Nullable GlintsmithConfig.GlintCategorySettings s) {

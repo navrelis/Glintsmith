@@ -7,7 +7,8 @@ import navrelis.glintsmith.style.ColorStyle;
 import navrelis.glintsmith.style.GlintCategory;
 
 /**
- * The glint master switch and the settings of the four glint layers (item, armor, entity, GUI).
+ * The glint master switch, the atlas-independent scale and the settings of the four glint layers (item, armor, entity,
+ * GUI).
  */
 public final class GlintTab extends ConfigTab {
 	private GlintCategory category = GlintCategory.ITEM;
@@ -23,6 +24,8 @@ public final class GlintTab extends ConfigTab {
 
 		list.addHeading(Ui.t("glintsmith.glint.heading"));
 		list.addFull(Ui.toggle(Ui.WIDTH, "glintsmith.glint.enabled", glint.enabled, v -> glint.enabled = v));
+		list.addFull(Ui.toggle(Ui.WIDTH, "glintsmith.glint.atlas_scale", glint.atlasIndependentScale,
+			v -> glint.atlasIndependentScale = v));
 		list.addFull(Ui.cycle(Ui.WIDTH, "glintsmith.glint.category", "glintsmith.glint.category",
 			GlintCategory.values(), category, true, selected -> {
 				category = selected;

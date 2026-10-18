@@ -16,6 +16,7 @@ import java.util.TreeSet;
 
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
@@ -53,16 +54,20 @@ class GlintMixinApplicationTest {
 	private static final String GAME_RENDERER = "net.minecraft.client.renderer.GameRenderer";
 	private static final String ITEM_IN_HAND_RENDERER = "net.minecraft.client.renderer.ItemInHandRenderer";
 	private static final String RENDER_BUFFERS = "net.minecraft.client.renderer.RenderBuffers";
+	private static final String TEXTURE_ATLAS = "net.minecraft.client.renderer.texture.TextureAtlas";
 
 	private static final Set<String> MIXIN_CLASSES = new TreeSet<>(Set.of(
 		"glint.ItemRendererGlintMixin", "glint.HumanoidArmorLayerGlintMixin", "glint.ElytraLayerGlintMixin",
 		"glint.BlockEntityWithoutLevelRendererGlintMixin", "glint.BufferSourceGlintMixin", "glint.GameRendererGlintMixin",
 		"glint.ItemInHandRendererGlintMixin",
-		"glint.BufferSourceAccessor", "glint.RenderBuffersAccessor",
-		"glint.compat.IrisFullyBufferedGlintMixin", "glint.compat.ImmediatelyFastBufferSourceGlintMixin"));
+		"glint.BufferSourceAccessor", "glint.RenderBuffersAccessor", "glint.TextureAtlasGlintMixin",
+		"glint.compat.IrisFullyBufferedGlintMixin", "glint.compat.ImmediatelyFastBufferSourceGlintMixin",
+		"glint.compat.ImmediatelyFastGuiSourceGlintMixin", "glint.compat.ImmediatelyFastHudGlintMixin"));
 
 	private static final String IRIS_MIXIN = "/navrelis/glintsmith/mixin/glint/compat/IrisFullyBufferedGlintMixin.class";
 	private static final String IF_MIXIN = "/navrelis/glintsmith/mixin/glint/compat/ImmediatelyFastBufferSourceGlintMixin.class";
+	private static final String IF_GUI_MIXIN = "/navrelis/glintsmith/mixin/glint/compat/ImmediatelyFastGuiSourceGlintMixin.class";
+	private static final String IF_HUD_MIXIN = "/navrelis/glintsmith/mixin/glint/compat/ImmediatelyFastHudGlintMixin.class";
 
 	/** The transformed bytecode of a class. */
 	private static ClassNode transformed(String name) throws Exception {
@@ -150,6 +155,12 @@ class GlintMixinApplicationTest {
 		ClassNode node = transformed(ITEM_IN_HAND_RENDERER);
 		assertCallsHandler(node, "renderHandsWithItems", "Lnet/minecraft/client/player/LocalPlayer;I)V", "glintsmith$glintHands");
 		assertHasWrapped(node, "renderHandsWithItems");
+	}
+
+	@Test
+	void textureAtlasUploadIsInjected() throws Exception {
+		ClassNode node = transformed(TEXTURE_ATLAS);
+		assertCallsHandler(node, "upload", "SpriteLoader$Preparations;)V", "glintsmith$blockAtlasSize");
 	}
 
 	@Test
@@ -248,8 +259,8 @@ class GlintMixinApplicationTest {
 				}
 			}
 		}
-		assertEquals(11, injectors,
-			"expected G1 to G4 and G8 (WrapMethod), G5a, G7 and G9 (ModifyVariable), G5b, G5c and G6 (Inject)");
+		assertEquals(14, injectors,
+			"expected G1 to G4 and G8 (WrapMethod), G5a, G7, G9 and G12 (ModifyVariable), G5b, G5c, G6, G10 and G11 (Inject)");
 	}
 
 	/**
@@ -275,7 +286,37 @@ class GlintMixinApplicationTest {
 		assertPseudoGetBufferSwap(IF_MIXIN, "net.raphimc.immediatelyfast.feature.core.BatchableBufferSource");
 	}
 
-	private static void assertPseudoGetBufferSwap(String mixinResource, String target) throws IOException {
+	/**
+	 * G12: ImmediatelyFast's HUD source overrides {@code getBuffer} too (verified in the 1.6.15+1.21.1 jar:
+	 * {@code public class_4588 getBuffer(class_1921)}, the only one of the class), same rules as G9.
+	 */
+	@Test
+	void immediatelyFastHudMixinTargetsGetBufferByBareNameWithoutRemapping() throws IOException {
+		assertPseudoGetBufferSwap(IF_HUD_MIXIN, "net.raphimc.immediatelyfast.feature.batching.HudBatchingBufferSource");
+	}
+
+	/**
+	 * G11: a static {@code @Inject} at RETURN of ImmediatelyFast's {@code BatchingBuffers.getNonBatchingEntityVertexConsumers}
+	 * (verified in the 1.6.15+1.21.1 jar: {@code public static class_4597$class_4598}, no parameters, the only method of
+	 * that name), by bare name and not remapped.
+	 */
+	@Test
+	void immediatelyFastGuiSourceMixinCapturesTheNonBatchingSource() throws IOException {
+		ClassNode node = pseudoMixin(IF_GUI_MIXIN, "net.raphimc.immediatelyfast.feature.batching.BatchingBuffers");
+		MethodNode handler = node.methods.stream().filter(m -> m.name.equals("glintsmith$captureGuiSource")).findFirst().orElse(null);
+		assertNotNull(handler, "handler missing");
+		assertTrue((handler.access & Opcodes.ACC_STATIC) != 0, "the target is static, so the handler must be");
+		assertEquals("(Lorg/spongepowered/asm/mixin/injection/callback/CallbackInfoReturnable;)V", handler.desc);
+		AnnotationNode inject = injectorOf(handler, "/Inject;");
+		assertEquals(List.of("getNonBatchingEntityVertexConsumers"), annotationValue(inject, "method"));
+		assertEquals(Boolean.FALSE, annotationValue(inject, "remap"));
+		@SuppressWarnings("unchecked")
+		List<AnnotationNode> at = (List<AnnotationNode>) annotationValue(inject, "at");
+		assertEquals("RETURN", annotationValue(at.get(0), "value"));
+	}
+
+	/** Reads a {@code @Pseudo} mixin class and checks its class annotations. */
+	private static ClassNode pseudoMixin(String mixinResource, String target) throws IOException {
 		ClassNode node = new ClassNode();
 		try (InputStream in = GlintMixinApplicationTest.class.getResourceAsStream(mixinResource)) {
 			assertNotNull(in, "missing " + mixinResource);
@@ -294,16 +335,25 @@ class GlintMixinApplicationTest {
 		assertNotNull(mixin, "@Mixin missing");
 		assertEquals(List.of(target), annotationValue(mixin, "targets"));
 		assertEquals(Boolean.FALSE, annotationValue(mixin, "remap"));
+		return node;
+	}
 
+	private static AnnotationNode injectorOf(MethodNode handler, String suffix) {
+		AnnotationNode found = handler.visibleAnnotations == null ? null : handler.visibleAnnotations.stream()
+			.filter(a -> a.desc.endsWith(suffix)).findFirst().orElse(null);
+		if (found == null && handler.invisibleAnnotations != null) {
+			found = handler.invisibleAnnotations.stream().filter(a -> a.desc.endsWith(suffix)).findFirst().orElse(null);
+		}
+		assertNotNull(found, suffix + " missing on " + handler.name);
+		return found;
+	}
+
+	private static void assertPseudoGetBufferSwap(String mixinResource, String target) throws IOException {
+		ClassNode node = pseudoMixin(mixinResource, target);
 		MethodNode handler = node.methods.stream().filter(m -> m.name.equals("glintsmith$swapGlint")).findFirst().orElse(null);
 		assertNotNull(handler, "handler missing");
 		assertEquals("(Lnet/minecraft/client/renderer/RenderType;)Lnet/minecraft/client/renderer/RenderType;", handler.desc);
-		AnnotationNode modify = handler.visibleAnnotations == null ? null : handler.visibleAnnotations.stream()
-			.filter(a -> a.desc.endsWith("/ModifyVariable;")).findFirst().orElse(null);
-		if (modify == null && handler.invisibleAnnotations != null) {
-			modify = handler.invisibleAnnotations.stream().filter(a -> a.desc.endsWith("/ModifyVariable;")).findFirst().orElse(null);
-		}
-		assertNotNull(modify, "@ModifyVariable missing");
+		AnnotationNode modify = injectorOf(handler, "/ModifyVariable;");
 		assertEquals(List.of("getBuffer"), annotationValue(modify, "method"), "bare name: a descriptor would not match in production");
 		assertEquals(Boolean.TRUE, annotationValue(modify, "argsOnly"));
 		assertEquals(Boolean.FALSE, annotationValue(modify, "remap"));

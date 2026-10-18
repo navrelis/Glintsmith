@@ -3,8 +3,10 @@ package navrelis.glintsmith.render.glint;
 import navrelis.glintsmith.style.GlintCategory;
 import navrelis.glintsmith.style.GlintLook;
 import navrelis.glintsmith.style.OutlineTarget;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -171,6 +173,15 @@ public final class GlintContext {
 			case GUI -> OutlineTarget.GUI;
 			case HEAD, NONE -> OutlineTarget.OTHER;
 		};
+	}
+
+	/**
+	 * Whether vanilla draws the glint of this stack through a {@code SheetedDecalTextureGenerator} (UVs from the position,
+	 * not from the atlas): {@code ItemRenderer.hasAnimatedTexture}, compasses and the clock. A glint is only requested for
+	 * stacks with foil, which is the other half of that vanilla condition.
+	 */
+	static boolean isDecalFoil(ItemStack stack) {
+		return !stack.isEmpty() && (stack.is(ItemTags.COMPASSES) || stack.is(Items.CLOCK));
 	}
 
 	/**

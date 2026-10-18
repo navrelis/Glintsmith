@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.0.0 (Fabric 1.21.1) — unreleased
+
+### Added
+
+- Glint option "Atlas-independent scale" (on by default, also for existing configs): customised item glints keep the
+  vanilla pattern density when mods or resource packs make the block texture atlas larger. Before, in big modpacks
+  (for example an 8192 x 4096 atlas) a preset at Scale 1.00 looked like a flat colour wash on items and Scale had to be
+  lowered to about 0.13 by hand. The correction is read from the block atlas after every resource reload and applies to
+  items in hand, on the ground, in item frames and in the GUI; armor and entity models use their own textures and are
+  not changed. High-resolution resource packs are not affected. Glints you did not customise stay exactly vanilla. If
+  you lowered Scale for a large atlas in 1.0.0, set it back to 1.00.
+
+### Fixed
+
+- With ImmediatelyFast installed, items in inventories, menus and the hotbar kept the vanilla glint whatever the GUI
+  layer said: ImmediatelyFast draws the GUI and the batched HUD into its own buffer sources, which bypassed
+  Glintsmith's glint swap. Both are hooked now; the HUD batch is still drawn only by ImmediatelyFast, so the hotbar is
+  not affected. Without ImmediatelyFast nothing changes.
+
 ## 1.0.0 (Fabric 1.21.1)
 
 First release. Client-side only. The jar is `glintsmith-1.0.0.jar`.

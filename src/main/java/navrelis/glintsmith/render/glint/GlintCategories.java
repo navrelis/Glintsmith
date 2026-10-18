@@ -34,6 +34,26 @@ final class GlintCategories {
 	}
 
 	/**
+	 * Whether the glint UVs of a requested kind are the item's block-atlas UVs, i.e. whether the atlas factor
+	 * ({@link GlintAtlasScale}) applies (design 5.4.1). True only for the item glint kinds ({@code glint},
+	 * {@code glint_translucent}) requested directly below {@code ItemRenderer.render} (the innermost frame is an item
+	 * frame), which draws the baked model's quads with their block-atlas UVs. False for:
+	 * <ul>
+	 * <li>no frame: the drawer and its UVs are unknown;</li>
+	 * <li>an armor or BEWLR innermost frame: armor and elytra models use the 0..1 UVs of their own textures, block
+	 * entity item renderers use entity textures or other atlases (shield patterns, banners, chests);</li>
+	 * <li>the entity glint kinds: entity models (thrown trident, armor) with their own texture UVs;</li>
+	 * <li>compasses and clocks with foil ({@code decalFoil}): vanilla draws their glint through a
+	 * {@code SheetedDecalTextureGenerator}, which derives the UVs from the position, not from the atlas.</li>
+	 * </ul>
+	 * The category does not matter: an item drawn in the GUI or below a BEWLR still has block-atlas UVs.
+	 */
+	static boolean blockAtlasUvs(GlintKind kind, @Nullable GlintContext.Frame frame, boolean decalFoil) {
+		return frame != null && frame.kind == GlintContext.ITEM_FRAME && !decalFoil
+			&& (kind == GlintKind.GLINT || kind == GlintKind.GLINT_TRANSLUCENT);
+	}
+
+	/**
 	 * The rule target used to look up the rules of a frame drawn as {@code category}.
 	 */
 	static OutlineTarget targetFor(GlintCategory category, GlintContext.Frame frame) {
