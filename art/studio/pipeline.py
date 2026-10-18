@@ -14,9 +14,12 @@ A GIF is built in four stages, each of which can use a pool of worker processes 
 The static backdrop and the contact shadow come from ONE footprint for the whole turntable (the median of every
 frame's), so the shadow does not wobble and the backdrop is identical in every frame.
 
-The size budget (default 8 MB) is met by stepping down, in this order, until the file fits: the fps (the scene's, then
-24, 20, 15: frames are dropped evenly, the loop keeps its length) and then the scale 1.0, 0.85, 0.75, 0.6 (at 15 fps).  If
-even the last step is over, the build stops with a clear message.  The chosen step is reported in `info`.
+The size budget (default 1.9 MB = 1.9 * 1024 * 1024 bytes, under the 2,000,000 bytes the gallery GIFs must not exceed) is
+met by stepping down, in this order, until the file fits: the fps (the scene's, then 24, 20, 15: frames are dropped evenly,
+the loop keeps its length) and then the scale (`max_scale`, 1.0 by default, then 0.85, 0.75, 0.6 down to `min_scale`, at the
+last fps).  If even the last step is over, the build stops with a clear message.  The chosen step is reported in `info`.
+Three more levers trade picture quality for bytes: `colours` (palette size, 255 at most), `dither` (strength of the ordered
+dither, 0 = off) and `lossy` (the temporal tolerance of gifenc.lossy_frames, 0 = exact).
 """
 import os
 import sys
@@ -129,7 +132,7 @@ def _log(log, msg):
         log(msg)
 
 
-def prepare(sc, mattes, native_fp, size, scale, caption, st, workers, dither, log):
+def prepare(sc, mattes, native_fp, size, scale, caption, st, workers, dither, log, colours=255):
     """Stages B and C for one scale: returns (palette, index blobs, (width, height of the GIF))."""
     pw, ph = max(2, int(round(size[0] * scale))), max(2, int(round(size[1] * scale)))
     native = (sc.width, sc.height)
@@ -150,7 +153,7 @@ def prepare(sc, mattes, native_fp, size, scale, caption, st, workers, dither, lo
             hist[k] = hist.get(k, 0) + v
     hist = {tuple(k): v for k, v in hist.items()}
     reserve = [lib.PAGE[:3], lib.BORDER_DARK[:3], lib.BORDER[:3], lib.colour(st["bar"]["colour"])[:3], (255, 255, 255)] if caption else []
-    pal = gifenc.build_palette(hist, gifenc.colour_hist(base), reserve)
+    pal = gifenc.build_palette(hist, gifenc.colour_hist(base), reserve, min(48, colours // 3), colours)
     _log(log, "  composite done in %.1f s; palette of %d colours from %d histogram colours" % (time.time() - t, len(pal), len(hist)))
     t = time.time()
     with gifenc.Stage(workers, gifenc.init_indexer, (pal, pw, ph, base, dither)) as stage:
@@ -171,12 +174,13 @@ def fps_ladder(scene_fps, wanted=None):
     return [start] + [f for f in FPS_STEPS if f < start]
 
 
-def build_gif(sc, size=None, caption=True, budget_mb=8.0, fps=None, workers=1, st=None, dither=10, log=None, min_scale=0.0):
+def build_gif(sc, size=None, caption=True, budget_mb=1.9, fps=None, workers=1, st=None, dither=10, log=None, min_scale=0.0,
+              colours=255, lossy=0, max_scale=1.0):
     """The turntable of a scene as a looping GIF.  Returns (bytes, info).
 
     size: (w, h) of the picture (the caption bar is added below); default the scene's.  Steps down to fit the budget
-    (see the module docstring; scales below `min_scale` are not tried, 1 keeps the picture size); exits with an error
-    message if it cannot."""
+    (see the module docstring; the first scale tried is `max_scale`, scales below `min_scale` are not tried, 1 keeps the
+    picture size); exits with an error message if it cannot.  colours / dither / lossy: see the module docstring."""
     st = st or composite.style()
     size = tuple(size) if size else (sc.width, sc.height)
     n = len(sc.frames)
@@ -189,19 +193,20 @@ def build_gif(sc, size=None, caption=True, budget_mb=8.0, fps=None, workers=1, s
     native_fp = composite.merge_footprints([r[1] for r in res])
     _log(log, "  matted in %.1f s" % (time.time() - t0))
     ladder = [(f, 1.0) for f in fps_ladder(sc.fps, fps)]
-    ladder += [(ladder[-1][0], s) for s in SCALE_STEPS[1:] if s >= min_scale]
+    ladder = [(f, max_scale) for f, _ in ladder]
+    ladder += [(ladder[-1][0], s) for s in SCALE_STEPS if min_scale <= s < max_scale]
     limit = budget_mb * MB
     done, tried = None, []
     for f, scale in ladder:
         if done is None or done[0] != scale:
             _log(log, "scale %.2f:" % scale)
-            done = (scale,) + prepare(sc, mattes, native_fp, size, scale, caption, st, workers, dither, log)
+            done = (scale,) + prepare(sc, mattes, native_fp, size, scale, caption, st, workers, dither, log, colours)
         _, pal, idx, (gw, gh) = done
         keep = kept_frames(n, sc.fps, f)
         delays = gifenc.delays_cs(len(keep), sc.fps, n)
         t = time.time()
         with gifenc.Stage(workers) as stage:
-            data = gifenc.encode_gif(gw, gh, pal, [zlib.decompress(idx[i]) for i in keep], delays, stage.map_fn())
+            data = gifenc.encode_gif(gw, gh, pal, [zlib.decompress(idx[i]) for i in keep], delays, stage.map_fn(), lossy)
         tried.append("%g fps / scale %.2f: %.2f MB" % (f, scale, len(data) / MB))
         _log(log, "  encode %g fps, scale %.2f: %d frames, %.2f MB in %.1f s (budget %.1f MB)" % (
             f, scale, len(keep), len(data) / MB, time.time() - t, budget_mb))

@@ -144,7 +144,7 @@ def cmd_gif(args):
         return 1 if args.strict else 0
     t = time.time()
     data, info = pipeline.build_gif(sc, args.size, args.caption, args.budget_mb, args.fps, args.workers,
-                                    _style(args.style), args.dither, _log)
+                                    _style(args.style), args.dither, _log, 0.0, args.colours, args.lossy, args.max_scale)
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
     with open(args.out, "wb") as f:
         f.write(data)
@@ -190,10 +190,13 @@ def main(argv=None):
     q.add_argument("--size", type=_size, help="WxH of the picture (default: the scene's); the caption bar is extra")
     q.add_argument("--caption", dest="caption", action="store_true", default=True)
     q.add_argument("--no-caption", dest="caption", action="store_false")
-    q.add_argument("--budget-mb", type=float, default=8.0)
+    q.add_argument("--budget-mb", type=float, default=1.9)
     q.add_argument("--fps", type=float, help="start at this frame rate (default the scene's, at most 50)")
     q.add_argument("--workers", type=int, default=min(8, os.cpu_count() or 1), help="worker processes (default up to 8)")
     q.add_argument("--dither", type=int, default=10, help="Bayer dither amplitude in levels (0 = off)")
+    q.add_argument("--colours", type=int, default=255, help="palette size (255 at most; fewer colours, smaller file)")
+    q.add_argument("--lossy", type=int, default=0, help="temporal tolerance (weighted squared colour distance, 0 = exact; ~300 is invisible)")
+    q.add_argument("--max-scale", type=float, default=1.0, help="the first picture scale tried (the ladder steps down from it)")
     q.set_defaults(fn=cmd_gif)
 
     args = ap.parse_args(argv)
