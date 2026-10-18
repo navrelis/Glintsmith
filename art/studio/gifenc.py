@@ -15,14 +15,16 @@ that moves.  The pieces, in the order a clip goes through them:
                colour, so the cost per pixel is one dict lookup; the cache is filled by a nearest-colour search that uses
                a coarse colour-cell grid of candidates (exact result, a fraction of 255 comparisons).
 4. DELTAS      a frame is stored as the bounding box of the pixels that differ from the previous OUTPUT frame, the
-               pixels inside it that did not change are the transparent index, disposal "do not dispose".
+               pixels inside it that did not change are the transparent index, disposal "do not dispose".  With `lossy`
+               (a tolerance, weighted squared colour distance) a pixel whose new palette colour is that close to the
+               colour the viewer already shows there is left as it is, so it joins the transparent runs (lossy_frames).
 5. DELAYS      GIF delays are centiseconds: the loop length (frames / fps) is spread exactly over the frames, so 30 fps
                gives 3, 3, 4, 3, 3, 4 ...  The loop runs forever.
 
 The heavy per-frame stages (indexing, LZW) can run in a multiprocessing pool (`Stage`); results do not depend on it, the
 output is byte-identical for any number of workers.
 
-    Palette, build_palette(...), Indexer, frame_hist(...), changed_flags(...), delta_regions(...), encode_gif(...)
+    Palette, build_palette(...), Indexer, frame_hist(...), changed_flags(...), delta_region(...), lossy_frames(...), encode_gif(...)
     delays_cs(n_frames_kept, fps, n_frames_total)     centisecond delays that add up to the loop length
 """
 import struct
@@ -133,25 +135,27 @@ def colour_hist(rgb):
     return {tuple(k[0]): v for k, v in Counter(struct.iter_unpack("3s", rgb)).items()}
 
 
-def build_palette(hist, base_hist, reserve=(), base_n=48):
-    """The 255 colour palette (a list of (r, g, b)): `reserve` colours exactly, up to `base_n` colours cut from the
-    exact backdrop colours (`base_hist`), the rest by median cut of `hist` (both {(r, g, b): count})."""
+def build_palette(hist, base_hist, reserve=(), base_n=48, n_colours=255):
+    """The palette (a list of (r, g, b), 255 colours by default, `n_colours` at most): `reserve` colours exactly, up to
+    `base_n` colours cut from the exact backdrop colours (`base_hist`), the rest by median cut of `hist` (both
+    {(r, g, b): count})."""
+    n_colours = max(1, min(255, n_colours))
     pal = []
     for c in reserve:
         c = tuple(c[:3])
         if c not in pal:
             pal.append(c)
     if base_hist and base_n:
-        colours, _ = imgio.median_cut(base_hist, min(base_n, 255 - len(pal)))
+        colours, _ = imgio.median_cut(base_hist, min(base_n, n_colours - len(pal)))
         for c in colours:
             if c not in pal:
                 pal.append(c)
-    if hist and len(pal) < 255:
-        colours, _ = imgio.median_cut(hist, 255 - len(pal))
+    if hist and len(pal) < n_colours:
+        colours, _ = imgio.median_cut(hist, n_colours - len(pal))
         for c in colours:
             if c not in pal:
                 pal.append(c)
-    return pal[:255]
+    return pal[:n_colours]
 
 
 # ------------------------------------------------------------------------------------------------ per frame helpers
@@ -289,11 +293,39 @@ def delays_cs(kept, fps, total):
     return [(loop_cs * (i + 1)) // kept - (loop_cs * i) // kept for i in range(kept)]
 
 
-def encode_gif(width, height, palette, idx_frames, delays, map_fn=map):
+def lossy_frames(palette, idx_frames, tol):
+    """The index frames as the viewer will see them when a pixel whose new colour is within `tol` (weighted squared
+    distance, WEIGHTS) of the colour already shown there keeps that colour: such pixels become unchanged, so delta_region
+    makes them transparent and the LZW runs get longer.  Frame 0 is exact; each frame is compared with the previous
+    OUTPUT frame, so a slow drift is refreshed as soon as it exceeds `tol` (no accumulation).  tol 0 returns the input."""
+    if tol <= 0 or len(idx_frames) < 2:
+        return list(idx_frames)
+    cols = [tuple(c) for c in palette][:255]
+    close = bytearray(65536)                                  # [new | shown << 8] = 255 when the two colours are within tol
+    for a, ca in enumerate(cols):
+        for b, cb in enumerate(cols):
+            if WEIGHTS[0] * (ca[0] - cb[0]) ** 2 + WEIGHTS[1] * (ca[1] - cb[1]) ** 2 + WEIGHTS[2] * (ca[2] - cb[2]) ** 2 <= tol:
+                close[a | b << 8] = 255
+    close = bytes(close)
+    out = [idx_frames[0]]
+    prev = idx_frames[0]
+    for cur in idx_frames[1:]:
+        pair = bytearray(2 * len(cur))
+        pair[0::2] = cur
+        pair[1::2] = prev
+        keep = int.from_bytes(bytes(map(close.__getitem__, memoryview(pair).cast("H"))), "little")
+        c, p = int.from_bytes(cur, "little"), int.from_bytes(prev, "little")
+        prev = (c ^ ((c ^ p) & keep)).to_bytes(len(cur), "little")
+        out.append(prev)
+    return out
+
+
+def encode_gif(width, height, palette, idx_frames, delays, map_fn=map, lossy=0):
     """The GIF bytes from palette (list of (r, g, b), up to 255), full-frame index bytes and delays (cs).
 
-    Frames are delta coded against the previous one (see delta_region); `map_fn` runs the LZW stage (a pool's map
-    to use several processes).  Returns bytes."""
+    Frames are delta coded against the previous one (see delta_region), after the `lossy` tolerance (see lossy_frames,
+    0 = exact); `map_fn` runs the LZW stage (a pool's map to use several processes).  Returns bytes."""
+    idx_frames = lossy_frames(palette, idx_frames, lossy)
     regions, prev = [], None
     for cur in idx_frames:
         regions.append(delta_region(cur, prev, width))

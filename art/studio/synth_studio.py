@@ -16,8 +16,10 @@ docs/STUDIO.md and art/README.md): the turntables hero_sword (512 x 512, 6 looks
 +-35 degree yaw swing) and armor_stand (480 x 600, 4 looks) with `--frames` frames in all (default 12; the real ones
 have 90 per look), and the still scenes stills_hero (1024 x 1024: banner_hero, logo), stills_wide (1200 x 400:
 universal_vanilla, universal_modded), stills_tiles (512 x 512: 14 glint_* and 10 outline_* shots) and stills_gap
-(800 x 800: gap_sword_off / _on, gap_modded_off / _on).  A still scene has one frame (one K / W pair) per shot; the
-frame's `name` is the shot name.
+(800 x 800: gap_sword_off / _on, gap_modded_off / _on), and the two logo scenes (art/logo.py): logo_concepts (512 x 512
+stills: concept_a, concept_b, concept_c) and logo_anim_a (a 256 x 256 turntable of `--frames` frames that does not turn: a
+fixed pose with the glint stripe sweeping).  A still scene has one frame (one K / W pair) per shot; the frame's `name` is
+the shot name.
 
 Every PNG carries the text "SYNTHETIC TEST CAPTURE" in a PNG text chunk and scene.json says `"synthetic": true`;
 verify.py refuses such files in art/captures/ (use a temp folder, or pass --out into one).  The renders are fully
@@ -27,7 +29,7 @@ For the matte test the black render holds the premultiplied colour (K = c * a) a
 exactly what the real studio produces, so the glow is a true semi-transparent edge, not a fake.
 
     make_scene(root, ...)     -> path of the scene folder (one generic turntable)
-    make_contract(root, ...)  -> {scene id: folder} for the seven scenes above
+    make_contract(root, ...)  -> {scene id: folder} for the nine scenes above
 """
 import argparse
 import json
@@ -280,7 +282,7 @@ def _row(tints, u=0.17, y=0.5):
 CONTRACT = {
     "hero_sword": ("turntable", 512, 512), "lineup": ("turntable", 1200, 400), "armor_stand": ("turntable", 480, 600),
     "stills_hero": ("still", 1024, 1024), "stills_wide": ("still", 1200, 400), "stills_tiles": ("still", 512, 512),
-    "stills_gap": ("still", 800, 800),
+    "stills_gap": ("still", 800, 800), "logo_concepts": ("still", 512, 512), "logo_anim_a": ("turntable", 256, 256),
 }
 SHOTS = {
     "stills_hero": ["banner_hero", "logo"],
@@ -290,6 +292,7 @@ SHOTS = {
                      "outline_vanilla", "outline_static", "outline_rainbow", "outline_pulse",
                      "outline_gradient", "outline_enchant", "outline_thick_1", "outline_thick_3", "outline_thick_6", "outline_soft_80"],
     "stills_gap": ["gap_sword_off", "gap_sword_on", "gap_modded_off", "gap_modded_on"],
+    "logo_concepts": ["concept_a", "concept_b", "concept_c"],
 }
 
 # glint presets and outline styles of the tiles scene: (name, glow colour, glow strength, ink px, ink colour)
@@ -315,7 +318,7 @@ def _stills(root, scene, width, height, S, shots, workers):
 
 
 def make_contract(root, frames=12, supersample=2, workers=1, only=None):
-    """Write the seven scenes of the gallery contract into root/studio/ (root must not be art/captures).  The turntables
+    """Write the nine scenes of the gallery contract into root/studio/ (root must not be art/captures).  The turntables
     get `frames` frames each (the real ones: hero_sword 6 x 90, lineup 120, armor_stand 4 x 120), the stills one frame per shot.
     Returns {scene id: folder}.  `only` is a list of scene ids to write."""
     S = supersample
@@ -324,7 +327,7 @@ def make_contract(root, frames=12, supersample=2, workers=1, only=None):
     def want(sid):
         return not only or sid in only
 
-    def turntable(sid, W, H, looks, subjects_for=None, swing=False, u=None):
+    def turntable(sid, W, H, looks, subjects_for=None, swing=False, u=None, fixed=None):
         n = max(len(looks), frames)
         per = max(1, n // len(looks))
         folder = os.path.join(root, "studio", sid)
@@ -334,7 +337,8 @@ def make_contract(root, frames=12, supersample=2, workers=1, only=None):
             lid, caption, glow, strength = looks[k]
             meta.append({"index": i, "file": "%04d" % i, "look": lid, "caption": caption, "name": None})
             f = ((i - 1) % per) / float(per)
-            theta = math.radians(35) * math.sin(2 * math.pi * (i - 1) / n) if swing else math.radians(28) + 2 * math.pi * f
+            theta = (fixed if fixed is not None else math.radians(35) * math.sin(2 * math.pi * (i - 1) / n) if swing
+                     else math.radians(28) + 2 * math.pi * f)
             params = {"theta": theta, "glow": GLOWS[glow], "stripe_t": f, "strength": strength,
                       "ink": 2, "subjects": subjects_for}
             jobs.append((folder, i, W, H, S, params))
@@ -370,6 +374,18 @@ def make_contract(root, frames=12, supersample=2, workers=1, only=None):
             for state in ("off", "on"):
                 shots.append(("gap_%s_%s" % (item, state), dict(base, gaps=state == "off", subjects=[(0.5, 0.5, 0.37, 0, tint)])))
         out["stills_gap"] = _stills(root, "stills_gap", 800, 800, S, shots, workers)
+    if want("logo_concepts"):
+        shots = []
+        for name, glow, theta, subjects in (
+                ("concept_a", "fire", 30, [(0.5, 0.5, 0.42, 0, (1.15, 1.0, 0.6))]),
+                ("concept_b", "frost", 30, [(0.42, 0.5, 0.36, -20, (1.1, 1.0, 0.7)), (0.58, 0.5, 0.36, 20, (0.8, 1.05, 1.1))]),
+                ("concept_c", "rainbow", 40, [(0.5, 0.45, 0.38, 0, (0.8, 1.05, 1.1))])):
+            shots.append((name, {"theta": math.radians(theta), "glow": GLOWS[glow], "stripe_t": 0.4, "strength": 0.6, "ink": 4,
+                                 "ink_col": (155, 77, 255), "subjects": subjects}))
+        out["logo_concepts"] = _stills(root, "logo_concepts", 512, 512, S, shots, workers)
+    if want("logo_anim_a"):
+        turntable("logo_anim_a", 256, 256, [("gold_fire_flow", "Fire glint + gradient outline", "fire", 0.6)],
+                  [(0.5, 0.5, 0.42, 0, (1.15, 1.0, 0.6))], fixed=math.radians(30))
     return out
 
 
@@ -395,7 +411,7 @@ def main(argv=None):
     ap.add_argument("--supersample", type=int, default=2)
     ap.add_argument("--fps", type=int, default=30)
     ap.add_argument("--workers", type=int, default=1)
-    ap.add_argument("--contract", action="store_true", help="write the seven scenes of the gallery contract instead of one turntable")
+    ap.add_argument("--contract", action="store_true", help="write the nine scenes of the gallery contract instead of one turntable")
     ap.add_argument("--only", nargs="*", help="with --contract: only these scene ids")
     args = ap.parse_args(argv)
     if args.supersample < 1 or args.frames is not None and args.frames < 1:

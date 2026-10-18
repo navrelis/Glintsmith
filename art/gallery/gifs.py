@@ -8,11 +8,16 @@
 
 Each entry of "gifs" in art/gallery/cards.json names a studio scene (art/captures/studio/<scene>/, the frame contract of
 art/studio/scene.py), the picture `size` [w, h] the turntable is fitted into, `caption` (the caption bar of the frame's
-`caption` under the picture, true by default), `budget_mb`, an optional start frame rate `fps` and an optional `min_scale`
-(the budget ladder of art/studio/pipeline.py steps the frame rate down and then the scale down until the file fits; a
-`min_scale` of 1 never shrinks the picture and ends the build with an error instead).  The work is done by
-art/studio/pipeline.build_gif (matte, studio backdrop and shadows, one global palette, ordered dither on the subject, delta
-frames, endless loop).  When a scene is not there nothing is faked: a one frame grey "capture missing" GIF is written, a
+`caption` under the picture, true by default), `budget_mb` (1.9 by default: 1.9 * 1024 * 1024 = 1,992,294 bytes, under the
+2,000,000 bytes every gallery GIF must stay below), an optional start frame rate `fps` and an optional `min_scale` (the
+budget ladder of art/studio/pipeline.py steps the frame rate down and then the scale down until the file fits; a
+`min_scale` of 1 never shrinks the picture and ends the build with an error instead).  Four more optional keys trade picture
+quality for bytes: `max_scale` (the first scale tried, default 1; the ladder steps down from there, so max_scale = min_scale
+pins the picture size), `colours` (palette size, default 255; 255 at most), `dither` (strength of the ordered dither on the
+subject in 8 bit levels, default 10, 0 = off) and `lossy` (default 0 = exact; a tolerance, the weighted squared colour
+distance within which a pixel keeps the colour shown in the previous frame, see gifenc.lossy_frames; about 300 is invisible
+on the turntables, 800 shows a faint trail).  The work is done by art/studio/pipeline.build_gif (matte, studio backdrop and
+shadows, one global palette, ordered dither on the subject, delta frames, endless loop).  When a scene is not there nothing is faked: a one frame grey "capture missing" GIF is written, a
 warning is printed and --strict fails.  A scene that is there but broken ends the run with an error.
 
 Standard library only.  Byte-identical output from run to run, for any number of workers.
@@ -61,12 +66,13 @@ def build_gif(spec, captures, report, workers=None, log=None):
         sys.exit("error: scene %s does not follow the frame contract:\n  %s" % (spec["scene"], "\n  ".join(errors[:12])))
     if problems:
         return placeholder("studio/%s/%s" % (spec["scene"], problems[0][1].split()[-1]))
-    data, info = pipeline.build_gif(sc, (w, h), spec.get("caption", True), spec.get("budget_mb", 8.0), spec.get("fps"),
+    data, info = pipeline.build_gif(sc, (w, h), spec.get("caption", True), spec.get("budget_mb", 1.9), spec.get("fps"),
                                     workers or min(8, os.cpu_count() or 1), pipeline.composite.style(spec.get("style")),
-                                    spec.get("dither", 10), log, spec.get("min_scale", 0.0))
+                                    spec.get("dither", 10), log, spec.get("min_scale", 0.0), spec.get("colours", 255), spec.get("lossy", 0),
+                                    spec.get("max_scale", 1.0))
     if len(info["tried"]) > 1:
         report.note("note: %s needed %s to fit %.1f MB: %dx%d, %g fps, %.2f MB" % (
-            spec["out"], "the step-down ladder (" + " | ".join(info["tried"]) + ")", spec.get("budget_mb", 8.0),
+            spec["out"], "the step-down ladder (" + " | ".join(info["tried"]) + ")", spec.get("budget_mb", 1.9),
             info["width"], info["height"], info["fps"], info["bytes"] / MB))
     return data
 

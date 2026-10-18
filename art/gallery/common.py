@@ -139,6 +139,8 @@ def required_captures(manifest):
     logo = manifest.get("logo")
     if logo:
         out.append(("logo.png, icon.png", "studio/%s/%s" % (logo["scene"], logo["frame"])))
+        if (logo.get("animated") or {}).get("scene"):
+            out.append(("logo_animated.gif", "studio/%s/" % logo["animated"]["scene"]))
     return out
 
 

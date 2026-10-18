@@ -19,18 +19,18 @@ turntables and stills of the dev-only studio (`docs/STUDIO.md`) and in-game scre
 | File | What it shows |
 |---|---|
 | `banner.png` | Title banner: a studio render of the sword, name, tagline and three chips |
-| `showcase.gif` | The studio turntable of one enchanted netherite sword, six looks of 2.5 s each: vanilla, static purple outline, rainbow glint with rainbow outline, fire glint with pulse outline, nebula glint with gradient outline, inferno glint with soft glow; captioned, 512 px, at most 8 MB |
-| `lineup.gif` | Six items in a row, each with its own glint and outline, swinging, captioned, at most 8 MB. Next to `card_universal.png` |
+| `showcase.gif` | The studio turntable of one enchanted netherite sword, six looks of 2.5 s each: vanilla, static purple outline, rainbow glint with rainbow outline, fire glint with pulse outline, nebula glint with gradient outline, inferno glint with soft glow; captioned, 384 px, at most 2,000,000 bytes |
+| `lineup.gif` | Six items in a row, each with its own glint and outline, swinging, captioned, at most 2,000,000 bytes. Next to `card_universal.png` |
 | `card_universal.png` | Two rows of studio renders: vanilla items and items of mods, all outlined |
 | `card_outline_styles.png` | The five colour modes, three thicknesses and a soft glow (studio stills) |
 | `card_targets.png` | The places an outline is drawn: hand, dropped items, frames, plus the optional worn armor and GUI targets (off by default) |
-| `armor.gif` | An armor stand in outlined, glinting netherite armor turning through its looks, captioned, at most 8 MB. Next to `card_targets.png` |
+| `armor.gif` | An armor stand in outlined, glinting netherite armor turning through its looks, captioned, at most 2,000,000 bytes. Next to `card_targets.png` |
 | `card_glint_presets.png` | The vanilla glint, neutral and the twelve generated presets (seven clean, five rich) on the same item, 14 tiles in a 5 x 3 grid, 1000 x 822 (studio stills) |
 | `card_gap_fix.png` | An enchanted vanilla sword and a modded chestplate, each with the fix off and on, as 3x detail crops where the cracks show (studio stills) |
 | `card_rules.png` | The Rules tab and the rule editor |
 | `card_config.png` | The Outline and Glint tabs of the settings screen with the live preview panel, 1000 x 846 |
 | `card_shaders.png` | Sodium, and Iris with a shader pack in the world, the hand and the GUI |
-| `logo_animated.gif` | The animated logo: the same turntable at 256 px, no caption, at most 2 MB |
+| `logo_animated.gif` | The animated logo: the golden blade at 256 px (fire glint flowing, outline colour cycling, fixed pose, seamless 8.25 s loop), no caption, made by `art/logo.py`, at most 2,000,000 bytes |
 
 ## Putting the description on CurseForge
 

@@ -31,7 +31,7 @@ timestamps, fixed seeds, any number of workers).
    capture      the 14 in-world shots of art/gallery/SHOTLIST.md, saved as art/captures/<name>.png
 2. look         py -B art/studio/studio.py check           every studio scene: frames, sizes, named stills
                 py -B art/gallery/build.py --list          which captures and studio frames exist, which are missing
-3. build        py -B art/logo.py                          logo_512, logo_32, the mod icon 128 (from stills_hero / logo)
+3. build        py -B art/logo.py                          logo_512, logo_32, the mod icon 128, logo_animated.gif (logo_concepts, logo_anim_a)
                 py -B art/gallery/build.py --strict        cards, banner and the four GIFs into docs/curseforge/img/
                                                            (the GIFs take minutes; --no-gif skips them; gifs.py builds only them)
 4. adjust       open the images; move a crop / box in art/gallery/cards.json where the subject is off; build again
@@ -46,7 +46,7 @@ py -B art/gallery/build.py --only card_gap_fix            only the images whose 
 py -B art/gallery/build.py --captures DIR --out DIR       read captures and studio scenes from / write the images to other folders
 py -B art/gallery/build.py --no-gif                       cards only
 py -B art/gallery/gifs.py [--only lineup] [--workers N]   only the GIFs (same --captures / --out / --strict)
-py -B art/logo.py [--captures DIR] [--out DIR] [--strict] the logo and the icon (--out DIR writes the tree below DIR, see below)
+py -B art/logo.py [--captures DIR] [--out DIR] [--strict] [--workers N] [--no-gif]  the logo, the icon and the animated logo (--out DIR: see below)
 py -B art/studio/studio.py still SCENE SHOT --out FILE.png     one studio picture (see docs/STUDIO.md and studio.py)
 py -B art/studio/studio.py gif SCENE --out FILE.gif            one turntable as a GIF
 py -B art/gallery/synth.py DIR                            synthetic stand-ins for every capture and studio scene (see below)
@@ -63,51 +63,65 @@ look up (`stills_tiles` has 24 frames, `outline_soft_80` among them).
 
 | Scene | Size | What |
 | --- | --- | --- |
-| `hero_sword` | 512 x 512 | turntable, 5 to 6 looks of one sword: `showcase.gif` (512 px + caption bar, at most 8 MB) and `logo_animated.gif` (256 px, no caption, at most 2 MB) |
-| `lineup` | 1200 x 400 | turntable, six items in a row with a +-35 degree yaw swing: `lineup.gif` (900 x 300 + caption bar, at most 8 MB) |
-| `armor_stand` | 480 x 600 | turntable, 3 to 4 looks of a stand in netherite armor: `armor.gif` (400 x 500 + caption bar, at most 8 MB) |
-| `stills_hero` | 1024 x 1024 | `banner_hero` (the banner picture), `logo` (logo, icon) |
+| `hero_sword` | 512 x 512 | turntable, 5 to 6 looks of one sword: `showcase.gif` (384 px + caption bar), at most 2,000,000 bytes |
+| `lineup` | 1200 x 400 | turntable, six items in a row with a +-35 degree yaw swing: `lineup.gif` (810 x 270 + caption bar, at most 2,000,000 bytes) |
+| `armor_stand` | 480 x 600 | turntable, 3 to 4 looks of a stand in netherite armor: `armor.gif` (320 x 400 + caption bar, at most 2,000,000 bytes) |
+| `stills_hero` | 1024 x 1024 | `banner_hero` (the banner picture); `logo` (the old logo still, no longer used) |
+| `logo_concepts` | 512 x 512 | `concept_a` (logo, icon, small logo: the golden blade); `concept_b`, `concept_c` (the two logo concepts not chosen, kept for reference) |
+| `logo_anim_a` | 256 x 256, supersample 4 | fixed pose of `concept_a`, 165 frames at 20 fps, glint and outline colour in an exact 8.25 s loop: `logo_animated.gif` |
 | `stills_wide` | 1200 x 400 | `universal_vanilla`, `universal_modded` (the two rows of `card_universal.png`) |
 | `stills_tiles` | 512 x 512 | `glint_vanilla`, `glint_neutral`, `glint_rainbow`, `glint_aurora`, `glint_fire`, `glint_frost`, `glint_sparkle`, `glint_gold`, `glint_void`, `glint_inferno`, `glint_nebula`, `glint_starlight`, `glint_opal`, `glint_storm` (`card_glint_presets.png`) and `outline_vanilla`, `outline_static`, `outline_rainbow`, `outline_pulse`, `outline_gradient`, `outline_enchant`, `outline_thick_1`, `outline_thick_3`, `outline_thick_6`, `outline_soft_80` (`card_outline_styles.png`) |
 | `stills_gap` | 800 x 800 | `gap_sword_off`, `gap_sword_on`, `gap_modded_off`, `gap_modded_on` (`card_gap_fix.png`) |
 
 ### The logo and the icon
 
-`py -B art/logo.py` reads the studio still `stills_hero` / `logo` (1024 x 1024), mattes it (`studio/matte.py`), sets it on the cream
-studio backdrop (`studio/composite.py`; the `logo` section of `gallery/cards.json` says whether the soft shadows are on, default off)
-and cuts a square from that picture: by default the centred square of the full height. The square can be moved or tightened in the
-`logo` section (`crop.centre` [x, y] in picture pixels, `"c"` for the middle; `crop.size` in pixels or `"full"`); a square that would
-leave the picture is moved inside it. The square is resized with the **area filter** (`Canvas.area`: every output pixel is the exact
-mean of the source area it covers, partly covered source pixels by their fraction; for whole factors it equals `down`) to
+The logo is "the golden blade": an enchanted golden sword on the diagonal (fire glint, violet outline), rendered by the studio.
+`py -B art/logo.py` reads the still `logo_concepts` / `concept_a` (512 x 512), mattes it (`studio/matte.py`), cuts a square centred on
+the subject (the sword fills `fill` = 86 % of it) and resizes it with the **area filter** (`Canvas.area`: every output pixel is the
+exact mean of the source area it covers, partly covered source pixels by their fraction; never enlarged), then sets it on the cream
+studio backdrop (`studio/composite.py`) with a soft **glow** made of the sword's own pixels: each pixel weighted by its alpha and by
+how colourful it is (so the dark parts do not glow), blurred in two layers (a tight and a wide one), the colour a little more
+saturated and lighter. Nothing is drawn. From that 512 picture (area filter):
 
 * `art/logo/logo_512.png` (512 x 512), the logo,
 * `src/main/resources/assets/glintsmith/icon.png` (128 x 128), the mod icon,
 * `art/logo/logo_32.png` (32 x 32).
 
-`docs/curseforge/img/logo_animated.gif` (256 x 256, no caption, at most 2 MB) is a GIF of the `gifs` list: the `hero_sword` turntable.
+`docs/curseforge/img/logo_animated.gif` (256 x 256, no caption, at most 2,000,000 bytes, about 1.2 MB) is made by the same script from
+the scene `logo_anim_a`: the same pose, the glint flowing (speed 10) and the outline colour going violet, magenta, blue and back. The
+glint scroll and the outline colour both repeat after exactly 8.25 s (165 frames at 20 fps, 5 cs each), so the loop has no seam. Every
+frame is framed with the square of the first frame; the glow is the mean of 12 frames and stays still, and its colours get their own
+120 palette entries (gifenc `base_n`), so the glow has no bands.
 
-If the studio still is missing the script says which file, writes nothing and exits 0 (1 with `--strict`); the committed `icon.png`
-is never touched by that. With `--out DIR` the script writes `DIR/art/logo/...` and `DIR/src/main/resources/...` instead of the
-repository, which is how a synthetic run is kept away from the real `icon.png` (see below).
+The settings (scene, frame, fill, glow layers, GIF scene, size, dither, base_n) are `DEFAULTS` in `logo.py`; a `logo` section of
+`gallery/cards.json` in that format (with a `glow` key) overrides them. If a render is missing the script says which file and writes
+nothing for that output (the stills and the GIF are independent), exit 0 (1 with `--strict`); the committed files are never touched
+by that. With `--out DIR` the script writes `DIR/art/logo/...`, `DIR/src/main/resources/...` and `DIR/docs/...` instead of the
+repository, which is how a synthetic run is kept away from the real files (see below).
 
 ### The GIFs
 
-Each entry of `gifs` in `cards.json` is `{out, scene, size [w, h], caption, budget_mb, fps, min_scale, style}`: a studio turntable
+Each entry of `gifs` in `cards.json` is `{out, scene, size [w, h], caption, budget_mb, fps, min_scale, max_scale, colours, dither, lossy, style}`: a studio turntable
 fitted into `size`, with the caption bar of the frame's `caption` under the picture (36 px, `caption` true by default), set on the
 cream backdrop with a contact and a drop shadow (`style` overrides `studio/composite.py` `DEFAULT_STYLE`; the lineup GIF has no
 contact shadow, a row of floating items has no floor) and encoded by `studio/pipeline.py` with one global palette, ordered dither on
-the subject only and delta frames. The budget ladder steps the frame rate down (30, 24, 20, 15 fps) and then the picture size down
-(1.0, 0.85, 0.75, 0.6) until the file fits `budget_mb`, and the build prints which step it chose; `min_scale` 1 forbids the size
-step (the build then stops with an error instead). The loop plays the whole turntable once, forever.
+the subject only and delta frames. Every GIF of the page must stay at most **2,000,000 bytes**, so `budget_mb` is 1.9 (1.9 MiB =
+1,992,294 bytes, under the limit however a "MB" is counted). The budget ladder steps the frame rate down (30, 24, 20, 15 fps) and
+then the picture size down (`max_scale`, then 0.85, 0.75, 0.6, down to `min_scale`) until the file fits `budget_mb`, and the build
+prints which step it chose; `min_scale` 1 forbids the size step (the build then stops with an error instead), `max_scale` (default
+1) is the first scale tried, so `max_scale` = `min_scale` pins the picture size. The other levers trade quality for bytes:
+`colours` (palette size, default 255), `dither` (ordered dither strength on the subject, default 10, 0 = off) and `lossy` (default
+0 = exact; a tolerance, the weighted squared colour distance within which a pixel keeps the colour the previous frame showed, so
+more of each delta frame is transparent; about 300 is not visible, 800 leaves a faint trail on fast glints). The checked-in
+manifest pins them per GIF (see the table). The loop plays the whole turntable once, forever.
 
-| Output | Scene | Picture | Budget |
-| --- | --- | --- | --- |
-| `showcase.gif` | `hero_sword` | 512 x 512 + 36 px caption bar | 8 MB |
-| `logo_animated.gif` | `hero_sword` | 256 x 256, no caption | 2 MB |
-| `lineup.gif` | `lineup` | 900 x 300 + 36 px caption bar | 8 MB |
-| `armor.gif` | `armor_stand` | 400 x 500 + 36 px caption bar | 8 MB |
+| Output | Scene | Picture | Frame rate | Palette, dither, lossy | Budget |
+| --- | --- | --- | --- | --- | --- |
+| `showcase.gif` | `hero_sword` | 384 x 384 + 36 px caption bar (scale 0.75 of 512) | 15 fps | 128, 0, 300 | 1.9 MB |
+| `lineup.gif` | `lineup` | 810 x 270 + 36 px caption bar (scale 0.9 of 900) | 30 fps | 128, 0, 300 | 1.9 MB |
+| `armor.gif` | `armor_stand` | 320 x 400 + 36 px caption bar (scale 0.8 of 400) | 12 fps | 64, 0, 800 | 1.9 MB |
 
-`gallery/gifs.py` builds them; `build.py` calls it (`--no-gif` skips). `legacy/gif.py` is the old screenshot-burst GIF builder, no longer
+`gallery/gifs.py` builds them; `build.py` calls it (`--no-gif` skips). `logo_animated.gif` is not in this list: `logo.py` makes it (see "The logo and the icon"). `legacy/gif.py` is the old screenshot-burst GIF builder, no longer
 used.
 
 ### Missing input is never faked
@@ -122,13 +136,13 @@ grey GIF in the same way. `logo.py` writes nothing (see above). The repository s
 ```
 py -B art/gallery/synth.py DIR [--frames N] [--supersample S] [--workers N] [--no-studio]
 py -B art/gallery/build.py --captures DIR --out DIR2            cards, banner and GIFs from the synthetic input
-py -B art/logo.py --captures DIR --out DIR3                     logo and icon (DIR3/art/logo, DIR3/src/main/resources/...)
-py -B art/studio/synth_studio.py DIR --contract                 only the seven synthetic studio scenes
+py -B art/logo.py --captures DIR --out DIR3                     logo, icon, animated logo (DIR3/art/logo, DIR3/src/main/resources/..., DIR3/docs/...)
+py -B art/studio/synth_studio.py DIR --contract                 only the nine synthetic studio scenes
 py -B art/studio/synth_studio.py DIR --size 256 | 480x600       one synthetic turntable of that size
 ```
 
 `synth.py` writes a 1920 x 1080 stand-in for every in-world capture the manifest names (a gradient with a coordinate grid, a diagonal
-bar, the file name and the words "SYNTHETIC TEST CAPTURE") and, unless `--no-studio`, the seven studio scenes of the contract in
+bar, the file name and the words "SYNTHETIC TEST CAPTURE") and, unless `--no-studio`, the nine studio scenes of the contract in
 `DIR/studio/` (a little extruded sword turning on a vertical axis, a row of six for the lineup, with a glow, as black / white frame pairs
 in the contract's names and sizes: 12 frames per turntable by default, one frame per still shot). Look at `DIR2` / `DIR3` to check
 crops, scales, labels and spacing. These files are only ever written to a folder you name (use a temp folder); they carry the text in a
@@ -168,7 +182,7 @@ The in-game text inside a capture is the game's own and is not part of this tabl
 
 | File | What it does |
 | --- | --- |
-| `gallery/cards.json` | Manifest of every gallery image: output name, size, title, and a list of elements (captures with crop / resampling / position / label, studio renders, text, bullets, chips, panels, ...), the `logo` section (studio still and square crop) and the `gifs` list. |
+| `gallery/cards.json` | Manifest of every gallery image: output name, size, title, and a list of elements (captures with crop / resampling / position / label, studio renders, text, bullets, chips, panels, ...), the `logo` section (studio still, framing, glow and the animated logo of `logo.py`) and the `gifs` list. |
 | `gallery/build.py` | Reads the manifest, the captures and the studio scenes, writes the PNGs (and calls `gifs.py`). |
 | `gallery/gifs.py` | Builds the GIFs of the manifest from studio turntables (see "The GIFs"). |
 | `gallery/synth.py` | Synthetic test captures and studio scenes (see above): light, white / cream-ish backdrops like the real ones. |
@@ -177,7 +191,7 @@ The in-game text inside a capture is the game's own and is not part of this tabl
 | `studio/` | The studio pipeline: `scene.py` (frame contract), `matte.py`, `composite.py` (backdrop, shadows, caption bar), `gifenc.py`, `pipeline.py` (matte, composite, palette, budget ladder), `studio.py` (CLI), `synth_studio.py` (synthetic scenes). |
 | `lib.py` | RGBA canvas (fill, frame, crop, nearest-neighbour scale, box and area downscale, alpha blit, PNG in and out), the vanilla font, word wrap, the card frame, chips, labels, bays, placeholder. |
 | `imgio.py` | PNG writer and reader (8-bit RGB / RGBA of every filter type, which is what the game writes; palette and grey for the vanilla font), GIF89a writer with LZW, median-cut quantiser with delta frames, and a small GIF decoder used by `verify.py`. |
-| `logo.py` | Logo and icon from the studio still `stills_hero` / `logo` (square crop, area filter). |
+| `logo.py` | Logo, icon and animated logo from the studio scenes `logo_concepts` / `concept_a` and `logo_anim_a` (framing, area filter, glow of the render's own pixels). |
 | `legacy/gif.py` | The old screenshot-burst GIF builder (the `showcase` frames of the in-world workflow). Not used. |
 | `verify.py` | The checks below. |
 
@@ -212,7 +226,7 @@ subject that is cut off or too small and move its `size`, `crop` or `trim` here.
 * the PNG reader decodes every filter type, RGB, RGBA and a 1-bit palette image exactly, and rejects garbage;
 * the manifest only uses known elements, every picture box lies inside its card, every capture and every studio shot is described in `SHOTLIST.md`
   and exists in the studio contract, the cards show the shots they should (banner, universal, glint presets, outline styles, gap fix), the `logo`
-  section names a contract still, the four GIFs are turntables of the contract with the scene's shape, at most 1000 px wide and at most 8 MB, and
+  section names a contract still, the four GIFs are turntables of the contract with the scene's shape, at most 1000 px wide and at most 2,000,000 bytes (budget at most 1.9), and
   every image of the manifest has its paste marker in `docs/curseforge/description.md`;
 * every text colour the build puts on a cream surface has a WCAG contrast of at least **4.5:1** (`MIN_CONTRAST`; the 3:1
   allowance for large text is not used). It checks the pairs of the table above (`TEXT`, `TEXT_DIM`, `GOOD`, `BAD`,
@@ -222,18 +236,19 @@ subject that is cut off or too small and move its `size`, `crop` or `trim` here.
   `text` and `bullets` element of `cards.json` on the card, the dither speck and the panel it sits in, and the caption
   bar text of the GIFs on `PAGE`. Text that is part of an in-game capture is the game's own and is not checked;
 * the cards, the logo files and the GIFs are built twice, from the captures in the repository (the GIFs only with `--full`) and from synthetic
-  input (in-world PNGs plus the seven synthetic studio scenes), and come out byte-identical both times, and the synthetic build draws no placeholder;
+  input (in-world PNGs plus the nine synthetic studio scenes), and come out byte-identical both times, and the synthetic build draws no placeholder;
   the synthetic scenes have the contract's names, sizes and still shots;
 * the GIFs built from the synthetic scenes have the manifest's size (plus the caption bar), loop forever, have frame delays of at least 2 cs and
   are below their budget; with `--full` the GIFs in `docs/curseforge/img/` are checked the same way (a shrunk picture of at least 0.6 of the size
   is accepted: the budget ladder) and equal a fresh build; an impossible budget ends the build with an error, `min_scale` 1 never shrinks the
   picture, a missing scene gives a grey one-frame GIF and a warning;
 * the area filter averages exactly (a 4 x 4 image becomes the 2 x 2 block means, 3 -> 2 weights by covered fraction, a flat colour
-  stays flat, transparent pixels do not darken, whole factors equal the box downscale), and the logo crop picks the centred square
-  of the full height by default;
-* from a synthetic studio still: `logo_512.png` and `icon.png` are the area-filtered square crop of the matted render on the cream backdrop byte for byte,
-  512 / 128 / 32 px; `logo.py` without the still prints the missing file, writes nothing and exits 0 (1 with `--strict`), and leaves the
-  committed `icon.png` untouched;
+  stays flat, transparent pixels do not darken, whole factors equal the box downscale);
+* from the synthetic logo scenes (`logo_concepts` / `concept_a`, `logo_anim_a`): logo 512, icon 128 and logo 32 px, the icon and the small logo
+  are area filters of the 512 picture byte for byte, the subject fills `fill` of the square, the glow tints the cream backdrop round it, and
+  `logo_animated.gif` is 256 x 256 with every frame, loops forever, its delays add up to the loop and it is at most 2,000,000 bytes (also the
+  committed one with `--full`), the same bytes for 1 and 2 workers; `logo.py` without the scenes prints the missing files, writes nothing and
+  exits 0 (1 with `--strict`), and leaves the committed `icon.png` and `logo_animated.gif` untouched;
 * every committed card and logo image is byte-identical to a fresh build (an image whose captures are not on this machine is reported as skipped,
   not failed; a warning is printed while `icon.png` is still the hand-drawn one of the first commit);
 * sizes: cards and banner as in the manifest (at most 1000 px wide; a card whose studio renders are not on this machine may still be the old one);
@@ -250,27 +265,27 @@ the GIFs on disk; run it once after the real build.
 
 | Path | Size | What |
 | --- | --- | --- |
-| `art/logo/logo_512.png` | 512 x 512 | the logo, from `stills_hero` / `logo` (not in the repository until the render exists) |
+| `art/logo/logo_512.png` | 512 x 512 | the logo, from `logo_concepts` / `concept_a` |
 | `art/logo/logo_32.png` | 32 x 32 | the small logo |
-| `src/main/resources/assets/glintsmith/icon.png` | 128 x 128 | the mod icon, from `stills_hero` / `logo` |
-| `docs/curseforge/img/logo_animated.gif` | 256 x 256 | the `hero_sword` turntable, no caption, at most 2 MB |
+| `src/main/resources/assets/glintsmith/icon.png` | 128 x 128 | the mod icon, from `logo_concepts` / `concept_a` |
+| `docs/curseforge/img/logo_animated.gif` | 256 x 256 | the golden blade, `logo_anim_a` (glint and outline colour, fixed pose), made by `logo.py`, at most 2,000,000 bytes |
 | `docs/curseforge/img/banner.png` | 1000 x 420 | the `banner_hero` render, title, tagline and chips |
 | `docs/curseforge/img/card_universal.png` | 1000 x 590 | two rows of studio renders: vanilla and modded items, all outlined |
-| `docs/curseforge/img/lineup.gif` | 900 x 336 | six items in a row, each with its own look, swinging, captioned, at most 8 MB |
+| `docs/curseforge/img/lineup.gif` | 810 x 306 | six items in a row, each with its own look, swinging, captioned, at most 2,000,000 bytes |
 | `docs/curseforge/img/card_glint_presets.png` | 1000 x 822 | the neutral glint and all twelve generated presets (seven clean, five rich) as studio stills, with the vanilla glint as the before, in a grid of 5 x 3 (the last slot holds a note) |
 | `docs/curseforge/img/card_outline_styles.png` | 1000 x 648 | ten outline styles as studio stills: vanilla, static, rainbow, pulse, gradient, per enchantment, thickness, soft glow |
 | `docs/curseforge/img/card_targets.png` | 1000 x 590 | hand and armor (hero shots), third person, dropped items, item frames, inventory |
-| `docs/curseforge/img/armor.gif` | 400 x 536 | the armor stand turning through its looks, captioned, at most 8 MB |
+| `docs/curseforge/img/armor.gif` | 320 x 436 | the armor stand turning through its looks, captioned, at most 2,000,000 bytes |
 | `docs/curseforge/img/card_gap_fix.png` | 1000 x 744 | before / after of the gap fix on an enchanted netherite sword and a modded chestplate: 3x detail crops of the studio stills, the cracks show in the vanilla tiles |
 | `docs/curseforge/img/card_rules.png` | 1000 x 590 | the rule list and the rule editor |
 | `docs/curseforge/img/card_config.png` | 1000 x 846 | the 2.0.0 settings screen with the live preview panel, Outline and Glint tabs |
 | `docs/curseforge/img/card_shaders.png` | 1000 x 590 | Sodium, and an Iris shader pack in the world, the hand and the inventory |
-| `docs/curseforge/img/showcase.gif` | 512 x 548 | the `hero_sword` turntable through its looks, captioned, at most 8 MB |
+| `docs/curseforge/img/showcase.gif` | 384 x 420 | the `hero_sword` turntable through its looks, captioned, at most 2,000,000 bytes |
 
 ## Licence and sources
 
-* **The logo and the icon** are renders of the running mod (an enchanted sword, from the studio), matted, set on the cream backdrop and cut and resized by
-  `logo.py`; they are not drawn.
+* **The logo and the icon** are renders of the running mod (an enchanted golden sword, from the studio), matted, framed, set on the cream backdrop with a
+  glow made of the render's own pixels and resized by `logo.py`; they are not drawn.
 * **The gallery images and the GIFs** show Minecraft and the textures and models of the mods in the test pack as renders and gameplay screenshots. They are
   renders of the running game, not redistributed assets, and nothing from the game is committed as a file other than those images.
 * **The vanilla font** is read from your own Minecraft 1.21.1 client jar every time the gallery is built (`GLINTSMITH_MC_JAR`, else

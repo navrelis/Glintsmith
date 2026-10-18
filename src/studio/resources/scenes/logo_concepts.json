@@ -1,0 +1,143 @@
+{
+	"scene": "logo_concepts",
+	"type": "still",
+	"width": 512,
+	"height": 512,
+	"supersample": 2,
+	"fps": 30,
+	"time_offset": 5.0,
+	"camera": {
+		"projection": "orthographic",
+		"pitch": 8,
+		"distance": 4,
+		"view_height": 1.16
+	},
+	"lights": {
+		"key": [-0.45, 0.75, 0.6],
+		"fill": [0.65, 0.2, 0.45]
+	},
+	"subjects": [
+		{
+			"type": "item",
+			"item": {
+				"item": "minecraft:golden_sword",
+				"enchantments": { "minecraft:sharpness": 5, "minecraft:fire_aspect": 2 }
+			}
+		}
+	],
+	"looks": [
+		{ "id": "plain", "caption": "Frame look (each subject has its own)", "outline": { "enabled": false }, "gap_fix": { "enabled": true, "mode": "CUSTOM", "uvShrinkMultiplier": 1.0, "sideExpansion": 0.005, "sideIndent": 0.0001, "preciseSpans": false } },
+		{
+			"id": "gold_fire",
+			"caption": "Fire glint + violet outline",
+			"outline": { "color": "#9B4DFF", "thickness": 8 },
+			"glint": { "texture": "preset:fire", "scale": 0.12 },
+			"gap_fix": { "enabled": true, "mode": "CUSTOM", "uvShrinkMultiplier": 1.0, "sideExpansion": 0.005, "sideIndent": 0.0001, "preciseSpans": false }
+		},
+		{
+			"id": "gold_fire_hot",
+			"caption": "Fire glint + orange outline",
+			"outline": { "color": "#FF6A1F", "thickness": 8 },
+			"glint": { "texture": "preset:fire", "scale": 0.12 },
+			"gap_fix": { "enabled": true, "mode": "CUSTOM", "uvShrinkMultiplier": 1.0, "sideExpansion": 0.005, "sideIndent": 0.0001, "preciseSpans": false }
+		},
+		{
+			"id": "diamond_rainbow",
+			"caption": "Rainbow glint + violet outline",
+			"outline": { "color": "#9B4DFF", "thickness": 8 },
+			"glint": { "texture": "preset:rainbow", "scale": 0.1 },
+			"gap_fix": { "enabled": true, "mode": "CUSTOM", "uvShrinkMultiplier": 1.0, "sideExpansion": 0.005, "sideIndent": 0.0001, "preciseSpans": false }
+		},
+		{
+			"id": "diamond_frost",
+			"caption": "Frost glint + blue outline",
+			"outline": { "color": "#2F6BFF", "thickness": 8 },
+			"glint": { "texture": "preset:frost", "scale": 0.12 },
+			"gap_fix": { "enabled": true, "mode": "CUSTOM", "uvShrinkMultiplier": 1.0, "sideExpansion": 0.005, "sideIndent": 0.0001, "preciseSpans": false }
+		},
+		{
+			"id": "anvil_sheen",
+			"caption": "Vanilla glint at 60 %, no outline",
+			"outline": { "enabled": false },
+			"glint": { "texture": "vanilla", "strength": 0.6 },
+			"gap_fix": { "enabled": true, "mode": "CUSTOM", "uvShrinkMultiplier": 1.0, "sideExpansion": 0.005, "sideIndent": 0.0001, "preciseSpans": false }
+		}
+	],
+	"shots": [
+		{
+			"name": "concept_a",
+			"look": "gold_fire",
+			"yaw": 20,
+			"pitch": 8,
+			"time": 2.5,
+			"subjects": [
+				{
+					"type": "item",
+					"item": {
+						"item": "minecraft:golden_sword",
+						"enchantments": { "minecraft:sharpness": 5, "minecraft:fire_aspect": 2 }
+					}
+				}
+			]
+		},
+		{
+			"name": "concept_b",
+			"look": "plain",
+			"yaw": 0,
+			"pitch": 0,
+			"time": 1.5,
+			"camera": { "view_height": 1.22 },
+			"subjects": [
+				{
+					"type": "item",
+					"item": {
+						"item": "minecraft:golden_sword",
+						"enchantments": { "minecraft:sharpness": 5, "minecraft:fire_aspect": 2 }
+					},
+					"rotation": [0, 0, 90],
+					"pos": [0, 0, 0.04],
+					"look": "gold_fire_hot"
+				},
+				{
+					"type": "item",
+					"item": {
+						"item": "minecraft:diamond_sword",
+						"enchantments": { "minecraft:sharpness": 5 }
+					},
+					"pos": [0, 0, -0.04],
+					"look": "diamond_frost"
+				}
+			]
+		},
+		{
+			"name": "concept_c",
+			"look": "plain",
+			"yaw": 0,
+			"pitch": 30,
+			"time": 3.5,
+			"camera": { "view_height": 1.95 },
+			"subjects": [
+				{
+					"type": "item",
+					"item": { "item": "minecraft:anvil", "glint": true },
+					"context": "none",
+					"rotation": [0, 45, 0],
+					"pos": [0, -0.3, 0],
+					"look": "anvil_sheen"
+				},
+				{
+					"type": "item",
+					"item": {
+						"item": "minecraft:diamond_sword",
+						"enchantments": { "minecraft:sharpness": 5 }
+					},
+					"context": "none",
+					"rotation": [-90, 0, 0],
+					"pos": [0, 0.33, 0],
+					"scale": 1.6,
+					"look": "diamond_rainbow"
+				}
+			]
+		}
+	]
+}

@@ -1253,16 +1253,34 @@
   }
  ],
  "logo": {
-  "comment": "The logo and the mod icon come from a studio render, never from drawing: the still `frame` of `scene` (art/captures/studio/<scene>/, a K / W pair) is matted, set on the cream studio backdrop (`shadows`: with the soft contact and drop shadows; `style` overrides composite.DEFAULT_STYLE) and a square is cut from the picture. crop.centre is [x, y] in picture pixels (\"c\" = middle), crop.size a pixel count or \"full\" (the full height); the square is area-filtered to 512 / 128 / 32 px. logo_animated.gif is a GIF of the `gifs` list.",
-  "scene": "stills_hero",
-  "frame": "logo",
-  "shadows": false,
-  "crop": {
-   "centre": [
-    "c",
-    "c"
-   ],
-   "size": "full"
+  "comment": "The logo, the mod icon and the animated logo come from studio renders, never from drawing (art/logo.py): the still `frame` of `scene` (art/captures/studio/<scene>/, a K / W pair) is matted, a square centred on the subject is cut so that the subject fills `fill` of it, area-filtered to 512 px and set on the cream studio backdrop with a glow made of the render's own colourful pixels (`glow`: layers of blur `sigma` (fraction of the width), `opacity`, `saturate`, `lift`, `gamma`, `chroma`); logo 512, icon 128 and logo 32 are area filters of that picture. `animated` builds docs/curseforge/img/logo_animated.gif (`size` px, no caption, at most 2,000,000 bytes) from the fixed-pose turntable `scene` in the same way: the glow is the mean of `glow_frames` frames and stays still, `base_n` palette colours are kept for the backdrop and glow, `dither` is the ordered dither strength. It is not in the `gifs` list.",
+  "scene": "logo_concepts",
+  "frame": "concept_a",
+  "fill": 0.86,
+  "glow": [
+   {
+    "sigma": 0.03,
+    "opacity": 0.75,
+    "saturate": 1.4,
+    "lift": 0.1,
+    "gamma": 0.9,
+    "chroma": 120
+   },
+   {
+    "sigma": 0.1,
+    "opacity": 0.55,
+    "saturate": 1.5,
+    "lift": 0.2,
+    "gamma": 0.6,
+    "chroma": 120
+   }
+  ],
+  "animated": {
+   "scene": "logo_anim_a",
+   "size": 256,
+   "dither": 10,
+   "base_n": 120,
+   "glow_frames": 12
   }
  },
  "gifs": [
@@ -1274,17 +1292,13 @@
     512
    ],
    "caption": true,
-   "budget_mb": 8
-  },
-  {
-   "out": "logo_animated.gif",
-   "scene": "hero_sword",
-   "size": [
-    256,
-    256
-   ],
-   "caption": false,
-   "budget_mb": 2
+   "budget_mb": 1.9,
+   "fps": 15,
+   "max_scale": 0.75,
+   "min_scale": 0.75,
+   "colours": 128,
+   "dither": 0,
+   "lossy": 300
   },
   {
    "out": "lineup.gif",
@@ -1294,7 +1308,13 @@
     300
    ],
    "caption": true,
-   "budget_mb": 8,
+   "budget_mb": 1.9,
+   "fps": 30,
+   "max_scale": 0.9,
+   "min_scale": 0.9,
+   "colours": 128,
+   "dither": 0,
+   "lossy": 300,
    "style": {
     "contact": {
      "opacity": 0.0
@@ -1309,7 +1329,13 @@
     500
    ],
    "caption": true,
-   "budget_mb": 8
+   "budget_mb": 1.9,
+   "fps": 12,
+   "max_scale": 0.8,
+   "min_scale": 0.8,
+   "colours": 64,
+   "dither": 0,
+   "lossy": 800
   }
  ]
 }

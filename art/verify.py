@@ -18,12 +18,14 @@
 5. Sizes and GIF properties: card and banner sizes from the manifest (a card whose studio renders are not here yet may
    still be the old one), the GIFs built from the synthetic scenes have the manifest size, a caption bar where asked, an
    endless loop and are below their budget; with --full the GIFs on disk are checked the same way.
-6. Area-filter downscale (exact averages) and the logo / icon from a synthetic studio still, including what logo.py does
-   when the render is missing (a message, nothing written, exit 0, or 1 with --strict).
+6. Area-filter downscale (exact averages) and the logo, icon and animated logo from the synthetic logo scenes
+   (logo_concepts / concept_a, logo_anim_a): sizes, the icon and small logo as area filters of the 512 picture, the framing,
+   the glow on the cream backdrop, the GIF's size, frames, loop and byte limit, the same bytes for any number of workers;
+   and what logo.py does when the renders are missing (a message, nothing written, exit 0, or 1 with --strict).
 6b. Studio (art/studio/): matte round trip of a black / white pair (alpha and colour within 1, exact empty / opaque pixels,
    premultiplied supersampling), a synthetic turntable end to end (check, GIF with the expected frames, size, delays, delta
    boxes, loop, budget and the step-down, identical bytes for any number of workers), stills, the "studio" card element
-   (crop, trim, labels) and its missing-scene behaviour, the synthetic contract (seven scenes, names and sizes), the CLI
+   (crop, trim, labels) and its missing-scene behaviour, the synthetic contract (nine scenes, names and sizes), the CLI
    exit codes (also synth_studio's --size).
 7. Standard library only for every script under art/, and no __pycache__ anywhere below art/.
 
@@ -216,17 +218,22 @@ def test_manifest(manifest):
     lg = manifest.get("logo", {})
     check(lg and lg.get("scene") in synth_studio.SHOTS and lg.get("frame") in synth_studio.SHOTS.get(lg.get("scene"), []) and lg["frame"] in shotlist,
           "logo section: the studio still %s / %s is in the contract and described in SHOTLIST.md" % (lg.get("scene"), lg.get("frame")))
-    check("gif" not in lg and "capture" not in lg, "logo section holds no capture and no GIF (logo_animated.gif is a studio GIF of the gifs list)")
+    an = lg.get("animated") or {}
+    check(synth_studio.CONTRACT.get(an.get("scene"), ("",))[0] == "turntable" and "`%s`" % an.get("scene") in shotlist and an.get("size") == 256,
+          "logo section: the animated logo is the 256 px GIF of the turntable %s, in the contract and described in SHOTLIST.md" % an.get("scene"))
+    check("capture" not in lg and lg.get("glow") and 0 < lg.get("fill", 0) <= 1 and logo.settings(manifest)["scene"] == lg.get("scene"),
+          "logo section: no capture, glow layers and a fill, and logo.py reads it")
     description = open(os.path.join(ROOT, "docs", "curseforge", "description.md"), encoding="utf-8").read()
     gifs_out = [g["out"] for g in manifest.get("gifs", [])]
-    check(gifs_out == ["showcase.gif", "logo_animated.gif", "lineup.gif", "armor.gif"], "the GIFs are %s" % ", ".join(gifs_out))
+    check(gifs_out == ["showcase.gif", "lineup.gif", "armor.gif"],
+          "the GIFs of the gifs list are %s (logo_animated.gif is made by art/logo.py)" % ", ".join(gifs_out))
     for g in manifest.get("gifs", []):
         kind, w0, h0 = synth_studio.CONTRACT.get(g.get("scene"), (None, 0, 0))
         check(kind == "turntable" and g["scene"] in shotlist and g.get("size") and g["size"][0] <= 1000 and g["size"][0] / float(g["size"][1]) == w0 / float(h0)
-              and 0 < g.get("budget_mb", 8) <= 8,
+              and 0 < g.get("budget_mb", 1.9) <= 1.9,
               "GIF %s: turntable scene %s, picture %s (the scene's shape, at most 1000 px wide), budget %s MB" % (
-                  g["out"], g.get("scene"), g.get("size"), g.get("budget_mb", 8)))
-    for name in sorted({c["out"] for c in manifest["cards"]} | set(gifs_out)):
+                  g["out"], g.get("scene"), g.get("size"), g.get("budget_mb", 1.9)))
+    for name in sorted({c["out"] for c in manifest["cards"]} | set(gifs_out) | {"logo_animated.gif"}):
         check((">>> PASTE IMAGE: %s | " % name) in description, "docs/curseforge/description.md has the paste marker for %s" % name)
 
 
@@ -333,8 +340,9 @@ def build_everything(manifest, captures_dir, with_gifs=True, workers=2):
     report = common.Report()
     caps = common.Captures(captures_dir)
     out = {}
-    for rel in logo.build(out, manifest, caps):
-        report.missing.append(("logo", rel))
+    anim = "art/captures/studio/%s/" % logo.settings(manifest)["animated"]["scene"]
+    for rel in logo.build(out, manifest, caps, workers=workers, gif=with_gifs):
+        report.missing.append(("logo_animated.gif" if rel.startswith(anim) else "logo", rel))
     for name, data in build.build_all(manifest, caps, report).items():
         out["docs/curseforge/img/" + name] = data
     if with_gifs:
@@ -371,7 +379,7 @@ def test_builds(manifest):
         s1, srep = build_everything(manifest, tmp)
         s2, _ = build_everything(manifest, tmp)
         check(s1.keys() == s2.keys() and all(s1[k] == s2[k] for k in s1),
-              "synthetic captures and studio scenes: %d files (logo, icon, cards, %d GIFs) built twice, byte-identical" % (
+              "synthetic captures and studio scenes: %d files (logo, icon, animated logo, cards, %d GIFs) built twice, byte-identical" % (
                   len(s1), len(manifest.get("gifs", []))))
         check(not srep, "synthetic captures cover every slot (no placeholder drawn)")
         check(all(s1[k] != a[k] for k in s1 if k.startswith("docs/curseforge/img/card_")) if rep else True,
@@ -399,9 +407,9 @@ def test_builds(manifest):
         if rel in a:
             continue
         if os.path.exists(disk(rel)):
-            print("  skip  %s: the studio render stills_hero / logo is not on this machine, so it cannot be rebuilt" % rel)
+            print("  skip  %s: the studio render logo_concepts / concept_a is not on this machine, so it cannot be rebuilt" % rel)
     if os.path.exists(disk(logo.P_ICON)) and logo.P_ICON not in a and sha(read(disk(logo.P_ICON))) in HAND_DRAWN:
-        print("  WARN  %s is still the hand-drawn icon from a816b40: run py -B art/logo.py once art/captures/studio/stills_hero exists"
+        print("  WARN  %s is still the hand-drawn icon from a816b40: run py -B art/logo.py once art/captures/studio/logo_concepts exists"
               % logo.P_ICON)
     missing_for = {}
     for image, rel in rep.missing:
@@ -427,10 +435,11 @@ def test_builds(manifest):
 # ---------------------------------------------------------------------------------------- 5. sizes
 
 def gif_expectation(g):
-    """(width, height, bytes limit, caption?) of the GIF of a manifest entry at its full picture size."""
-    w, h = g["size"]
+    """(width, height, bytes limit, caption?) of the GIF of a manifest entry at its first picture scale (`max_scale`)."""
+    s = g.get("max_scale", 1.0)                           # the first (and, when pinned, the only) picture scale the build tries
+    w, h = max(2, int(round(g["size"][0] * s))), max(2, int(round(g["size"][1] * s)))
     cap = g.get("caption", True)
-    return w, h + (composite.DEFAULT_STYLE["bar"]["height"] if cap else 0), g.get("budget_mb", 8) * MB, cap
+    return w, h + (composite.DEFAULT_STYLE["bar"]["height"] if cap else 0), g.get("budget_mb", 1.9) * MB, cap
 
 
 def check_gif(name, data, g, exact):
@@ -442,7 +451,7 @@ def check_gif(name, data, g, exact):
     gw, gh = info["width"], info["height"]
     ok = (gw, gh) == (w, h) if exact else (0.6 * w - 1 <= gw <= w and 0.6 * g["size"][1] - 1 <= gh - bh <= g["size"][1])
     check(ok, "%s is %dx%d (manifest picture %dx%d%s)" % (name, gw, gh, g["size"][0], g["size"][1], " + caption bar" if cap else ""))
-    check(len(data) <= limit, "%s is %.2f MB (budget %.0f MB)" % (name, len(data) / MB, limit / MB))
+    check(len(data) <= limit and len(data) <= 2000000, "%s is %.2f MB (budget %.1f MB, at most 2,000,000 bytes)" % (name, len(data) / MB, limit / MB))
     check(info["loop"] == 0, "%s loops forever (NETSCAPE loop count %s)" % (name, info["loop"]))
     delays = [f["delay"] for f in info["frames"]]
     check(len(delays) >= 2 and min(delays) >= 2, "%s: %d frames, delays %s ... cs" % (name, len(delays), sorted(set(delays))[:3]))
@@ -489,6 +498,18 @@ def test_sizes(manifest):
             check(False, "%s exists (py -B art/gallery/build.py)" % g["out"])
             continue
         check_gif(g["out"], read(p), g, False)
+    # the animated logo (art/logo.py, not in the gifs list): always exactly its size, at most 2,000,000 bytes
+    lgif = {"out": "logo_animated.gif", "size": [logo.settings(manifest)["animated"]["size"]] * 2, "caption": False,
+            "budget_mb": logo.GIF_LIMIT / float(MB)}
+    data = SYNTH.get(logo.P_GIF)
+    check(data is not None, "synthetic logo_animated.gif was built (art/logo.py)")
+    if data is not None:
+        check_gif("synthetic logo_animated.gif", data, lgif, True)
+    if FULL:
+        if os.path.exists(disk(logo.P_GIF)):
+            check_gif("logo_animated.gif", read(disk(logo.P_GIF)), lgif, True)
+        else:
+            check(False, "%s exists (py -B art/logo.py)" % logo.P_GIF)
     if not FULL:
         print("  skip  the GIFs in docs/curseforge/img/: checked with --full once the real studio build has run")
 
@@ -502,7 +523,7 @@ def test_sizes(manifest):
             check(False, "an impossible GIF budget stops the build")
         except SystemExit as e:
             check("does not fit" in str(e), "an impossible GIF budget stops the GIF build with an error (and writes nothing)")
-        spec = dict(spec, min_scale=1.0)
+        spec = dict(spec, min_scale=1.0, max_scale=1.0)
         try:
             quiet(gifs.build_gif, spec, common.Captures(synth_dir), common.Report(), 1)
             check(False, "min_scale 1 with an impossible budget stops the build")
@@ -523,10 +544,12 @@ def test_sizes(manifest):
 
 # ---------------------------------------------------------------------------------------- 6. hygiene
 
-def synthetic_logo_build(manifest, tmp):
-    synth_studio.make_contract(tmp, 4, 1, 1, only=["stills_hero"])
+def synthetic_logo_build(manifest, tmp, make=True, workers=1):
+    cfg = logo.settings(manifest)
+    if make:
+        synth_studio.make_contract(tmp, 4, 1, 1, only=[cfg["scene"], cfg["animated"]["scene"]])
     out = {}
-    missing = logo.build(out, manifest, common.Captures(tmp))
+    missing = logo.build(out, manifest, common.Captures(tmp), workers=workers)
     return out, missing
 
 
@@ -561,52 +584,61 @@ def test_area():
     r1, r2 = big.area(512, 512), big.area(512, 512)
     check((r1.w, r1.h) == (512, 512) and bytes(r1.buf) == bytes(r2.buf), "1080 -> 512 gives 512x512, deterministic")
 
-    # the square cut
-    class Fake:
-        w, h = 1920, 1080
-    check(logo.square(Fake, {"centre": ["c", "c"], "size": "full"}) == (420, 0, 1080), "default crop: centred square of the full height (420, 0, 1080)")
-    check(logo.square(Fake, {"centre": [100, 900], "size": 800}) == (0, 280, 800), "a crop near an edge is moved inside the picture, not shrunk")
-    check(logo.square(Fake, {"centre": [1000, 500], "size": 600}) == (700, 200, 600), "crop centre and size from the config")
-
     manifest = common.load_manifest()
+    cfg = logo.settings(manifest)
     tmp = tempfile.mkdtemp(prefix="glintsmith-synth-")
     try:
         out, missing = synthetic_logo_build(manifest, tmp)
-        check(not missing, "a synthetic studio still stills_hero / logo covers the logo and the icon")
-        sizes = {rel: (lib.Canvas.from_png(out[rel]).w, lib.Canvas.from_png(out[rel]).h) for rel in (logo.P_LOGO, logo.P_ICON, logo.P_LOGO_SMALL)}
-        check(sizes == {logo.P_LOGO: (512, 512), logo.P_ICON: (128, 128), logo.P_LOGO_SMALL: (32, 32)}, "logo 512, icon 128, small logo 32 px (square)")
-        cfg = manifest["logo"]
+        check(not missing, "the synthetic scenes %s / %s and %s cover the logo, the icon and the animated logo" % (
+            cfg["scene"], cfg["frame"], cfg["animated"]["scene"]))
+        pngs = {rel: lib.Canvas.from_png(out[rel]) for rel in (logo.P_LOGO, logo.P_ICON, logo.P_LOGO_SMALL)}
+        check({rel: (c.w, c.h) for rel, c in pngs.items()} == {logo.P_LOGO: (512, 512), logo.P_ICON: (128, 128), logo.P_LOGO_SMALL: (32, 32)},
+              "logo 512, icon 128, small logo 32 px (square)")
+        big = pngs[logo.P_LOGO]
+        check(big.opaque() and bytes(pngs[logo.P_ICON].buf) == bytes(big.area(128, 128).buf)
+              and bytes(pngs[logo.P_LOGO_SMALL].buf) == bytes(big.area(32, 32).buf),
+              "icon.png and logo_32.png are area filters of the opaque 512 logo picture, byte for byte")
+        corner = tuple(big.get(3, 3))
+        check(corner[3] == 255 and corner[0] > 225 and corner[0] >= corner[2] > 190, "the logo is on cream: the corner is %s" % ("#%02x%02x%02x" % corner[:3]))
+        # framing and glow: the same framed matte over the plain backdrop differs from the logo only by the glow round it
         sc = studio_scene.load(tmp, cfg["scene"])
         m = pipeline.matte_frame(sc, studio_scene.find_frame(sc, cfg["frame"]))
-        pic = composite.render(m, composite.style(cfg.get("style")), None, cfg.get("shadows", True))
-        x, y, n = logo.square(pic, cfg.get("crop"))
-        square = pic.crop(x, y, n, n)
-        check(pic.opaque() and (pic.w, pic.h) == (1024, 1024), "the logo render is matted and set on the cream studio backdrop: opaque, 1024 x 1024")
-        check(bytes(lib.Canvas.from_png(out[logo.P_ICON]).buf) == bytes(square.area(128, 128).buf),
-              "icon.png is the area-filtered square crop of the logo picture, byte for byte")
-        check(bytes(lib.Canvas.from_png(out[logo.P_LOGO]).buf) == bytes(square.area(512, 512).buf),
-              "logo_512.png is the area-filtered square crop of the logo picture, byte for byte")
-        corner = tuple(lib.Canvas.from_png(out[logo.P_LOGO]).get(3, 3))
-        check(corner[3] == 255 and corner[0] > 225 and corner[0] >= corner[2] > 190, "the logo is on cream: the corner is %s" % ("#%02x%02x%02x" % corner[:3]))
+        fm = logo.frame(m, logo.square_of(m, cfg["fill"]), 512)
+        st = composite.style()
+        plain, _ = composite.compose(fm, composite.backdrop(512, 512, st), st, drop=False)
+        box = composite.alpha_bbox(bytes(fm.buf[3::4]), 512, 512, 8)
+        side = max(box[2] - box[0], box[3] - box[1])
+        check(abs(side - 512 * cfg["fill"]) <= 3, "framing: the subject fills %.3f of the square (fill %.2f)" % (side / 512.0, cfg["fill"]))
+        alpha = fm.buf[3::4]
+        glow = [i for i in range(0, 512 * 512, 7) if alpha[i] == 0 and big.buf[i * 4:i * 4 + 3] != plain[i * 3:i * 3 + 3]]
+        check(len(glow) > 500, "the glow tints the backdrop round the subject (%d sampled background pixels differ from the plain backdrop)" % len(glow))
+        gi = imgio.parse_gif(out[logo.P_GIF])
+        an = studio_scene.load(tmp, cfg["animated"]["scene"])
+        check((gi["width"], gi["height"]) == (256, 256) and len(gi["frames"]) == len(an.frames) and gi["loop"] == 0
+              and len(out[logo.P_GIF]) <= logo.GIF_LIMIT and sum(f["delay"] for f in gi["frames"]) == int(round(100.0 * len(an.frames) / an.fps)),
+              "logo_animated.gif: 256 x 256, every frame of %s (%d), loops forever, delays add up to the loop, at most 2,000,000 bytes"
+              % (cfg["animated"]["scene"], len(an.frames)))
+        out2, _ = synthetic_logo_build(manifest, tmp, make=False, workers=2)
+        check(out2 == out, "logo.py output is byte-identical for 1 and 2 worker processes")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
-    # a missing render: message, nothing written, exit 0 (1 with --strict), the committed icon untouched
+    # missing renders: message, nothing written, exit 0 (1 with --strict), the committed icon and GIF untouched
     empty, outdir = tempfile.mkdtemp(prefix="glintsmith-empty-"), tempfile.mkdtemp(prefix="glintsmith-out-")
     try:
         script = os.path.join(HERE, "logo.py")
         run = lambda *extra: subprocess.run([sys.executable, "-B", script, "--captures", empty, "--out", outdir] + list(extra),
                                             capture_output=True, text=True)
         r = run()
-        check(r.returncode == 0 and "stills_hero" in r.stdout and "missing" in r.stdout,
-              "logo.py without the studio still stills_hero prints which file is missing and exits 0")
+        check(r.returncode == 0 and cfg["scene"] in r.stdout and cfg["animated"]["scene"] in r.stdout and "missing" in r.stdout,
+              "logo.py without the studio scenes %s and %s prints which files are missing and exits 0" % (cfg["scene"], cfg["animated"]["scene"]))
         check(not [f for _, _, fs in os.walk(outdir) for f in fs], "...and writes nothing")
         r = run("--strict")
-        check(r.returncode == 1 and "stills_hero" in r.stdout, "logo.py --strict without the render exits 1")
-        icon_before = sha(read(disk(logo.P_ICON))) if os.path.exists(disk(logo.P_ICON)) else None
+        check(r.returncode == 1 and cfg["scene"] in r.stdout, "logo.py --strict without the renders exits 1")
+        before = [sha(read(disk(p))) if os.path.exists(disk(p)) else None for p in (logo.P_ICON, logo.P_GIF)]
         r = subprocess.run([sys.executable, "-B", script, "--captures", empty], capture_output=True, text=True)
-        icon_after = sha(read(disk(logo.P_ICON))) if os.path.exists(disk(logo.P_ICON)) else None
-        check(r.returncode == 0 and icon_before == icon_after, "logo.py with the default output folder leaves the committed icon.png untouched")
+        after = [sha(read(disk(p))) if os.path.exists(disk(p)) else None for p in (logo.P_ICON, logo.P_GIF)]
+        check(r.returncode == 0 and before == after, "logo.py with the default output folder leaves the committed icon.png and logo_animated.gif untouched")
     finally:
         shutil.rmtree(empty, ignore_errors=True)
         shutil.rmtree(outdir, ignore_errors=True)
@@ -731,6 +763,14 @@ def test_studio():
             same = same and bytes(canvas) == want
         check(same and (gd["frames"][-1]["w"], gd["frames"][-1]["h"]) == (1, 1) and all(f["w"] * f["h"] < fw * fh for f in gd["frames"][1:]),
               "delta frames: the GIF's frames applied in order give back every index frame; an unchanged frame is 1 x 1")
+        # lossy: a pixel within the tolerance of the colour already shown stays (transparent in the delta), tolerance 0 is exact
+        lp = [(0, 0, 0), (2, 2, 2), (200, 0, 0), (10, 10, 10)]
+        lf = [bytes([0, 0, 2, 2]), bytes([1, 0, 2, 3]), bytes([1, 0, 2, 3]), bytes([3, 3, 3, 3])]
+        got = gifenc.lossy_frames(lp, lf, 40)
+        check(gifenc.lossy_frames(lp, lf, 0) == lf and got[0] == lf[0] and got[1] == bytes([0, 0, 2, 3]) and got[3] == bytes([3, 3, 3, 3]),
+              "lossy: tolerance 0 is exact, a near colour (2 vs 0) keeps the shown colour, a far one (10 vs 0) and a big change are drawn")
+        lg = imgio.parse_gif(gifenc.encode_gif(4, 1, lp, lf, [3] * 4, lossy=40))
+        check(len(lg["frames"]) == 4, "lossy: the GIF still decodes (4 frames)")
         # the dither is anchored to the picture, so a flat subject colour gives the same pattern every frame
         pal = gifenc.Palette([(i * 4 % 256, i * 7 % 256, i * 11 % 256) for i in range(255)])
         flat = bytes([200, 150, 120]) * (16 * 16)
