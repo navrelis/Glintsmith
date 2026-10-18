@@ -173,3 +173,33 @@ Open for the owner:
 - Done (owner OK): the live description's comparison header said "Glintsmith 2.0.0" (never changed for 2.0.1); now  "Glintsmith 2.0.2", saved and re-read after reload, matching the repository's description.md.
 - After archiving this session: `git -C "F:/Coding/Glintsmith" branch -d claude/eloquent-wing-a06858` and
   `git -C "F:/Coding/Glintsmith" pull --ff-only` (main checkout dev).
+
+## Session 19: owner config as the built-in defaults, 2.1.0 release
+
+What was done (2026-10-18, owner request: make NytheriaDevelopment `config/glintsmith.json` the defaults and upload):
+- **D1 defaults** (Sonnet, 1 correction; 33f42c1): `GlintsmithConfig` defaults = the owner file (sha 4726ac14): outline
+  targets armor + GUI on, static #E6B2FF at 7.5 px (also the sanitize fallback), all four glint layers from one factory
+  `GlintCategorySettings.defaults()` (neutral preset, rainbow tint #D088FC, strength 0.9; the no-arg constructor stays
+  vanilla). New `DefaultConfigTest` compares the JSON tree of a fresh, a sanitised and a copied config with
+  `src/test/resources/glintsmith/owner-defaults.json`. Ten old-default tests updated (expected values where they pin
+  defaults, explicit baselines elsewhere, `TestConfigs.vanilla()` also turns armor/GUI targets off). README, DESIGN,
+  description (+paste, preview), GUI-target tooltip en/de, CHANGELOG. Existing saved configs keep their values.
+- **D2 defcheck** (Sonnet): fresh-config in-game check in the lead scratchpad `12c21bcc/v210/defcheck` (moves the
+  copy's config to quarantine, mod writes its defaults, 8 shots, copies the written file out, `compare_written.py`).
+  Dry run 0 with the 2.0.2 jar. **Not run**: the owner's game was open and the owner chose to release without it.
+- **2.1.0 release** (RL8, MINOR: new defaults, nothing breaks): bump by Sonnet (04b6f29), clean build 502 tests green,
+  jar `15e615d3...`, `art/verify.py` and `preview.py --check` pass. CurseForge project 1751215 **file 9249792**
+  (`glintsmith-2.1.0.jar`, Release, 1.21.1 / Fabric / Java 21 / Client, Fabric API required, Mod Menu optional, same
+  conventions as 2.0.2). Checklist SHA + not-run note (a1b56a4). main = dev = a1b56a4, tag v2.1.0.
+- Graphify updated (3347 nodes, 10054 edges); backup quarantined in build/quarantine/graphify-backup-s19.
+
+Known: the studio cards and GIFs on the CurseForge page still show the 2.0.x default look. The live CurseForge
+description still has the 2.0.2 text (comparison header and the old-defaults sentences); the repository's
+`docs/curseforge/description_paste.md` has the 2.1.0 text.
+
+Manual test checklist (owner): rename your own `config/glintsmith.json` (or press Reset tab per tab) in a test
+instance with 2.1.0 and check the look matches your setup; your existing config keeps its values. Optional later:
+`pwsh <scratchpad>\v210\defcheck\run_defcheck.ps1 -Session <id> -Jar <glintsmith-2.1.0.jar>` with all clients closed.
+
+Model usage this session: Sonnet D1 finish S 1 (+1 correction), D2 S 1, bump S 1, checklist S 0.5; no Opus. Project
+total about 28 % Opus. No precision overrides.

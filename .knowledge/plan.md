@@ -115,4 +115,4 @@ Session 17 (stray dot, 2.0.1): Opus B1 S 1, Sonnet B1 docs S 1, Opus B2 S 1, Son
 Session 17 (2.0.1 release, owner go): + Sonnet RL1 S 1, RL2 S 1 -> Sonnet ~86.5, Opus ~36.5 (about 30 % Opus).
 Session 17: + Sonnet RL2 correction (in its S), RL6 checklist values S 0.5 -> Sonnet ~87, Opus ~36.5 (about 30 % Opus).
 Session 18: Opus B4 S 1 (side session); Sonnet checklist tick S 1, 2.0.2 bump S 1, VERSIONING S 1 (+1 corr), checklist SHA S 1, D1 L 2, D2 S 1 -> about 29 % Opus.
-Session 19: D1 finish Sonnet S 1 (+corr), D2 restart Sonnet S 1, RL8a bump Sonnet S 1 -> about 28 % Opus.
+Session 19: D1 finish Sonnet S 1 (+corr), D2 restart Sonnet S 1, RL8a bump Sonnet S 1, RL8b checklist Sonnet S 0.5 -> about 28 % Opus.
