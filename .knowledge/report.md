@@ -73,9 +73,7 @@ O9 (core render math) went to Opus within the budget.
 
 ## Known limitations and recommendations
 
-- Stray outline dot: with the bow (soft void outline) a single mask pixel with nothing drawn in the colour pass appears
-  about 100 px beside the bow at some yaws (studio lineup, 21 of 120 frames). Reproduced with the bow alone. Not
-  investigated; recommended follow-up (Opus, mask pass vs colour pass of the bow model).
+- Stray outline dot beside the bow: fixed for 2.0.1 (session 17, see below).
 - In the owner's pack a 3D mace model from a resource pack keeps a purple glint on its handle (not investigated).
 - On armor every preset reads as a slow colour wash (vanilla armor glint scale), by design.
 - With proportional on, GUI outlines are ~0.5 px and clamp to Minimum width (1 px); at opacity 0.25 they are faint.
@@ -94,3 +92,40 @@ O9 (core render math) went to Opus within the budget.
 - Checks: gradle build 0, `art/logo.py --strict`, `art/verify.py`, `docs/curseforge/preview.py --check`, `art/studio/studio.py check` all 0. Not run: `verify.py --full`.
 - Usage this session: Sonnet S 1, Opus L 2 + S 1; total about 30 % Opus. No precision overrides.
 - Open: stray outline dot fix lives on branch claude/eloquent-wing-a06858 (other session, not merged); lineup needs a re-render after it lands. Clean-up candidates (git-ignored): build/logo-concepts, build/quarantine/l1, art/captures/studio/logo_explore1-5 and logo_anim_b.
+
+## Session 17: 2.0.1 fixes (unreleased, on dev)
+
+What was done, per owner decision (2026-10-18):
+- **Stray outline dot, outline side** (B1, Opus, 129f299): the flat GUI/PREVIEW outline mask was double-sided while the
+  colour pass culls back faces; on a turntable the back quad's atlas-bleeding edge pixels became mask-only seeds with a
+  full ring. The flat mask now repeats the source's cull state. `MaskTypes.java`, `MaskTypesTest` (red first, then green).
+- **Stray pixel, gap fix side** (B2, Opus, 7dc772e): with gap fix AUTO (UV shrink 0) a pixel at a flat item's outer
+  edge sampled the neighbouring atlas sprite. Edge guard, always on with the gap fix: front/back faces stop 1/64 texel
+  short of the sprite border (positions and UVs together), border side faces move in by the same amount, side-face UVs
+  move 0.25 texel inwards across the thickness. `GapFix.java`, `ItemModelGeneratorMixin.java`, 9 new tests (5 fail
+  without the guard). Studio: stray frames 0 at atlas 2048/8192/16384 (before 20/47/94), crack pixels 1994 -> 1991.
+- **Lineup GIF** (B3, Sonnet, 743467f): re-rendered on the fixed code with the release studio-mods jars; strays.py 0 of
+  120 frames (2.0.0: 61); `docs/curseforge/img/lineup.gif` 1,731,398 bytes with the G2MB settings.
+- Docs: CHANGELOG 2.0.1 (Unreleased) with both Fixed entries, DESIGN 3.2 and 11 (new "Edge guard (2.0.1)" with the
+  measurement table), README gap-fix section. Lead proofread the DESIGN wording.
+- Merged into dev and pushed (main untouched, no release, as decided by the owner). Graphify updated (3284 nodes,
+  9961 edges; backup quarantined in the main checkout build/quarantine/graphify-backup-s17).
+
+Checks: `./gradlew build --no-daemon` 495 tests, 0 failures (lead, after each merge); strays.py 0 (lead re-ran);
+`art/verify.py` all passed, `preview.py --check` 0 (B3); lead viewed GIF frames 1 and 61.
+
+Manual test checklist (in game, not yet done):
+- Settings screen live preview, outlined bow or trident turning: no stray dot rings.
+- Inventory GUI outlines unchanged (head-on).
+- Held, dropped and item-frame flat items with gap fix AUTO: no wrongly coloured edge pixel, no new hairline cracks.
+- Same with a big HD resource pack (atlas 8192+).
+
+Model usage: Opus B1 S 1 + B2 S 1, Sonnet B1 docs S 1 + B3 S 1; project total about 30 % Opus. No precision overrides.
+
+Open for the owner:
+- The live CurseForge page still shows the 2.0.0 lineup.gif (attachment 2071/596); upload the new file and update the
+  description link if wanted.
+- Release 2.0.1 when wanted (version bump, in-game check, merge to main, tag, upload).
+- Housekeeping the permission check would not let the lead do: remove the merged worktrees `F:\Coding\Glintsmith-g4`,
+  `-o9`, `-studio`, `.claude\worktreesgent-ab21401f389c63083` (locked), `busy-wilson-9ce123`, `eloquent-wing-a06858`
+  and their merged local branches (commands in the session's final message).
