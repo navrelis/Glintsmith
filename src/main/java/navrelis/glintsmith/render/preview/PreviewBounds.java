@@ -51,10 +51,13 @@ final class PreviewBounds {
 	}
 
 	/**
-	 * A buffer source that hands out itself for every render type and records the extent of the vertex positions
-	 * (already transformed by the pose) it receives. Everything else is ignored.
+	 * A buffer source that records the extent of the vertex positions (already transformed by the pose) it receives.
+	 * Everything else is ignored.
+	 * <p>
+	 * Every {@link #getBuffer} call hands out a view of its own: an enchanted item joins its glint buffer and its main
+	 * buffer with {@code VertexMultiConsumer.create}, which refuses two identical delegates.
 	 */
-	static final class Recorder implements MultiBufferSource, VertexConsumer {
+	static final class Recorder implements MultiBufferSource {
 		private float minX = Float.POSITIVE_INFINITY;
 		private float minY = Float.POSITIVE_INFINITY;
 		private float minZ = Float.POSITIVE_INFINITY;
@@ -65,11 +68,10 @@ final class PreviewBounds {
 
 		@Override
 		public VertexConsumer getBuffer(RenderType renderType) {
-			return this;
+			return new View();
 		}
 
-		@Override
-		public VertexConsumer addVertex(float x, float y, float z) {
+		private void record(float x, float y, float z) {
 			if (Float.isFinite(x) && Float.isFinite(y) && Float.isFinite(z)) {
 				minX = Math.min(minX, x);
 				minY = Math.min(minY, y);
@@ -79,32 +81,6 @@ final class PreviewBounds {
 				maxZ = Math.max(maxZ, z);
 				vertices++;
 			}
-			return this;
-		}
-
-		@Override
-		public VertexConsumer setColor(int red, int green, int blue, int alpha) {
-			return this;
-		}
-
-		@Override
-		public VertexConsumer setUv(float u, float v) {
-			return this;
-		}
-
-		@Override
-		public VertexConsumer setUv1(int u, int v) {
-			return this;
-		}
-
-		@Override
-		public VertexConsumer setUv2(int u, int v) {
-			return this;
-		}
-
-		@Override
-		public VertexConsumer setNormal(float x, float y, float z) {
-			return this;
 		}
 
 		/**
@@ -116,6 +92,40 @@ final class PreviewBounds {
 				return null;
 			}
 			return new float[] {minX, minY, minZ, maxX, maxY, maxZ};
+		}
+
+		/** One buffer of the recorder: passes the positions on, ignores everything else. */
+		private final class View implements VertexConsumer {
+			@Override
+			public VertexConsumer addVertex(float x, float y, float z) {
+				record(x, y, z);
+				return this;
+			}
+
+			@Override
+			public VertexConsumer setColor(int red, int green, int blue, int alpha) {
+				return this;
+			}
+
+			@Override
+			public VertexConsumer setUv(float u, float v) {
+				return this;
+			}
+
+			@Override
+			public VertexConsumer setUv1(int u, int v) {
+				return this;
+			}
+
+			@Override
+			public VertexConsumer setUv2(int u, int v) {
+				return this;
+			}
+
+			@Override
+			public VertexConsumer setNormal(float x, float y, float z) {
+				return this;
+			}
 		}
 	}
 }

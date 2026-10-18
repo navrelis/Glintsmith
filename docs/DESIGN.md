@@ -2147,8 +2147,11 @@ checked by hand is listed in 12.7 and in section 10, item 31.
    cannot be inverted (a scale axis below 1e-4, a non-finite component; `PreviewPose.invertible`) falls back to
    context `NONE` without cancelling.
 2. The size comes from the item's real bounds: `PreviewBounds.measure` renders the item once into a recording
-   `MultiBufferSource` / `VertexConsumer` that keeps only vertex positions (an item that throws or draws nothing gives
-   the unit cube). The result is cached per (item, model identity, context), at most 16 entries, cleared when the
+   `MultiBufferSource` that keeps only vertex positions (an item that throws or draws nothing gives the unit cube).
+   Every `getBuffer` call hands out a recording view of its own, because an enchanted item joins its glint and main
+   buffers with `VertexMultiConsumer.create`, which throws on two identical delegates (2.0.0 and 2.0.1 handed out one
+   consumer, so every enchanted item got the unit cube and the held trident, which sits far from the origin, was drawn
+   partly below the panel). The result is cached per (item, model identity, context), at most 16 entries, cleared when the
    settings screen closes (`PreviewRenderer.clearCache`). The measuring render is skipped while an outline phase is
    open (unit cube for that frame), because it would be captured.
 3. `PreviewPose.fit` returns the largest scale at which the bounds stay inside the box less the margin for every yaw

@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Live preview: an enchanted trident in the main hand is now drawn whole and centred in the panel over the full turn.
+  Before, it sat partly below the panel, because the preview could not measure the size of any enchanted item and used
+  a one-block cube instead (close enough for flat items and the bow, far off for the long held trident model). Other
+  enchanted items are now sized to their real shape too, so some fill the panel a little better.
+
 ## 2.0.1 (Fabric 1.21.1) — 2026-10-18
 
 ### Fixed
