@@ -3,7 +3,7 @@
 Fabric 1.21.1 client mod: universal item outlines, a customisable enchantment glint, a model gap fix and (2.0.0) a live
 preview. 1.0.0 was built in sessions 1 to 12 and uploaded in session 14; 2.0.0 in sessions 13 to 15 (2026-10-18).
 Release jar `build/libs/glintsmith-2.0.0.jar`, SHA-256 `b91aea4f6ac4be923a9192f734b5b3438df2a29f3b286ee800a1e54f2dd283c6`,
-built at commit 3219f73, 486 tests green. CurseForge project 1751215: 1.0.0 = file 9234824, 2.0.0 = file 9235330 (uploaded 2026-10-18 04:45, release). The owner instance now holds the release jar (old dev jar in `buildquarantineowner-instance-2.0.0-dev-jar`).
+built at commit 3219f73, 486 tests green. CurseForge project 1751215: 1.0.0 = file 9234824, 2.0.0 = file 9235330 (uploaded 2026-10-18 04:45, release). The owner instance now holds the release jar (old dev jar in `build/quarantine/owner-instance-2.0.0-dev-jar/`).
 
 ## What was implemented, per requirement
 
