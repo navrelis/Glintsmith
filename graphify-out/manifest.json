@@ -1,32 +1,26 @@
 {
   "art/gallery/build.py": {
-    "mtime": 1792246920.4921942,
-    "seen": 1792259006.9087462,
-    "ast_hash": "3d8c57e75de61f64fbcaacdbdba20c9f",
+    "mtime": 1792290240.2605598,
+    "seen": 1792291490.482322,
+    "ast_hash": "8d1b9b19e7dfd80e430a9b0385b755b3",
     "semantic_hash": ""
   },
   "art/gallery/cards.json": {
-    "mtime": 1792262935.6928492,
-    "seen": 1792277149.7656364,
-    "ast_hash": "883f0e2fc1ed03433728f49b53feace4",
+    "mtime": 1792290468.432249,
+    "seen": 1792291490.482322,
+    "ast_hash": "06a39fc9080b2f5026332ebe105a1b5d",
     "semantic_hash": ""
   },
   "art/gallery/common.py": {
-    "mtime": 1792236591.0069633,
-    "seen": 1792259006.9087462,
-    "ast_hash": "34a7433b2d29b66d3c385bb5e156f5b8",
-    "semantic_hash": ""
-  },
-  "art/gallery/gif.py": {
-    "mtime": 1792252353.7643228,
-    "seen": 1792259006.9087462,
-    "ast_hash": "7fb054b6fc5dfdddbc8df608d290e02f",
+    "mtime": 1792283243.9598677,
+    "seen": 1792291490.482322,
+    "ast_hash": "64f6566254a16d3602cfd0267ad68378",
     "semantic_hash": ""
   },
   "art/gallery/synth.py": {
-    "mtime": 1792246597.8323674,
-    "seen": 1792259006.9087462,
-    "ast_hash": "7250ee87b12b6b322c88d65ee4e7dcc1",
+    "mtime": 1792282894.2092385,
+    "seen": 1792291490.482322,
+    "ast_hash": "e4c788346d7b0c5534026216930a490c",
     "semantic_hash": ""
   },
   "art/imgio.py": {
@@ -42,27 +36,27 @@
     "semantic_hash": ""
   },
   "art/logo.py": {
-    "mtime": 1792246932.5210469,
-    "seen": 1792259006.9087462,
-    "ast_hash": "e23898b9a12bca80a4369d31a679c340",
+    "mtime": 1792282894.2092385,
+    "seen": 1792291490.482322,
+    "ast_hash": "2db4256ff38660814eb5dd902267cac5",
     "semantic_hash": ""
   },
   "art/verify.py": {
-    "mtime": 1792247289.0515387,
-    "seen": 1792259006.9087462,
-    "ast_hash": "3f110abff4dc9eabcedae6be61622abf",
+    "mtime": 1792283929.5467339,
+    "seen": 1792291490.482322,
+    "ast_hash": "d54f350b7b34dd278cdfce7bc03f938e",
     "semantic_hash": ""
   },
   "build.gradle": {
-    "mtime": 1792229757.2342854,
-    "seen": 1792259006.9087462,
-    "ast_hash": "891501d67d9d3896f48e743582053c00",
+    "mtime": 1792279208.755025,
+    "seen": 1792291490.482322,
+    "ast_hash": "4cc3f0abcc9dd488d1a13c1ba51bc49a",
     "semantic_hash": ""
   },
   "docs/curseforge/preview.py": {
-    "mtime": 1792247024.4252472,
-    "seen": 1792259006.9087462,
-    "ast_hash": "c57cdf8cd08661990e8224412bec935b",
+    "mtime": 1792283441.3062534,
+    "seen": 1792291490.482322,
+    "ast_hash": "20b413962882ac92de1c0e6facf16655",
     "semantic_hash": ""
   },
   "gradlew": {
@@ -96,9 +90,9 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/config/GlintsmithConfig.java": {
-    "mtime": 1792243100.258678,
-    "seen": 1792259006.9087462,
-    "ast_hash": "aa25f3a3b998a401e6d0beeb5c2e99d8",
+    "mtime": 1792287790.1465816,
+    "seen": 1792291490.482322,
+    "ast_hash": "046d8b49536f46bb1e09dcf3d70fdcd3",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/config/OutlineCondition.java": {
@@ -108,21 +102,21 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/gui/ColorPickerScreen.java": {
-    "mtime": 1792231592.2023351,
-    "seen": 1792259006.9087462,
-    "ast_hash": "63133f6240ed1e65ce7c48d2f2e57143",
+    "mtime": 1792282507.8631358,
+    "seen": 1792291490.482322,
+    "ast_hash": "c80c90604cff0a06594b8e4085b7507e",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/gui/ColorStyleScreen.java": {
-    "mtime": 1792231561.6049554,
-    "seen": 1792259006.9087462,
-    "ast_hash": "eddaaead18ffe25ad8317919bbf821f5",
+    "mtime": 1792282491.6638966,
+    "seen": 1792291490.482322,
+    "ast_hash": "07d971df20cbe1ff7e1e3277299291aa",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/gui/ConfigSubScreen.java": {
-    "mtime": 1792231507.2992115,
-    "seen": 1792259006.9087462,
-    "ast_hash": "e92ae60f6e37c6d5c4af408f92681298",
+    "mtime": 1792282464.9003286,
+    "seen": 1792291490.482322,
+    "ast_hash": "9332ae30141e4d082f4b256a3d4d20a2",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/gui/GlintsmithCommands.java": {
@@ -138,9 +132,9 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/gui/GlintsmithScreen.java": {
-    "mtime": 1792231792.6260843,
-    "seen": 1792259006.9087462,
-    "ast_hash": "7b4f76d3c18acbfe40682d671802a5ed",
+    "mtime": 1792282543.8886468,
+    "seen": 1792291490.482322,
+    "ast_hash": "341c7529945e641d667bec5e7245ea85",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/gui/GuiBootstrap.java": {
@@ -168,15 +162,15 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/gui/RuleEditScreen.java": {
-    "mtime": 1792232194.676736,
-    "seen": 1792259006.9087462,
-    "ast_hash": "4abd4a2723c9b03192f22d54e8d1a3c6",
+    "mtime": 1792282478.1572204,
+    "seen": 1792291490.482322,
+    "ast_hash": "97a86b7c947e7963a62f37f17a0c531f",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/gui/SettingRows.java": {
-    "mtime": 1792232873.9475746,
-    "seen": 1792259006.9087462,
-    "ast_hash": "8015bf1751e65188579452552aafee20",
+    "mtime": 1792284613.0802505,
+    "seen": 1792291490.482322,
+    "ast_hash": "28fe46a845f15cf57df63d1feab46960",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/gui/TextureNames.java": {
@@ -204,9 +198,9 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/gui/tab/GlintTab.java": {
-    "mtime": 1792231647.3768475,
-    "seen": 1792259006.9087462,
-    "ast_hash": "895f43095288c27214dca2284d141851",
+    "mtime": 1792282963.5245903,
+    "seen": 1792291490.482322,
+    "ast_hash": "4a1dd358cfce964f703a03b91625d803",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/gui/tab/ModelFixTab.java": {
@@ -216,9 +210,9 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/gui/tab/OutlineTab.java": {
-    "mtime": 1792247335.4061675,
-    "seen": 1792259006.9087462,
-    "ast_hash": "47fca8c23fbc008130f2d4c25c0f4b2e",
+    "mtime": 1792287790.1475816,
+    "seen": 1792291490.482322,
+    "ast_hash": "5f163094c22ddbd50bcab7429f119459",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/gui/tab/RulesTab.java": {
@@ -240,9 +234,9 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/gui/widget/FloatSlider.java": {
-    "mtime": 1792247329.8147023,
-    "seen": 1792259006.9087462,
-    "ast_hash": "5816cc7ea110de24ab060683dfb5e3bd",
+    "mtime": 1792284618.9278505,
+    "seen": 1792291490.482322,
+    "ast_hash": "710f85676cd29686d4bb4de98ad5468b",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/gui/widget/GradientSlider.java": {
@@ -294,9 +288,9 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/mixin/glint/BufferSourceGlintMixin.java": {
-    "mtime": 1792233506.7988944,
-    "seen": 1792259006.9087462,
-    "ast_hash": "7b1829625277b583aacbe39bba3c44d2",
+    "mtime": 1792282905.3976507,
+    "seen": 1792291490.482322,
+    "ast_hash": "2dd3af9a31d9edda9a6d583d4c097422",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/mixin/glint/ElytraLayerGlintMixin.java": {
@@ -384,9 +378,9 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/mixin/outline/ElytraLayerOutlineMixin.java": {
-    "mtime": 1792237453.132654,
-    "seen": 1792259006.9087462,
-    "ast_hash": "41c661c95acb1c81e4deccbe096899bb",
+    "mtime": 1792287790.1475816,
+    "seen": 1792291490.482322,
+    "ast_hash": "a357b6a108adc232ca5d36e0af962e8d",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/mixin/outline/EmptyTextureStateShardAccessor.java": {
@@ -408,9 +402,9 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/mixin/outline/HumanoidArmorLayerOutlineMixin.java": {
-    "mtime": 1792237453.132654,
-    "seen": 1792259006.9087462,
-    "ast_hash": "6e323e2d341a536338a672861ebc3b40",
+    "mtime": 1792287790.1475816,
+    "seen": 1792291490.482322,
+    "ast_hash": "e6dd4af79c4ce0154d958bc8f5df2168",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/mixin/outline/ItemInHandRendererOutlineMixin.java": {
@@ -420,9 +414,9 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/mixin/outline/ItemRendererOutlineMixin.java": {
-    "mtime": 1792237453.133653,
-    "seen": 1792259006.9087462,
-    "ast_hash": "44faad65b90d9324252a9eff09adbf8e",
+    "mtime": 1792287790.1485825,
+    "seen": 1792291490.482322,
+    "ast_hash": "cf884df26cdaf05fad4f4e3af23aa76e",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/modelfix/GapFix.java": {
@@ -438,15 +432,15 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/glint/GlintCategories.java": {
-    "mtime": 1792241652.0133638,
-    "seen": 1792259006.9087462,
-    "ast_hash": "06882e691d336888b49c95d8976bcddb",
+    "mtime": 1792282825.1262555,
+    "seen": 1792291490.482322,
+    "ast_hash": "52cb8fa46a082b5fb6491f09ee467aab",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/glint/GlintContext.java": {
-    "mtime": 1792241651.863427,
-    "seen": 1792259006.9087462,
-    "ast_hash": "e24e29b2d3acd91275610d4c3cf0900e",
+    "mtime": 1792282884.3441825,
+    "seen": 1792291490.482322,
+    "ast_hash": "e9f557397c07d9bb9ba6a12d1ada98e5",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/glint/GlintFailsafe.java": {
@@ -462,21 +456,21 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/glint/GlintNoise.java": {
-    "mtime": 1792247329.7636926,
-    "seen": 1792259006.9087462,
-    "ast_hash": "972b6fc6d4bd4b2d93a5272b0f4dd586",
+    "mtime": 1792287577.2916098,
+    "seen": 1792291490.482322,
+    "ast_hash": "c42b8db2e280421e6522e90620589aec",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/glint/GlintParams.java": {
-    "mtime": 1792233253.1081018,
-    "seen": 1792259006.9087462,
-    "ast_hash": "4c6ab7ecfd7e91b7651a828a7fdbb6ca",
+    "mtime": 1792282814.1258264,
+    "seen": 1792291490.482322,
+    "ast_hash": "bdd41aff4c90d62f7b7f7afef9764d95",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/glint/GlintPresets.java": {
-    "mtime": 1792235098.6149125,
-    "seen": 1792259006.9087462,
-    "ast_hash": "0c671adcfb84035a0cc5375f003fab87",
+    "mtime": 1792287577.2916098,
+    "seen": 1792291490.482322,
+    "ast_hash": "2d9d0bd36b4a3048c847dcbd10dc7558",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/glint/GlintRenderTypes.java": {
@@ -486,15 +480,15 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/glint/GlintRuntimeSettings.java": {
-    "mtime": 1792233362.674772,
-    "seen": 1792259006.9087462,
-    "ast_hash": "6d91a8d97ce3216ea60c59e9331ecab7",
+    "mtime": 1792284607.1692233,
+    "seen": 1792291490.482322,
+    "ast_hash": "c6fe412f19d612796e898a2aa1454105",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/glint/GlintShards.java": {
-    "mtime": 1792233380.849029,
-    "seen": 1792259006.9087462,
-    "ast_hash": "900e5a43eb159bf234dcfc12a59cb49f",
+    "mtime": 1792282824.832718,
+    "seen": 1792291490.482322,
+    "ast_hash": "4546e0f977d818cc19091797bef21f92",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/glint/GlintSlot.java": {
@@ -510,15 +504,15 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/glint/GlintSystem.java": {
-    "mtime": 1792251852.5210145,
-    "seen": 1792259006.9087462,
-    "ast_hash": "b311b95a2581a9b0f9c7eb8807bea0ca",
+    "mtime": 1792283919.964108,
+    "seen": 1792291490.482322,
+    "ast_hash": "062ea7f582912081e0e79c10a5c6ddfc",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/glint/GlintTextures.java": {
-    "mtime": 1792247329.659977,
-    "seen": 1792259006.9087462,
-    "ast_hash": "1a7f06fdaf13dccd3fdc50d14f815c0a",
+    "mtime": 1792287577.2916098,
+    "seen": 1792291490.482322,
+    "ast_hash": "4e322a90bdd8edc73b6600238a1aa8c7",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/outline/FullscreenQuad.java": {
@@ -564,9 +558,9 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/outline/OutlineContexts.java": {
-    "mtime": 1792241325.8365319,
-    "seen": 1792259006.9087462,
-    "ast_hash": "ebb8c96fdc3100ed26c714dbc089b67c",
+    "mtime": 1792282315.3650486,
+    "seen": 1792291490.482322,
+    "ast_hash": "4a19b78c2bdb48e314d85d0374e8b6b1",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/outline/OutlineDepth.java": {
@@ -582,15 +576,15 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/outline/OutlinePhase.java": {
-    "mtime": 1792241325.8365319,
-    "seen": 1792259006.9087462,
-    "ast_hash": "b62247fb4d82f9465aabafef238e34c2",
+    "mtime": 1792282314.8075738,
+    "seen": 1792291490.482322,
+    "ast_hash": "086002ac3976fab3643b492b838c8f2d",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/outline/OutlineRuntimeSettings.java": {
-    "mtime": 1792237453.1356606,
-    "seen": 1792259006.9087462,
-    "ast_hash": "70b65a0c29275e0eb44f4d0181933a4e",
+    "mtime": 1792287790.1485825,
+    "seen": 1792291490.482322,
+    "ast_hash": "e686dea216448f8c7eb88481b3ed0cc2",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/outline/OutlineShaders.java": {
@@ -600,9 +594,9 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/outline/OutlineSystem.java": {
-    "mtime": 1792246002.0038462,
-    "seen": 1792259006.9087462,
-    "ast_hash": "7dff71bc2979fca6cf56b04f88633c13",
+    "mtime": 1792287790.1495817,
+    "seen": 1792291490.482322,
+    "ast_hash": "54a8857e838104d68c0569a11c1d2c8c",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/outline/OutlineTargets.java": {
@@ -612,9 +606,9 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/outline/PhaseState.java": {
-    "mtime": 1792245906.1015513,
-    "seen": 1792259006.9087462,
-    "ast_hash": "e96e455c678605d17ea3f9ef66a61ddf",
+    "mtime": 1792287790.1495817,
+    "seen": 1792291490.482322,
+    "ast_hash": "c2ece5ab0d6b26f9dc580ab17e0cc647",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/outline/ScreenBounds.java": {
@@ -624,9 +618,9 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/outline/StyleTable.java": {
-    "mtime": 1792237453.137654,
-    "seen": 1792259006.9087462,
-    "ast_hash": "b7c728ac312d56ca9ffb1f06073772fd",
+    "mtime": 1792287790.1495817,
+    "seen": 1792291490.482322,
+    "ast_hash": "27609e9fbbcff96efd962cfd26cc2d5b",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/outline/StyleTexture.java": {
@@ -708,9 +702,9 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/style/GlintSettings.java": {
-    "mtime": 1792247344.848675,
-    "seen": 1792259006.9087462,
-    "ast_hash": "065a111be9aaf406895e3d936851b5b2",
+    "mtime": 1792287577.2926097,
+    "seen": 1792291490.482322,
+    "ast_hash": "4a2a8b4782f6a69cadb92e83d944c276",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/style/ItemFacts.java": {
@@ -762,27 +756,27 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/style/RuleEngine.java": {
-    "mtime": 1792232589.69364,
-    "seen": 1792259006.9087462,
-    "ast_hash": "2c79d5d4190bd4c3092ba26fb7d31466",
+    "mtime": 1792282197.2008696,
+    "seen": 1792291490.482322,
+    "ast_hash": "290ecb9577e2b4c4e91eecd86abaeca7",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/style/RuleMatcher.java": {
-    "mtime": 1792232264.8049655,
-    "seen": 1792259006.9087462,
-    "ast_hash": "8ac6bb69872b8bde46a6a4b03df04739",
+    "mtime": 1792284603.8072548,
+    "seen": 1792291490.482322,
+    "ast_hash": "70526814c690df5d1a88741c8d14c5a5",
     "semantic_hash": ""
   },
   "src/main/resources/assets/glintsmith/lang/de_de.json": {
-    "mtime": 1792252389.055509,
-    "seen": 1792259006.9087462,
-    "ast_hash": "46d7e5c06e9d059f709fd4397713050d",
+    "mtime": 1792287903.8838215,
+    "seen": 1792291490.482322,
+    "ast_hash": "0a9e8aa36e834b9b0399b16b0eecec2d",
     "semantic_hash": ""
   },
   "src/main/resources/assets/glintsmith/lang/en_us.json": {
-    "mtime": 1792252335.908893,
-    "seen": 1792259006.9087462,
-    "ast_hash": "afd4eb01ed923dea347c943f6a0acee8",
+    "mtime": 1792287903.8838215,
+    "seen": 1792291490.482322,
+    "ast_hash": "e135c724ed09c94d8fa964ed2013cfc5",
     "semantic_hash": ""
   },
   "src/main/resources/assets/glintsmith/shaders/core/mask.json": {
@@ -810,9 +804,9 @@
     "semantic_hash": ""
   },
   "src/main/resources/glintsmith.glint.mixins.json": {
-    "mtime": 1792251634.8367403,
-    "seen": 1792259006.9087462,
-    "ast_hash": "ab2db0e7aae1064ba6aeb52205e5f906",
+    "mtime": 1792282929.660498,
+    "seen": 1792291490.482322,
+    "ast_hash": "8ebd22725e2ef503eb0693315b552ce9",
     "semantic_hash": ""
   },
   "src/main/resources/glintsmith.mixins.json": {
@@ -834,9 +828,9 @@
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/config/ConfigTest.java": {
-    "mtime": 1792243100.3132,
-    "seen": 1792259006.9087462,
-    "ast_hash": "5a519e201df192569cd6541720e388c4",
+    "mtime": 1792287790.1515818,
+    "seen": 1792291490.482322,
+    "ast_hash": "25e90cd813de735d629abfbd7c9c615e",
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/gui/GuiHelpersTest.java": {
@@ -876,9 +870,9 @@
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/render/glint/GlintContextTest.java": {
-    "mtime": 1792241669.3178022,
-    "seen": 1792259006.9087462,
-    "ast_hash": "702692e78a3cf47229bf56c1f2a0a40e",
+    "mtime": 1792283166.0570493,
+    "seen": 1792291490.482322,
+    "ast_hash": "cfb5640f0655408394a47bdfad3984bd",
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/render/glint/GlintFailsafeTest.java": {
@@ -888,33 +882,33 @@
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/render/glint/GlintMixinApplicationTest.java": {
-    "mtime": 1792251660.6841419,
-    "seen": 1792259006.9087462,
-    "ast_hash": "a89a7315f6b054fa96c3211ebcb48982",
+    "mtime": 1792283227.5025907,
+    "seen": 1792291490.482322,
+    "ast_hash": "c8da525d5976d4acabdf751b98f5300b",
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/render/glint/GlintNoiseTest.java": {
-    "mtime": 1792233827.8194723,
-    "seen": 1792259006.9087462,
-    "ast_hash": "7bad25a027471e6167de66af0bc72a60",
+    "mtime": 1792287577.2926097,
+    "seen": 1792291490.482322,
+    "ast_hash": "97abd9429783b26b997bb02c069c627e",
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/render/glint/GlintParamsTest.java": {
-    "mtime": 1792233881.1929922,
-    "seen": 1792259006.9087462,
-    "ast_hash": "e7dbcbe73f7f0ecd6ed6099bd38a309f",
+    "mtime": 1792283104.0433743,
+    "seen": 1792291490.482322,
+    "ast_hash": "f1a3be5598ed80607fd5a92e725fbdf1",
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/render/glint/GlintPresetsTest.java": {
-    "mtime": 1792235108.1992218,
-    "seen": 1792259006.9087462,
-    "ast_hash": "636e67e8592e21f4bd29299501ca5a2f",
+    "mtime": 1792287577.2936113,
+    "seen": 1792291490.482322,
+    "ast_hash": "906458e24726d2dcc57c6f85a73c6853",
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/render/glint/GlintRuntimeSettingsTest.java": {
-    "mtime": 1792234870.6473417,
-    "seen": 1792259006.9087462,
-    "ast_hash": "fdd8abf6c5a2b6ea7c94795f2ee5bf13",
+    "mtime": 1792285234.9833596,
+    "seen": 1792291490.482322,
+    "ast_hash": "c119407ba33b735298c54736bb4a6b73",
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/render/glint/GlintSlotPoolTest.java": {
@@ -924,15 +918,15 @@
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/render/glint/GlintSystemTest.java": {
-    "mtime": 1792251680.8335652,
-    "seen": 1792259006.9087462,
-    "ast_hash": "e2aed507e9bede07a03b72c990934169",
+    "mtime": 1792283949.536326,
+    "seen": 1792291490.482322,
+    "ast_hash": "f0396968fdd5e51f402c8ec72fbed737",
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/render/glint/GlintTexturesTest.java": {
-    "mtime": 1792247329.7151494,
-    "seen": 1792259006.9087462,
-    "ast_hash": "8558c42f7ff0686606be2a041fab1704",
+    "mtime": 1792287577.2936113,
+    "seen": 1792291490.482322,
+    "ast_hash": "91cc4819ba7d39d28930f7982f7934a8",
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/render/outline/GameBootstrap.java": {
@@ -954,9 +948,9 @@
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/render/outline/OutlineContextsTest.java": {
-    "mtime": 1792241325.8375318,
-    "seen": 1792259006.9087462,
-    "ast_hash": "1e3aa884119946c570952e9dae8ad19f",
+    "mtime": 1792282366.5101166,
+    "seen": 1792291490.482322,
+    "ast_hash": "d9d664281dcb43ade96ab0b54de83797",
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/render/outline/OutlineDepthTest.java": {
@@ -978,9 +972,9 @@
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/render/outline/OutlineRuntimeSettingsTest.java": {
-    "mtime": 1792241325.8375318,
-    "seen": 1792259006.9087462,
-    "ast_hash": "58f638cde55c4e196ea1646c1f9403d3",
+    "mtime": 1792287790.1515818,
+    "seen": 1792291490.482322,
+    "ast_hash": "00e9d18cfcdc679cbb8b6e51acde5478",
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/render/outline/OutlineShaderResourcesTest.java": {
@@ -996,9 +990,9 @@
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/render/outline/StyleTableTest.java": {
-    "mtime": 1792237453.1437008,
-    "seen": 1792259006.9087462,
-    "ast_hash": "fc88cf70fbae4c33db06cbfd9d06eca2",
+    "mtime": 1792287790.1525815,
+    "seen": 1792291490.482322,
+    "ast_hash": "b2e68b5564e4e4523b5e1faa5ab47bf7",
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/render/outline/TeeCaptureTest.java": {
@@ -1026,9 +1020,9 @@
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/style/GlintSettingsTest.java": {
-    "mtime": 1792247344.991824,
-    "seen": 1792259006.9087462,
-    "ast_hash": "aa3f9a7f3c5ba708e5309ade9539ebce",
+    "mtime": 1792287577.2946093,
+    "seen": 1792291490.482322,
+    "ast_hash": "1c682f5da5fff9f19b57735931e615a4",
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/style/PatternTest.java": {
@@ -1044,183 +1038,561 @@
     "semantic_hash": ""
   },
   "src/test/java/navrelis/glintsmith/style/RuleMatcherTest.java": {
-    "mtime": 1792232693.0962355,
-    "seen": 1792259006.9087462,
-    "ast_hash": "db66adf8b04064431e6a4ceb29bb239a",
+    "mtime": 1792285211.3640985,
+    "seen": 1792291490.482322,
+    "ast_hash": "a9b34bef1f7c9bf91503987fcdc4aaa3",
     "semantic_hash": ""
   },
   ".knowledge/decisions.md": {
-    "mtime": 1792259644.1942184,
-    "seen": 1792277149.7672417,
-    "ast_hash": "09be451a3633df192be82cb79972ad3d",
+    "mtime": 1792291345.7619407,
+    "seen": 1792291490.482322,
+    "ast_hash": "5a5360eacaf35375db6533cb15caa4e1",
     "semantic_hash": ""
   },
   ".knowledge/log.md": {
-    "mtime": 1792277105.5722353,
-    "seen": 1792277149.7672417,
-    "ast_hash": "de798e9e025d8e1e9be908ae21b3ca41",
+    "mtime": 1792291345.7619407,
+    "seen": 1792291490.482322,
+    "ast_hash": "aa0a740fa2f1d97ae905c1b65eec15ab",
     "semantic_hash": ""
   },
   ".knowledge/plan.md": {
-    "mtime": 1792277105.5705602,
-    "seen": 1792277149.7672417,
-    "ast_hash": "2854264de3a1fc45bd5bba63b12850bd",
+    "mtime": 1792291345.7509937,
+    "seen": 1792291490.482322,
+    "ast_hash": "beb1a7f7e8ee59a3f8ec3e2c00d361e5",
     "semantic_hash": ""
   },
   ".knowledge/requirements.md": {
-    "mtime": 1792248718.1715305,
-    "seen": 1792259006.9087462,
-    "ast_hash": "fe3dba563b267edf35e88594469c5a13",
+    "mtime": 1792286460.9278486,
+    "seen": 1792291490.482322,
+    "ast_hash": "548fbd53b1a99fe15c7f6573556f23c2",
     "semantic_hash": ""
   },
   "CHANGELOG.md": {
-    "mtime": 1792261403.6839545,
-    "seen": 1792277149.7672417,
-    "ast_hash": "4d1e295492f94f18650673f02f9bc8f5",
+    "mtime": 1792288660.3914204,
+    "seen": 1792291490.482322,
+    "ast_hash": "a291a2c23fcd3fa8540607b2c2fbb290",
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1792261403.6829572,
-    "seen": 1792277149.7672417,
-    "ast_hash": "f9a709e7ac1126c334caac5b8c59941b",
+    "mtime": 1792289552.2514021,
+    "seen": 1792291490.482322,
+    "ast_hash": "c22a19e3356303ce5a9872b1ab97ab0e",
     "semantic_hash": ""
   },
   "art/README.md": {
-    "mtime": 1792262201.4256148,
-    "seen": 1792277149.7672417,
-    "ast_hash": "e98a18075dffdaabae866d0278f091d3",
+    "mtime": 1792291442.5061622,
+    "seen": 1792291490.482322,
+    "ast_hash": "ee6df893da3dbf97e3c87626589d6eb2",
     "semantic_hash": ""
   },
   "art/gallery/SHOTLIST.md": {
-    "mtime": 1792262208.7297032,
-    "seen": 1792277149.7672417,
-    "ast_hash": "232c540cbcb8410de2316271cbfb4b91",
+    "mtime": 1792290630.8036973,
+    "seen": 1792291490.482322,
+    "ast_hash": "e7e1b2a96026416a1ae73ddba29dd462",
     "semantic_hash": ""
   },
   "docs/DESIGN.md": {
-    "mtime": 1792261394.0506427,
-    "seen": 1792277149.7672417,
-    "ast_hash": "9cf19012c5794ee5a78e98f5ecd482d0",
+    "mtime": 1792288706.3707368,
+    "seen": 1792291490.482322,
+    "ast_hash": "9a0d691d851b6a52658392cdbe182ccf",
     "semantic_hash": ""
   },
   "docs/curseforge/README.md": {
-    "mtime": 1792248824.605081,
-    "seen": 1792259006.9087462,
-    "ast_hash": "45fa8214d66b81a737885a68298c9ad3",
+    "mtime": 1792290630.8046975,
+    "seen": 1792291490.482322,
+    "ast_hash": "31d13a6d7f13c3fca31f9ca8b1fd6503",
     "semantic_hash": ""
   },
   "docs/curseforge/description.md": {
-    "mtime": 1792261403.6839545,
-    "seen": 1792277149.7672417,
-    "ast_hash": "d01948b60fe9fdf2c5e09299def554d7",
+    "mtime": 1792288655.929291,
+    "seen": 1792291490.482322,
+    "ast_hash": "bb515c43b8ac5b6c5c97e3931f9730b3",
     "semantic_hash": ""
   },
   "docs/curseforge/description_paste.md": {
-    "mtime": 1792261403.851685,
-    "seen": 1792277149.7672417,
-    "ast_hash": "d01948b60fe9fdf2c5e09299def554d7",
+    "mtime": 1792288758.6051195,
+    "seen": 1792291490.482322,
+    "ast_hash": "a2ab3825d5c3c4464188f87487b4669d",
     "semantic_hash": ""
   },
   "docs/curseforge/preview.html": {
-    "mtime": 1792261403.851685,
-    "seen": 1792277149.7672417,
-    "ast_hash": "acab7d5f1d8751f808f13b9bf11dab6c",
+    "mtime": 1792288758.6051195,
+    "seen": 1792291490.482322,
+    "ast_hash": "c76a7806e0837e36cab4f21847ca998d",
     "semantic_hash": ""
   },
   "docs/curseforge/summary.txt": {
-    "mtime": 1792236812.3722258,
-    "seen": 1792259006.9087462,
-    "ast_hash": "fe05ff7ce3e4ff8de572d726d2e55527",
+    "mtime": 1792286336.942368,
+    "seen": 1792291490.482322,
+    "ast_hash": "e1794c837ced14dd6ec0f83ced28aedd",
     "semantic_hash": ""
   },
   "docs/curseforge/upload-checklist.md": {
-    "mtime": 1792277134.983195,
-    "seen": 1792277149.7672417,
-    "ast_hash": "394eb16d5a14503f965ea6022c695601",
+    "mtime": 1792291442.5051703,
+    "seen": 1792291490.482322,
+    "ast_hash": "b9af0de31c21584999e277bb56a7f129",
     "semantic_hash": ""
   },
   "docs/curseforge/img/banner.png": {
-    "mtime": 1792276576.7475002,
-    "seen": 1792277149.7672417,
-    "ast_hash": "d1dec6dcee16f3ca55dbe93a212015e6",
+    "mtime": 1792290816.7859957,
+    "seen": 1792291490.482322,
+    "ast_hash": "d8a7d978d1b8d4a3cb9c01251ed31ec3",
     "semantic_hash": ""
   },
   "docs/curseforge/img/card_config.png": {
-    "mtime": 1792276576.7513518,
-    "seen": 1792277149.7672417,
-    "ast_hash": "e728f269c9935db72389f4f07ae21315",
+    "mtime": 1792290816.7879972,
+    "seen": 1792291490.482322,
+    "ast_hash": "029852527439ea58e07920668b9cd3bb",
     "semantic_hash": ""
   },
   "docs/curseforge/img/card_gap_fix.png": {
-    "mtime": 1792276576.749801,
-    "seen": 1792277149.7672417,
-    "ast_hash": "58d3049c4e9c99c80a161e66c7cb7eb0",
+    "mtime": 1792290816.7869968,
+    "seen": 1792291490.482322,
+    "ast_hash": "5e47408519e9bef108f7a6c6972f2913",
     "semantic_hash": ""
   },
   "docs/curseforge/img/card_glint_presets.png": {
-    "mtime": 1792276576.749801,
-    "seen": 1792277149.7672417,
-    "ast_hash": "96a8d274164bdd7c1ae3cb9c866ebe73",
+    "mtime": 1792290816.7869968,
+    "seen": 1792291490.482322,
+    "ast_hash": "7164716f8455f71ac5552e2a31cc9b0c",
     "semantic_hash": ""
   },
   "docs/curseforge/img/card_outline_styles.png": {
-    "mtime": 1792276576.749801,
-    "seen": 1792277149.7672417,
-    "ast_hash": "843720b182e6fe6f4bc3937ffe4359f8",
+    "mtime": 1792290816.7869968,
+    "seen": 1792291490.482322,
+    "ast_hash": "7d6ab178ba227fa8f2c5f9366ca87687",
     "semantic_hash": ""
   },
   "docs/curseforge/img/card_rules.png": {
-    "mtime": 1792276576.7513518,
-    "seen": 1792277149.7672417,
+    "mtime": 1792290816.7879972,
+    "seen": 1792291490.482322,
     "ast_hash": "dd3958e33bbc7f3461103961985e0b8d",
     "semantic_hash": ""
   },
   "docs/curseforge/img/card_shaders.png": {
-    "mtime": 1792276576.7513518,
-    "seen": 1792277149.7672417,
+    "mtime": 1792290816.7879972,
+    "seen": 1792291490.482322,
     "ast_hash": "39934900e1ebdd7c609c8290416194f4",
     "semantic_hash": ""
   },
   "docs/curseforge/img/card_targets.png": {
-    "mtime": 1792276576.749801,
-    "seen": 1792277149.7672417,
+    "mtime": 1792290816.7869968,
+    "seen": 1792291490.482322,
     "ast_hash": "59ff8cd144a6d7450831a8fd93c31e34",
     "semantic_hash": ""
   },
   "docs/curseforge/img/card_universal.png": {
-    "mtime": 1792276576.7492864,
-    "seen": 1792277149.7672417,
-    "ast_hash": "78ba9508bc76aaf07161f7b1c695df15",
+    "mtime": 1792290816.7859957,
+    "seen": 1792291490.482322,
+    "ast_hash": "1e0915a2073f8f5b53eb0bcc4a558078",
     "semantic_hash": ""
   },
   "docs/curseforge/img/logo_animated.gif": {
-    "mtime": 1792276693.598699,
-    "seen": 1792277149.7672417,
-    "ast_hash": "bc485b56f418ea2744e681f6c64f8171",
+    "mtime": 1792291007.795576,
+    "seen": 1792291490.482322,
+    "ast_hash": "3bc3b1ceb2486c72edd62c204a2d4431",
     "semantic_hash": ""
   },
   "docs/curseforge/img/showcase.gif": {
-    "mtime": 1792276688.9954853,
-    "seen": 1792277149.7672417,
-    "ast_hash": "b7e86752054069d0711ca35fabab8a02",
+    "mtime": 1792291007.7945764,
+    "seen": 1792291490.482322,
+    "ast_hash": "10422b0c485652587caf2dbc61304a67",
     "semantic_hash": ""
   },
   "src/main/resources/assets/glintsmith/icon.png": {
-    "mtime": 1792276693.5997047,
-    "seen": 1792277149.7672417,
-    "ast_hash": "90e0d7a2106760a48ac6f1463257a731",
+    "mtime": 1792288675.884902,
+    "seen": 1792291490.482322,
+    "ast_hash": "fc5eb57a3e9754af24c360f51ae67854",
     "semantic_hash": ""
   },
   "art/logo/logo_32.png": {
-    "mtime": 1792276693.5971797,
-    "seen": 1792277149.7672417,
-    "ast_hash": "2f226e2e034498e6e41b388e491c8ff5",
+    "mtime": 1792288675.884902,
+    "seen": 1792291490.482322,
+    "ast_hash": "7efd800ddd717697343ee85f7ed0091c",
     "semantic_hash": ""
   },
   "art/logo/logo_512.png": {
-    "mtime": 1792276693.5971797,
-    "seen": 1792277149.7672417,
-    "ast_hash": "57adf58e6360eaec092a39823a06b044",
+    "mtime": 1792288675.884902,
+    "seen": 1792291490.482322,
+    "ast_hash": "3917e6064de12ddc5902019848f83357",
+    "semantic_hash": ""
+  },
+  "art/gallery/gifs.py": {
+    "mtime": 1792282756.342867,
+    "seen": 1792291490.482322,
+    "ast_hash": "400b6d524be0c64f06ed171048ee0890",
+    "semantic_hash": ""
+  },
+  "art/legacy/gif.py": {
+    "mtime": 1792282773.2961392,
+    "seen": 1792291490.482322,
+    "ast_hash": "6fb354b0f512ad7b0ec7a13115cd2a2e",
+    "semantic_hash": ""
+  },
+  "art/studio/composite.py": {
+    "mtime": 1792283903.5993712,
+    "seen": 1792291490.482322,
+    "ast_hash": "3cdfe158911a66b4621925c887df1a87",
+    "semantic_hash": ""
+  },
+  "art/studio/gifenc.py": {
+    "mtime": 1792279540.6673615,
+    "seen": 1792291490.482322,
+    "ast_hash": "22eb9bd12f5856548da5b93533bcfdc4",
+    "semantic_hash": ""
+  },
+  "art/studio/matte.py": {
+    "mtime": 1792279038.8801734,
+    "seen": 1792291490.482322,
+    "ast_hash": "206a1b3cdfd9eaf3f4de67c7ecfdda3b",
+    "semantic_hash": ""
+  },
+  "art/studio/pipeline.py": {
+    "mtime": 1792282761.458285,
+    "seen": 1792291490.482322,
+    "ast_hash": "db56cf789d0328821a41a69f49f18819",
+    "semantic_hash": ""
+  },
+  "art/studio/scene.py": {
+    "mtime": 1792279794.1490915,
+    "seen": 1792291490.482322,
+    "ast_hash": "a2d81d3602cb934eb96a1fc25470edca",
+    "semantic_hash": ""
+  },
+  "art/studio/studio.py": {
+    "mtime": 1792280371.8197575,
+    "seen": 1792291490.482322,
+    "ast_hash": "fd96e638e34f81fd65c0fb6169e7f1ec",
+    "semantic_hash": ""
+  },
+  "art/studio/synth_studio.py": {
+    "mtime": 1792287966.9694107,
+    "seen": 1792291490.482322,
+    "ast_hash": "0a0225e825aae857c9884774f77e1da7",
+    "semantic_hash": ""
+  },
+  "src/main/java/navrelis/glintsmith/gui/preview/PendingEdits.java": {
+    "mtime": 1792282289.440822,
+    "seen": 1792291490.482322,
+    "ast_hash": "0431ad43301693a5c95f91e40084d46c",
+    "semantic_hash": ""
+  },
+  "src/main/java/navrelis/glintsmith/gui/preview/PreviewHost.java": {
+    "mtime": 1792282289.3704238,
+    "seen": 1792291490.482322,
+    "ast_hash": "632a4c9caf5f51a22b090c3553df2c20",
+    "semantic_hash": ""
+  },
+  "src/main/java/navrelis/glintsmith/gui/preview/PreviewItems.java": {
+    "mtime": 1792282347.9809413,
+    "seen": 1792291490.482322,
+    "ast_hash": "234cb801e6a7f08aef624da775c488b4",
+    "semantic_hash": ""
+  },
+  "src/main/java/navrelis/glintsmith/gui/preview/PreviewLayout.java": {
+    "mtime": 1792282300.6902287,
+    "seen": 1792291490.482322,
+    "ast_hash": "d7a81407f6d297e2a0b39879294a1f2e",
+    "semantic_hash": ""
+  },
+  "src/main/java/navrelis/glintsmith/gui/preview/PreviewNotes.java": {
+    "mtime": 1792282311.2390845,
+    "seen": 1792291490.482322,
+    "ast_hash": "5eafd1da573f7d3520d9ea2ed1dc51c8",
+    "semantic_hash": ""
+  },
+  "src/main/java/navrelis/glintsmith/gui/preview/PreviewPanel.java": {
+    "mtime": 1792287790.1465816,
+    "seen": 1792291490.482322,
+    "ast_hash": "a561396267e1db3df2c8a4c92c3532ae",
+    "semantic_hash": ""
+  },
+  "src/main/java/navrelis/glintsmith/gui/preview/PreviewSession.java": {
+    "mtime": 1792287790.1465816,
+    "seen": 1792291490.482322,
+    "ast_hash": "5eabd613403ee6f2a48089a9e1781d20",
+    "semantic_hash": ""
+  },
+  "src/main/java/navrelis/glintsmith/gui/preview/PreviewSnapshot.java": {
+    "mtime": 1792282289.51597,
+    "seen": 1792291490.482322,
+    "ast_hash": "9666dc4e30a8691a16ced1bdbab98946",
+    "semantic_hash": ""
+  },
+  "src/main/java/navrelis/glintsmith/mixin/glint/TextureAtlasGlintMixin.java": {
+    "mtime": 1792282904.8782904,
+    "seen": 1792291490.482322,
+    "ast_hash": "74e77c62580bfce4003b05eb82278752",
+    "semantic_hash": ""
+  },
+  "src/main/java/navrelis/glintsmith/mixin/glint/compat/ImmediatelyFastBufferSourceGlintMixin.java": {
+    "mtime": 1792280720.440922,
+    "seen": 1792291490.482322,
+    "ast_hash": "1a3ec1d267829b83902fa50e4cdaf192",
+    "semantic_hash": ""
+  },
+  "src/main/java/navrelis/glintsmith/mixin/glint/compat/ImmediatelyFastGuiSourceGlintMixin.java": {
+    "mtime": 1792282922.603295,
+    "seen": 1792291490.482322,
+    "ast_hash": "66e64b48018d537423c3d63f69aac791",
+    "semantic_hash": ""
+  },
+  "src/main/java/navrelis/glintsmith/mixin/glint/compat/ImmediatelyFastHudGlintMixin.java": {
+    "mtime": 1792282922.966459,
+    "seen": 1792291490.482322,
+    "ast_hash": "b3a06e1c89e42e266a779fe39202be4c",
+    "semantic_hash": ""
+  },
+  "src/main/java/navrelis/glintsmith/render/glint/GlintAtlasScale.java": {
+    "mtime": 1792282795.608319,
+    "seen": 1792291490.482322,
+    "ast_hash": "47df35b734fe9ceade0aaf1a95a08fb4",
+    "semantic_hash": ""
+  },
+  "src/main/java/navrelis/glintsmith/render/outline/OutlineScale.java": {
+    "mtime": 1792287790.1485825,
+    "seen": 1792291490.482322,
+    "ast_hash": "5555aa5ed846053618e3e1645a71ac08",
+    "semantic_hash": ""
+  },
+  "src/main/java/navrelis/glintsmith/render/preview/PreviewBounds.java": {
+    "mtime": 1792282561.9498112,
+    "seen": 1792291490.482322,
+    "ast_hash": "ea1c42ccd52639f24fd85b3b41090e20",
+    "semantic_hash": ""
+  },
+  "src/main/java/navrelis/glintsmith/render/preview/PreviewPose.java": {
+    "mtime": 1792282511.1659706,
+    "seen": 1792291490.482322,
+    "ast_hash": "cded13e7a63875b11df9735067597de2",
+    "semantic_hash": ""
+  },
+  "src/main/java/navrelis/glintsmith/render/preview/PreviewRenderer.java": {
+    "mtime": 1792287790.1505816,
+    "seen": 1792291490.482322,
+    "ast_hash": "14ed12ac6e0e517e4f7470c9ee21e7a6",
+    "semantic_hash": ""
+  },
+  "src/studio/java/navrelis/glintsmith/studio/FrameWriter.java": {
+    "mtime": 1792279508.2672029,
+    "seen": 1792291490.482322,
+    "ast_hash": "0169f22a74a6e1030bbf08d235dfc2ae",
+    "semantic_hash": ""
+  },
+  "src/studio/java/navrelis/glintsmith/studio/Looks.java": {
+    "mtime": 1792288048.0942683,
+    "seen": 1792291490.482322,
+    "ast_hash": "81af2eee997c73d39729c78c8f062e84",
+    "semantic_hash": ""
+  },
+  "src/studio/java/navrelis/glintsmith/studio/PipelineBridge.java": {
+    "mtime": 1792279350.1901846,
+    "seen": 1792291490.482322,
+    "ast_hash": "6b8a0904890693bed24790b5aeb185c0",
+    "semantic_hash": ""
+  },
+  "src/studio/java/navrelis/glintsmith/studio/Scene.java": {
+    "mtime": 1792286129.6692338,
+    "seen": 1792291490.482322,
+    "ast_hash": "1557970940cc4467f4f6c2dd68bd0efa",
+    "semantic_hash": ""
+  },
+  "src/studio/java/navrelis/glintsmith/studio/StudioBootstrap.java": {
+    "mtime": 1792280129.839928,
+    "seen": 1792291490.482322,
+    "ast_hash": "5a0e87e28571da3e1e0528082eb855d2",
+    "semantic_hash": ""
+  },
+  "src/studio/java/navrelis/glintsmith/studio/StudioClock.java": {
+    "mtime": 1792279239.9203272,
+    "seen": 1792291490.482322,
+    "ast_hash": "a899b3005461311f0b4f9d5fbd6b4bee",
+    "semantic_hash": ""
+  },
+  "src/studio/java/navrelis/glintsmith/studio/StudioMod.java": {
+    "mtime": 1792279614.2223573,
+    "seen": 1792291490.482322,
+    "ast_hash": "8a92affe451bb85b273c29d1c4803200",
+    "semantic_hash": ""
+  },
+  "src/studio/java/navrelis/glintsmith/studio/StudioScreen.java": {
+    "mtime": 1792286129.670234,
+    "seen": 1792291490.482322,
+    "ast_hash": "b97d1311b7826bbd397c14c3dbeaf4fa",
+    "semantic_hash": ""
+  },
+  "src/studio/java/navrelis/glintsmith/studio/mixin/GlintShardsClockMixin.java": {
+    "mtime": 1792279231.799417,
+    "seen": 1792291490.482322,
+    "ast_hash": "abdc59946cab08d81f263a672a479570",
+    "semantic_hash": ""
+  },
+  "src/studio/java/navrelis/glintsmith/studio/mixin/GlintSystemClockMixin.java": {
+    "mtime": 1792279231.8587983,
+    "seen": 1792291490.482322,
+    "ast_hash": "4a8aac91dbc3131c06087d3fc58d1a17",
+    "semantic_hash": ""
+  },
+  "src/studio/java/navrelis/glintsmith/studio/mixin/MinecraftExitMixin.java": {
+    "mtime": 1792279232.0305066,
+    "seen": 1792291490.482322,
+    "ast_hash": "6aa854c9344f222790bbbc5be814d812",
+    "semantic_hash": ""
+  },
+  "src/studio/java/navrelis/glintsmith/studio/mixin/OutlineSystemClockMixin.java": {
+    "mtime": 1792279231.9168532,
+    "seen": 1792291490.482322,
+    "ast_hash": "48108122b082b6d8e9ae316e1bcca211",
+    "semantic_hash": ""
+  },
+  "src/studio/java/navrelis/glintsmith/studio/mixin/RenderStateShardClockMixin.java": {
+    "mtime": 1792279231.9721847,
+    "seen": 1792291490.482322,
+    "ast_hash": "f869e2d92c073bcd7243aaba28639176",
+    "semantic_hash": ""
+  },
+  "src/studio/resources/fabric.mod.json": {
+    "mtime": 1792279216.680692,
+    "seen": 1792291490.482322,
+    "ast_hash": "81035ab6c2855e77d87e270fc0efb6e0",
+    "semantic_hash": ""
+  },
+  "src/studio/resources/glintsmith_studio.mixins.json": {
+    "mtime": 1792280649.7423854,
+    "seen": 1792291490.482322,
+    "ast_hash": "76a860e542075757a59cdeefb1178210",
+    "semantic_hash": ""
+  },
+  "src/studio/resources/scenes/armor_stand.json": {
+    "mtime": 1792287954.6512105,
+    "seen": 1792291490.482322,
+    "ast_hash": "bfd1bdcabd6bc18261b162fd3b7af67a",
+    "semantic_hash": ""
+  },
+  "src/studio/resources/scenes/hero_sword.json": {
+    "mtime": 1792287946.9785287,
+    "seen": 1792291490.482322,
+    "ast_hash": "3317880fa1f09e9f47dba9c2f6b35752",
+    "semantic_hash": ""
+  },
+  "src/studio/resources/scenes/lineup.json": {
+    "mtime": 1792287946.9795287,
+    "seen": 1792291490.482322,
+    "ast_hash": "657139ea8313ae9b7aca86b4ba6e7656",
+    "semantic_hash": ""
+  },
+  "src/studio/resources/scenes/stills_gap.json": {
+    "mtime": 1792290346.772359,
+    "seen": 1792291490.482322,
+    "ast_hash": "7123da1352d6f203d51be9117ed0f03c",
+    "semantic_hash": ""
+  },
+  "src/studio/resources/scenes/stills_hero.json": {
+    "mtime": 1792286129.6712334,
+    "seen": 1792291490.482322,
+    "ast_hash": "cc11d1cb3b6bb2b395673a4fbec7923d",
+    "semantic_hash": ""
+  },
+  "src/studio/resources/scenes/stills_tiles.json": {
+    "mtime": 1792289816.6381302,
+    "seen": 1792291490.482322,
+    "ast_hash": "1275678977981a344129825fac06834a",
+    "semantic_hash": ""
+  },
+  "src/studio/resources/scenes/stills_wide.json": {
+    "mtime": 1792286129.6723907,
+    "seen": 1792291490.482322,
+    "ast_hash": "53e5bcedeac0f8f1b02924f92811d987",
+    "semantic_hash": ""
+  },
+  "src/test/java/navrelis/glintsmith/config/TestConfigs.java": {
+    "mtime": 1792285137.1098442,
+    "seen": 1792291490.482322,
+    "ast_hash": "ea412cffc3d1eeeb944045ed1e15415c",
+    "semantic_hash": ""
+  },
+  "src/test/java/navrelis/glintsmith/gui/preview/PendingEditsTest.java": {
+    "mtime": 1792282644.2901957,
+    "seen": 1792291490.482322,
+    "ast_hash": "ae3aa74144ec27ce1e9261cb9835505f",
+    "semantic_hash": ""
+  },
+  "src/test/java/navrelis/glintsmith/gui/preview/PreviewLayoutTest.java": {
+    "mtime": 1792282693.9147255,
+    "seen": 1792291490.482322,
+    "ast_hash": "72956ef7b1b729f872fa4eab5716b7cf",
+    "semantic_hash": ""
+  },
+  "src/test/java/navrelis/glintsmith/gui/preview/PreviewNotesTest.java": {
+    "mtime": 1792285234.983865,
+    "seen": 1792291490.482322,
+    "ast_hash": "22b1e937ad84c3a0a576f2d00410be77",
+    "semantic_hash": ""
+  },
+  "src/test/java/navrelis/glintsmith/gui/preview/PreviewSnapshotTest.java": {
+    "mtime": 1792285234.983865,
+    "seen": 1792291490.482322,
+    "ast_hash": "f728073d067c8064ad1534f3552880cc",
+    "semantic_hash": ""
+  },
+  "src/test/java/navrelis/glintsmith/render/glint/GlintAtlasScaleTest.java": {
+    "mtime": 1792283104.326082,
+    "seen": 1792291490.482322,
+    "ast_hash": "96ce053545c3846d9fc1d1aee8a4e949",
+    "semantic_hash": ""
+  },
+  "src/test/java/navrelis/glintsmith/render/outline/OutlineScaleTest.java": {
+    "mtime": 1792287790.1525815,
+    "seen": 1792291490.482322,
+    "ast_hash": "096b0fa9c4735ee43fb41a16734019dd",
+    "semantic_hash": ""
+  },
+  "src/test/java/navrelis/glintsmith/render/outline/OutlineThicknessScaleTest.java": {
+    "mtime": 1792287790.1525815,
+    "seen": 1792291490.482322,
+    "ast_hash": "5aeae0ade654147facc4b7569ecf3dbb",
+    "semantic_hash": ""
+  },
+  "src/test/java/navrelis/glintsmith/render/preview/PreviewPoseTest.java": {
+    "mtime": 1792282586.249046,
+    "seen": 1792291490.482322,
+    "ast_hash": "f3c032052e6a5824285d5cd6449257d9",
+    "semantic_hash": ""
+  },
+  "src/test/java/navrelis/glintsmith/style/RuleEngineScopeTest.java": {
+    "mtime": 1792282273.8540525,
+    "seen": 1792291490.482322,
+    "ast_hash": "97c4a27c4aed256fe70febf4a70ae7b6",
+    "semantic_hash": ""
+  },
+  ".knowledge/report.md": {
+    "mtime": 1792291469.0305376,
+    "seen": 1792291490.482322,
+    "ast_hash": "94c951205194f9b6a32b9f44fd1c6b32",
+    "semantic_hash": ""
+  },
+  "docs/STUDIO.md": {
+    "mtime": 1792290630.8036973,
+    "seen": 1792291490.482322,
+    "ast_hash": "231195c8e65bbb2c4326ef8d3a1e474e",
+    "semantic_hash": ""
+  },
+  "handoff-2026-10-18-b2de8c6d.md": {
+    "mtime": 1792288413.946504,
+    "seen": 1792291490.482322,
+    "ast_hash": "044be922f9c5f7d758859c791de20965",
+    "semantic_hash": ""
+  },
+  "docs/curseforge/img/armor.gif": {
+    "mtime": 1792291007.7985785,
+    "seen": 1792291490.482322,
+    "ast_hash": "af4fef131cde4a420e91d55ec8baa42c",
+    "semantic_hash": ""
+  },
+  "docs/curseforge/img/lineup.gif": {
+    "mtime": 1792291007.7965763,
+    "seen": 1792291490.482322,
+    "ast_hash": "c13187e270b2188b8df1c24fd233e940",
     "semantic_hash": ""
   }
 }

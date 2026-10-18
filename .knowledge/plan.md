@@ -93,3 +93,4 @@ Session 14: + P2b-1 Sonnet S 1, V1 Sonnet S 1 -> Sonnet ~74.5, Opus ~31.5 (about
 Session 14: + O9 correction (in its L), S5 Sonnet S 1, P2b-2 Sonnet S 1 -> Sonnet ~76.5, Opus ~31.5 (about 29 % Opus).
 Session 15: P2b-3 Sonnet S 1 -> Sonnet ~77.5, Opus ~31.5 (about 29 % Opus).
 Session 15: + A2 Sonnet L 2 -> Sonnet ~79.5, Opus ~31.5 (about 28 % Opus).
+Session 15: + checklist Sonnet S 1 -> Sonnet ~81.5, Opus ~31.5 (about 28 % Opus). Final build 486 green, jar b91aea4f (3219f73).
