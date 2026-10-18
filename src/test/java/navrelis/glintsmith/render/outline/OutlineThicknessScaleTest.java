@@ -12,15 +12,17 @@ import navrelis.glintsmith.config.GlintsmithConfig;
 import org.junit.jupiter.api.Test;
 
 /**
- * Pins the one thickness factor every outline phase uses: with {@code scaleWithResolution} a thickness is in pixels at
- * a framebuffer height of 1080, without it in framebuffer pixels, and neither the phase nor the GUI scale changes it.
- * One thickness must have one on-screen width in the world, the first-person hand, the GUI and the settings preview.
+ * Pins the one thickness factor every outline phase uses while {@code proportional} is off: with
+ * {@code scaleWithResolution} a thickness is in pixels at a framebuffer height of 1080, without it in framebuffer
+ * pixels, and neither the phase nor the GUI scale changes it. One thickness must then have one on-screen width in the
+ * world, the first-person hand, the GUI and the settings preview. Proportional widths: {@link OutlineScaleTest}.
  */
 class OutlineThicknessScaleTest {
 	private static final int[] HEIGHTS = { 480, 720, 1080, 1440, 1600, 2160, 4320 };
 
 	private static OutlineRuntimeSettings settings(boolean scaleWithResolution) {
 		GlintsmithConfig config = new GlintsmithConfig().sanitize();
+		config.outline.proportional = false;
 		config.outline.scaleWithResolution = scaleWithResolution;
 		return OutlineRuntimeSettings.from(config);
 	}

@@ -153,7 +153,15 @@ public final class GlintsmithConfig {
 		public boolean disableWithShaders = false;
 		/** Keep first-person outlines while an Iris shader pack is active. */
 		public boolean handWithShaderPack = true;
-		/** The renderer multiplies the thickness by framebufferHeight / 1080. */
+		/**
+		 * Proportional outlines: a thickness is in pixels on the item held in first person (at a window height of 1080
+		 * pixels); every other item gets it scaled by its size on screen relative to that item. Off: the same pixels
+		 * everywhere.
+		 */
+		public boolean proportional = true;
+		/** Smallest proportional outline width in pixels at a window height of 1080, 0.5..8. */
+		public float minThickness = 1.0f;
+		/** Only while {@link #proportional} is off: the renderer multiplies the thickness by framebufferHeight / 1080. */
 		public boolean scaleWithResolution = true;
 		/** Distance fade of world outlines in blocks, 0..256; 0 and 0 = off. */
 		public float fadeStart = 0.0f;
@@ -187,6 +195,7 @@ public final class GlintsmithConfig {
 				targetThickness = new TargetThickness();
 			}
 			targetThickness.sanitize();
+			minThickness = Num.clamp(minThickness, 0.5f, 8.0f, 1.0f);
 			softness = Num.clamp(softness, 0.0f, 1.0f, 0.0f);
 			opacity = Num.clamp(opacity, 0.0f, 1.0f, 0.25f);
 			fadeStart = Num.clamp(fadeStart, 0.0f, 256.0f, 0.0f);

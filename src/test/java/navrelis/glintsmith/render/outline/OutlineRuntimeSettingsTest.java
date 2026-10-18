@@ -39,6 +39,8 @@ class OutlineRuntimeSettingsTest {
 		o.disableWithShaders = true;
 		o.handWithShaderPack = false;
 		o.scaleWithResolution = false;
+		o.proportional = false;
+		o.minThickness = 2.5f;
 		o.fadeStart = 10.0f;
 		o.fadeEnd = 20.0f;
 		OutlineRuntimeSettings s = OutlineRuntimeSettings.from(config);
@@ -54,6 +56,10 @@ class OutlineRuntimeSettingsTest {
 		assertTrue(s.disableWithShaders());
 		assertFalse(s.handWithShaderPack());
 		assertFalse(s.scaleWithResolution());
+		assertFalse(s.proportional());
+		assertEquals(2.5f, s.minThickness());
+		assertTrue(OutlineRuntimeSettings.from(config()).proportional(), "on by default");
+		assertFalse(OutlineRuntimeSettings.DISABLED.proportional());
 		assertEquals(10.0f, s.fadeStart());
 		assertEquals(20.0f, s.fadeEnd());
 		assertTrue(s.fadeActive());

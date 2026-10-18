@@ -23,7 +23,7 @@ public abstract class ItemRendererOutlineMixin {
 	)
 	private void glintsmith$outlineItem(ItemStack stack, ItemDisplayContext context, boolean leftHand, PoseStack pose,
 		MultiBufferSource source, int light, int overlay, BakedModel model, Operation<Void> original) {
-		MultiBufferSource tee = OutlineSystem.beginItem(stack, context, source);
+		MultiBufferSource tee = OutlineSystem.beginItem(stack, context, leftHand, pose, model, source);
 		try {
 			original.call(stack, context, leftHand, pose, tee, light, overlay, model);
 		} finally {

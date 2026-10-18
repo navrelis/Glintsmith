@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import navrelis.glintsmith.config.ConfigManager;
 import navrelis.glintsmith.config.GlintsmithConfig;
 import navrelis.glintsmith.render.outline.compat.IrisCompat;
@@ -23,7 +24,10 @@ import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.block.model.ItemTransform;
 import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -31,7 +35,10 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
+import org.joml.Matrix4fc;
 import org.lwjgl.opengl.GL11;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +58,14 @@ import org.slf4j.LoggerFactory;
 public final class OutlineSystem {
 	private static final Logger LOGGER = LoggerFactory.getLogger("Glintsmith/Outline");
 	private static final int MAX_HOLDERS = 16;
+	/** The flat models vanilla draws a trident or spyglass with in the GUI, on the ground and in frames. */
+	private static final ModelResourceLocation TRIDENT_INVENTORY = ModelResourceLocation.inventory(
+		ResourceLocation.withDefaultNamespace("trident"));
+	private static final ModelResourceLocation SPYGLASS_INVENTORY = ModelResourceLocation.inventory(
+		ResourceLocation.withDefaultNamespace("spyglass"));
+	/** Scratch matrices of the proportional measure (render thread only). */
+	private static final Matrix4f ITEM_POSE = new Matrix4f();
+	private static final Matrix4f MODEL_TO_VIEW = new Matrix4f();
 
 	private static volatile OutlineRuntimeSettings settings = OutlineRuntimeSettings.DISABLED;
 	private static boolean initialized;
@@ -149,9 +164,14 @@ public final class OutlineSystem {
 	// ---- O1: ItemRenderer.render
 
 	/**
+	 * Starts one {@code ItemRenderer.render} call. {@code leftHand}, {@code pose} and {@code model} are the arguments of
+	 * that call: the pose and the model's display transform give the item's size on screen for proportional outlines
+	 * (null: unknown; with proportional outlines the item then counts as the first-person reference item).
+	 *
 	 * @return the buffer source to render the item with: a tee if the item gets an outline, otherwise {@code source}
 	 */
-	public static MultiBufferSource beginItem(ItemStack stack, ItemDisplayContext context, MultiBufferSource source) {
+	public static MultiBufferSource beginItem(ItemStack stack, ItemDisplayContext context, boolean leftHand,
+		@Nullable PoseStack pose, @Nullable BakedModel model, MultiBufferSource source) {
 		if (source instanceof TeeBufferSource tee) {
 			// Nested render into an outer tee: it joins the outer item's outline and must not release it.
 			tee.enterNested();
@@ -166,7 +186,8 @@ public final class OutlineSystem {
 				return source;
 			}
 			OutlineTarget target = OutlineContexts.forPhase(phase.phase, context);
-			MultiBufferSource result = target == null ? source : capture(phase, stack, target, source, topHolder());
+			MultiBufferSource result = target == null ? source
+				: capture(phase, stack, target, source, topHolder(), pose, context, leftHand, model);
 			if (phase.phase == OutlinePhase.HAND) {
 				handRenders++;
 				if (result != source) {
@@ -357,9 +378,12 @@ public final class OutlineSystem {
 	// ---- O3, O4: armor and elytra
 
 	/**
+	 * @param pose the pose the layer draws the armor with (entity model space, one unit per block), for the size on
+	 *        screen of proportional outlines; null if unknown
 	 * @return the buffer source for an armor piece (or the elytra) worn by {@code entity} in {@code slot}
 	 */
-	public static MultiBufferSource beginArmor(LivingEntity entity, EquipmentSlot slot, MultiBufferSource source) {
+	public static MultiBufferSource beginArmor(LivingEntity entity, EquipmentSlot slot, @Nullable PoseStack pose,
+		MultiBufferSource source) {
 		if (source instanceof TeeBufferSource tee) {
 			tee.enterNested();
 			return source;
@@ -376,7 +400,7 @@ public final class OutlineSystem {
 			if (stack.isEmpty()) {
 				return source;
 			}
-			return capture(phase, stack, OutlineTarget.ARMOR, source, entity);
+			return capture(phase, stack, OutlineTarget.ARMOR, source, entity, pose, null, false, null);
 		} catch (Throwable t) {
 			OutlineFailsafe.trip("outline armor capture", t);
 			return source;
@@ -459,8 +483,8 @@ public final class OutlineSystem {
 			}
 			preview.discard();
 			open(preview);
-			// Same factor as every other phase, but from the snapshot's scaleWithResolution.
-			preview.thicknessScale = previewSettings.thicknessScale(Minecraft.getInstance().getMainRenderTarget().height);
+			// The same thickness rules as every other phase, but from the snapshot (proportional, scaleWithResolution).
+			preview.settings = previewSettings;
 			return true;
 		} catch (Throwable t) {
 			OutlineFailsafe.trip("outline preview begin", t);
@@ -645,8 +669,13 @@ public final class OutlineSystem {
 
 	// ---- capture
 
+	/**
+	 * {@code pose}, {@code context}, {@code leftHand} and {@code model} describe how the item is drawn, for its size on
+	 * screen ({@link #pixelsPerUnit}); {@code context} and {@code model} are null for armor (no display transform).
+	 */
 	private static MultiBufferSource capture(PhaseState phase, ItemStack stack, OutlineTarget target, MultiBufferSource source,
-		@Nullable LivingEntity holder) {
+		@Nullable LivingEntity holder, @Nullable PoseStack pose, @Nullable ItemDisplayContext context, boolean leftHand,
+		@Nullable BakedModel model) {
 		OutlineRuntimeSettings s = settings;
 		boolean local = holder != null && holder == Minecraft.getInstance().player;
 		// The preview follows its snapshot, not the live settings; the scoped rule engine applies the snapshot's switches.
@@ -666,12 +695,54 @@ public final class OutlineSystem {
 		if ((argb >>> 24) == 0) {
 			return source;
 		}
-		int index = phase.styles.indexFor(argb, look.thickness() * phase.thicknessScale, look.softness());
+		OutlineRuntimeSettings thicknessSettings = phase.settings;
+		float pixelsPerUnit = thicknessSettings.proportional() ? pixelsPerUnit(phase, stack, pose, context, leftHand, model)
+			: Float.NaN;
+		float thickness = thicknessSettings.itemThickness(look.thickness(), pixelsPerUnit, phase.framebufferHeight);
+		int index = phase.styles.indexFor(argb, thickness, look.softness());
 		if (index == 0) {
 			return source;
 		}
 		phase.prepareCapture();
 		return TEES.acquire(source, phase, index);
+	}
+
+	/**
+	 * The item's size on screen per model unit ({@link OutlineScale#pixelsPerUnit}) from the pose it is drawn with,
+	 * its display transform and the matrices in effect now: the ones the mask is drawn with, as for the screen bounds
+	 * ({@link PhaseState#prepareCapture}).
+	 *
+	 * @return pixels per model unit, or NaN if unknown
+	 */
+	private static float pixelsPerUnit(PhaseState phase, ItemStack stack, @Nullable PoseStack pose,
+		@Nullable ItemDisplayContext context, boolean leftHand, @Nullable BakedModel model) {
+		if (pose == null) {
+			return Float.NaN;
+		}
+		OutlineScale.itemPose(ITEM_POSE, pose.last().pose(), displayTransform(stack, context, model), leftHand);
+		MODEL_TO_VIEW.set(RenderSystem.getModelViewMatrix()).mul(ITEM_POSE);
+		return OutlineScale.pixelsPerUnit(RenderSystem.getProjectionMatrix(), MODEL_TO_VIEW, phase.framebufferHeight);
+	}
+
+	/**
+	 * The display transform {@code ItemRenderer.render} will apply, including its swap of the trident and the spyglass
+	 * to their flat models in the GUI, on the ground and in frames.
+	 */
+	@Nullable
+	private static ItemTransform displayTransform(ItemStack stack, @Nullable ItemDisplayContext context,
+		@Nullable BakedModel model) {
+		if (context == null || model == null) {
+			return null;
+		}
+		BakedModel drawn = model;
+		if (context == ItemDisplayContext.GUI || context == ItemDisplayContext.GROUND || context == ItemDisplayContext.FIXED) {
+			if (stack.is(Items.TRIDENT)) {
+				drawn = Minecraft.getInstance().getModelManager().getModel(TRIDENT_INVENTORY);
+			} else if (stack.is(Items.SPYGLASS)) {
+				drawn = Minecraft.getInstance().getModelManager().getModel(SPYGLASS_INVENTORY);
+			}
+		}
+		return drawn == null || drawn.getTransforms() == null ? null : drawn.getTransforms().getTransform(context);
 	}
 
 	private static double time() {
@@ -684,7 +755,8 @@ public final class OutlineSystem {
 		if (phase.open) {
 			return;
 		}
-		phase.thicknessScale = settings.thicknessScale(Minecraft.getInstance().getMainRenderTarget().height);
+		phase.settings = settings;
+		phase.framebufferHeight = Minecraft.getInstance().getMainRenderTarget().height;
 		phase.open = true;
 		if (openCount < OPEN.length) {
 			OPEN[openCount++] = phase;

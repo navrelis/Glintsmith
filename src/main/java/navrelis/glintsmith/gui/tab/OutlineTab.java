@@ -6,7 +6,9 @@ import navrelis.glintsmith.gui.ColorPickerScreen;
 import navrelis.glintsmith.gui.SettingRows;
 import navrelis.glintsmith.gui.Ui;
 import navrelis.glintsmith.gui.widget.ColorSwatch;
+import navrelis.glintsmith.gui.widget.FloatSlider;
 import navrelis.glintsmith.gui.widget.HexBox;
+import navrelis.glintsmith.render.outline.OutlineScale;
 import navrelis.glintsmith.render.outline.OutlineSystem;
 import navrelis.glintsmith.style.Colors;
 import navrelis.glintsmith.style.DurabilityAlert;
@@ -15,6 +17,7 @@ import navrelis.glintsmith.style.OutlineTarget;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.CycleButton;
 
 /**
  * Global outline settings and the low durability alert.
@@ -63,8 +66,22 @@ public final class OutlineTab extends ConfigTab {
 		SettingRows.sliderRow(list, "glintsmith.outline.thickness", OutlineSettings.MIN_THICKNESS,
 			OutlineSettings.MAX_THICKNESS, 0.1f, SettingRows.decimals("glintsmith.outline.thickness", 1),
 			outline.thickness, v -> outline.thickness = v);
-		list.addFull(Ui.toggle(Ui.WIDTH, "glintsmith.outline.scale_with_resolution", outline.scaleWithResolution,
-			v -> outline.scaleWithResolution = v));
+		// Proportional widths follow the window size by themselves; the resolution switch only matters without them.
+		CycleButton<Boolean> scaleWithResolution = Ui.toggle(Ui.HALF, "glintsmith.outline.scale_with_resolution",
+			outline.scaleWithResolution, v -> outline.scaleWithResolution = v);
+		FloatSlider minThickness = SettingRows.slider(Ui.WIDTH, "glintsmith.outline.min_thickness",
+			OutlineScale.MIN_THICKNESS_LOW, OutlineScale.MIN_THICKNESS_HIGH, 0.1f,
+			SettingRows.decimals("glintsmith.outline.min_thickness", 1), outline.minThickness, v -> outline.minThickness = v);
+		scaleWithResolution.active = !outline.proportional;
+		minThickness.active = outline.proportional;
+		list.addPair(
+			Ui.toggle(Ui.HALF, "glintsmith.outline.proportional", outline.proportional, v -> {
+				outline.proportional = v;
+				scaleWithResolution.active = !v;
+				minThickness.active = v;
+			}),
+			scaleWithResolution);
+		list.addFull(minThickness);
 		SettingRows.sliderRow(list, "glintsmith.outline.softness", 0.0f, 1.0f, 0.01f,
 			SettingRows.percent("glintsmith.outline.softness"), outline.softness, v -> outline.softness = v);
 		SettingRows.sliderRow(list, "glintsmith.outline.opacity", 0.0f, 1.0f, 0.01f,

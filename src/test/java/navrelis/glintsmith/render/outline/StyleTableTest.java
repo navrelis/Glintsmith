@@ -53,6 +53,22 @@ class StyleTableTest {
 	}
 
 	@Test
+	void fullTableGivesANewWidthOfAKnownColourItsNearestStyle() {
+		StyleTable table = new StyleTable();
+		int a = table.indexFor(0xFF112233, 2.0f, 0.0f);
+		int b = table.indexFor(0xFF112233, 6.0f, 0.0f);
+		for (int i = 0; table.count() < StyleTable.MAX_STYLES; i++) {
+			table.indexFor(0xFF000000 | i, 2.0f, 0.0f);
+		}
+		assertEquals(a, table.indexFor(0xFF112233, 2.5f, 0.0f), "2.5 px is nearest to 2 px");
+		assertEquals(b, table.indexFor(0xFF112233, 5.0f, 0.0f), "5 px is nearest to 6 px");
+		assertEquals(b, table.indexFor(0xFF112233, 30.0f, 0.0f));
+		assertEquals(0, table.indexFor(0xFF445566, 2.0f, 0.0f), "an unknown colour still gets nothing");
+		assertEquals(4, table.rejected());
+		assertEquals(StyleTable.MAX_STYLES, table.count());
+	}
+
+	@Test
 	void radiusFollowsTheWidestStyleAndIsCappedAt32() {
 		StyleTable table = new StyleTable();
 		assertEquals(1, table.maxRadius());
