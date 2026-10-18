@@ -193,9 +193,9 @@ What was done (2026-10-18, owner request: make NytheriaDevelopment `config/glint
   conventions as 2.0.2). Checklist SHA + not-run note (a1b56a4). main = dev = a1b56a4, tag v2.1.0.
 - Graphify updated (3347 nodes, 10054 edges); backup quarantined in build/quarantine/graphify-backup-s19.
 
-Known: the studio cards and GIFs on the CurseForge page still show the 2.0.x default look. The live CurseForge
-description still has the 2.0.2 text (comparison header and the old-defaults sentences); the repository's
-`docs/curseforge/description_paste.md` has the 2.1.0 text.
+Known: the studio cards and GIFs on the CurseForge page still show the 2.0.x default look.
+- Done (owner OK): the live CurseForge description now has the 2.1.0 text (comparison header, armor/GUI on by default,
+  the new default look), saved and re-read after reload; images intact.
 
 Manual test checklist (owner): rename your own `config/glintsmith.json` (or press Reset tab per tab) in a test
 instance with 2.1.0 and check the look matches your setup; your existing config keeps its values. Optional later:
