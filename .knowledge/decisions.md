@@ -50,3 +50,7 @@
 - s14: G4 and O9 go to Opus: visual taste work and a core render-pipeline change; worktrees ../Glintsmith-g4 and ../Glintsmith-o9 so builds don't collide.
 - s14: 1.0.0 uploaded from the owner-tested jar after the owner's in-game yes.
 - s15: lineup.gif ships with the bow's stray outline dot: hiding it would mask a renderer quirk; investigating (Opus, no clear cause) would delay the pre-authorised release; recorded as a known issue + follow-up.
+- s15: GIF limit = 2,000,000 bytes (decimal), budget_mb 1.9 MiB, so it holds however MB is counted. Logo: owner picks from 3 rendered concepts (taste call); L1 to Opus (visual design).
+- s16: owner wants speed: G2MB picks settings directly (1-2 encodes per GIF, run in parallel), L1 renders all concepts in one scene, overview first, animated GIF only for the chosen concept.
+- s16: owner picked logo concept A (golden blade: gold sword, fire glint, violet outline, colour glow on cream). Wiring goes to the L1 Opus agent (has the compose context, faster than a fresh Sonnet handover; owner wants speed); cards.json edits wait until G2MB is done.
+- s16: armor.gif keeps faint ghost trails from lossy 800 (owner: no fix needed); recorded as known limitation.

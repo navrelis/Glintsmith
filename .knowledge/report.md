@@ -85,3 +85,12 @@ O9 (core render math) went to Opus within the budget.
 - Put the CurseForge page address into `fabric.mod.json` `contact.homepage` in the next build.
 - Housekeeping for the owner: merged worktrees `F:\Coding\Glintsmith-studio`, `-o9`, `-g4`, `.claude\worktrees\agent-*`,
   and `build\quarantine\` can be removed.
+
+## Session 16 follow-up (owner, after the 2.0.0 upload)
+
+- **GIFs under 2,000,000 bytes** (3d7eb15, Sonnet): budget 1.9 MiB; new encoder levers (palette size `colours`, temporal `lossy` tolerance, `max_scale` pin). showcase 1,867,707 (384 px, 15 fps), lineup 1,748,251 (810 px, 30 fps), armor 1,916,336 (320 px, 12 fps, 64 colours; faint lossy trails accepted by the owner).
+- **New logo** (b846ff6, Opus): 3 studio-rendered concepts, owner picked A: golden sword, fire glint, violet outline, colour glow on cream. `art/logo.py` builds logo 512/32, icon 128 and `logo_animated.gif` (1,235,898 bytes, 165 frames, 20 fps, seamless 8.25 s loop) from scenes `logo_concepts` / `logo_anim_a`. The jar icon ships with the next mod version.
+- **CurseForge page**: description replaced with the 2.0.0 text, all 13 images linked to the owner's uploads (attachments 2071/589-601), saved and verified on reload. The project logo (avatar) itself is set by the owner.
+- Checks: gradle build 0, `art/logo.py --strict`, `art/verify.py`, `docs/curseforge/preview.py --check`, `art/studio/studio.py check` all 0. Not run: `verify.py --full`.
+- Usage this session: Sonnet S 1, Opus L 2 + S 1; total about 30 % Opus. No precision overrides.
+- Open: stray outline dot fix lives on branch claude/eloquent-wing-a06858 (other session, not merged); lineup needs a re-render after it lands. Clean-up candidates (git-ignored): build/logo-concepts, build/quarantine/l1, art/captures/studio/logo_explore1-5 and logo_anim_b.
