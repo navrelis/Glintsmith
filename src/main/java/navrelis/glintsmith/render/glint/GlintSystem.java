@@ -49,6 +49,9 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * Customised glints drawn with block-atlas UVs get the atlas factor of {@link GlintAtlasScale}, read from the block
  * atlas after every resource reload (G10).
+ * <p>
+ * The settings screen's preview draws its item into the main source between {@link #beginPreview} and
+ * {@link #endPreview}; {@link #substitute} then uses the preview's settings instead of the live ones.
  */
 public final class GlintSystem {
 	private static final ResourceLocation RELOAD_ID = ResourceLocation.fromNamespaceAndPath(Glintsmith.MOD_ID, "glint_textures");
@@ -57,6 +60,14 @@ public final class GlintSystem {
 	private static final GlintParams SCRATCH = new GlintParams();
 
 	private static volatile GlintRuntimeSettings settings = GlintRuntimeSettings.VANILLA;
+	/** The settings screen preview's settings while its item is drawn ({@link #beginPreview}); null otherwise. */
+	@Nullable
+	private static GlintRuntimeSettings previewSettings;
+	/** The snapshot {@link #previewCache} was built from. */
+	@Nullable
+	private static GlintsmithConfig previewOwner;
+	@Nullable
+	private static GlintRuntimeSettings previewCache;
 	@Nullable
 	private static MultiBufferSource.BufferSource main;
 	/** ImmediatelyFast's non-batching GUI source (a plain vanilla {@code BufferSource}), captured by G11; null without it. */
@@ -103,7 +114,7 @@ public final class GlintSystem {
 	 */
 	public static RenderType substitute(MultiBufferSource.BufferSource source, RenderType requested) {
 		try {
-			GlintRuntimeSettings s = settings;
+			GlintRuntimeSettings s = active(previewSettings, settings);
 			if (!s.anyCustom() || source != main || GlintFailsafe.tripped()) {
 				return requested;
 			}
@@ -116,6 +127,59 @@ public final class GlintSystem {
 			GlintFailsafe.trip("substitute", t);
 			return requested;
 		}
+	}
+
+	/**
+	 * @return the preview's settings while the preview item is drawn, otherwise the live ones
+	 */
+	static GlintRuntimeSettings active(@Nullable GlintRuntimeSettings preview, GlintRuntimeSettings live) {
+		return preview != null ? preview : live;
+	}
+
+	// ---------------------------------------------------------------- settings screen preview
+
+	/**
+	 * Makes {@link #substitute} use the glint settings of {@code snapshot} until {@link #endPreview()}, for the one
+	 * render of the settings screen's preview item into {@link #previewSource()}, and silences the texture warnings
+	 * (a texture spec being typed is invalid most of the time). The rule engine is scoped by the caller. The other
+	 * entry points keep the live settings: the preview never draws into Iris's or ImmediatelyFast's GUI sources.
+	 */
+	public static void beginPreview(GlintsmithConfig snapshot) {
+		try {
+			if (snapshot == null) {
+				return;
+			}
+			if (snapshot != previewOwner || previewCache == null) {
+				previewCache = GlintRuntimeSettings.from(snapshot);
+				previewOwner = snapshot;
+			}
+			previewSettings = previewCache;
+			GlintTextures.setQuiet(true);
+		} catch (Throwable t) {
+			GlintFailsafe.trip("preview begin", t);
+		}
+	}
+
+	/**
+	 * Back to the live settings and texture warnings. Safe to call without {@link #beginPreview}.
+	 */
+	public static void endPreview() {
+		try {
+			previewSettings = null;
+			GlintTextures.setQuiet(false);
+		} catch (Throwable t) {
+			GlintFailsafe.trip("preview end", t);
+		}
+	}
+
+	/**
+	 * @return the buffer source the preview item must be drawn into so that its glint is swapped: the main source
+	 *         (also under ImmediatelyFast, whose GUI source {@code GuiGraphics} draws into otherwise); null before the
+	 *         client has started
+	 */
+	@Nullable
+	public static MultiBufferSource.BufferSource previewSource() {
+		return main;
 	}
 
 	/**
@@ -311,6 +375,9 @@ public final class GlintSystem {
 	public static void onFrameBegin() {
 		try {
 			GlintContext.resetHands();
+			// Safety net: a preview that did not end cleanly must not leak into the next frame.
+			previewSettings = null;
+			GlintTextures.setQuiet(false);
 			if (initialized && !started) {
 				onClientStarted(Minecraft.getInstance());
 			}

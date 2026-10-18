@@ -1,6 +1,7 @@
 package navrelis.glintsmith.render.glint;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -114,6 +115,21 @@ class GlintTexturesTest {
 		assertEquals(GlintTextures.VANILLA_ENTITY, GlintTextures.resolve("preset:neutral", true, false));
 		assertEquals(GlintTextures.VANILLA_ITEM, GlintTextures.resolve("preset:no_such_preset", false, false));
 		assertEquals(GlintTextures.VANILLA_ITEM, GlintTextures.resolve("not a spec!", false, false));
+		GlintTextures.clearStateForTests();
+	}
+
+	@Test
+	void nothingIsWarnedWhileQuiet() {
+		GlintTextures.clearStateForTests();
+		GlintTextures.setQuiet(true);
+		assertEquals(GlintTextures.VANILLA_ITEM, GlintTextures.resolve("not a spec!", false, false));
+		assertEquals(GlintTextures.VANILLA_ITEM, GlintTextures.resolve("preset:no_such_preset", false, false));
+		assertFalse(GlintTextures.warnedForTests("not a spec!"));
+		assertFalse(GlintTextures.warnedForTests("preset:no_such_preset"));
+
+		GlintTextures.setQuiet(false);
+		assertEquals(GlintTextures.VANILLA_ITEM, GlintTextures.resolve("preset:other_missing", false, false));
+		assertTrue(GlintTextures.warnedForTests("preset:other_missing"), "warns again once quiet is off");
 		GlintTextures.clearStateForTests();
 	}
 

@@ -58,6 +58,7 @@ public final class GlintTextures {
 	private static final Map<String, FileEntry> FILES = new HashMap<>();
 	private static final Set<String> FAILED_FILES = new HashSet<>();
 	private static final Set<String> WARNED = new HashSet<>();
+	private static boolean quiet;
 	private static boolean neutralItemReady;
 	private static boolean neutralEntityReady;
 
@@ -254,6 +255,7 @@ public final class GlintTextures {
 		FILES.clear();
 		FAILED_FILES.clear();
 		WARNED.clear();
+		quiet = false;
 		neutralItemReady = false;
 		neutralEntityReady = false;
 	}
@@ -321,7 +323,23 @@ public final class GlintTextures {
 		}
 	}
 
+	/**
+	 * While quiet (the settings screen's preview is drawn), problems are not logged and not remembered as warned, so
+	 * the same spec still warns once when the live config uses it.
+	 */
+	static void setQuiet(boolean q) {
+		quiet = q;
+	}
+
+	/** Test hook. */
+	static boolean warnedForTests(String spec) {
+		return WARNED.contains(spec);
+	}
+
 	private static void warnOnce(String spec, String message) {
+		if (quiet) {
+			return;
+		}
 		if (WARNED.add(spec)) {
 			Glintsmith.LOGGER.warn("Glint texture '{}': {}. Using the vanilla glint texture.", spec, message);
 		}

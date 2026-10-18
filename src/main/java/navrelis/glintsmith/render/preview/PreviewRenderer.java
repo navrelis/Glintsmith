@@ -7,6 +7,7 @@ import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import navrelis.glintsmith.config.GlintsmithConfig;
+import navrelis.glintsmith.render.glint.GlintSystem;
 import navrelis.glintsmith.render.outline.OutlineSystem;
 import navrelis.glintsmith.style.RuleEngine;
 import net.minecraft.client.Minecraft;
@@ -29,8 +30,9 @@ import org.slf4j.LoggerFactory;
  * <p>
  * The item is drawn with {@link ItemDisplayContext#FIRST_PERSON_RIGHT_HAND}, so outline and glint classify it exactly
  * like the item in the hand, under a pose that cancels that context's display transform and turns the item upright
- * on a turntable fitted to the box. For exactly that one render the rule engine and the outline system are scoped to
- * the given config snapshot, so the preview shows unsaved settings while the rest of the game keeps the live ones.
+ * on a turntable fitted to the box. For exactly that one render the rule engine, the glint system and the outline
+ * system are scoped to the given config snapshot, so the preview shows unsaved settings while the rest of the game
+ * keeps the live ones.
  * <p>
  * A throw disables the preview for the rest of the session ({@link #available()}); the game itself is unaffected.
  */
@@ -138,21 +140,26 @@ public final class PreviewRenderer {
 	}
 
 	/**
-	 * The buffer source the preview item is drawn into and flushed from: the GUI's own, which is the game's main
-	 * buffer source.
+	 * The buffer source the preview item is drawn into and flushed from: the game's main source, where the glint system
+	 * swaps glints. Under ImmediatelyFast {@code GuiGraphics} draws into a GUI source of its own instead (flushed by
+	 * {@code g.flush()} before the item). Before the client has started, the GUI's source.
 	 */
 	private static MultiBufferSource.BufferSource sourceFor(GuiGraphics g) {
-		return g.bufferSource();
+		MultiBufferSource.BufferSource main = GlintSystem.previewSource();
+		return main != null ? main : g.bufferSource();
 	}
 
 	/**
-	 * Scopes everything that resolves looks to {@code snapshot} for the preview render. Undone by {@link #endScopes()}.
+	 * Scopes everything that resolves looks to {@code snapshot} for the preview render: the rule engine and the glint
+	 * settings. Undone by {@link #endScopes()}.
 	 */
 	private static void beginScopes(GlintsmithConfig snapshot) {
 		RuleEngine.beginScope(snapshot);
+		GlintSystem.beginPreview(snapshot);
 	}
 
 	private static void endScopes() {
+		GlintSystem.endPreview();
 		RuleEngine.endScope();
 	}
 

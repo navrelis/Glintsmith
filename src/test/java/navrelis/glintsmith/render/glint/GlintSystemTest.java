@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.AfterEach;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
+import navrelis.glintsmith.config.GlintsmithConfig;
 import net.minecraft.client.renderer.MultiBufferSource;
 
 /**
@@ -56,6 +58,23 @@ class GlintSystemTest {
 		assertFalse(GlintSystem.bufferedSwapAllowed(true, false, false, false), "main source not captured yet");
 		assertFalse(GlintSystem.bufferedSwapAllowed(true, true, true, false), "shader pack: world glint stays vanilla");
 		assertFalse(GlintSystem.bufferedSwapAllowed(true, true, false, true), "failsafe tripped");
+	}
+
+	@Test
+	void thePreviewSettingsWinOnlyWhileSet() {
+		GlintRuntimeSettings live = GlintRuntimeSettings.VANILLA;
+		GlintRuntimeSettings preview = GlintRuntimeSettings.from(new GlintsmithConfig().sanitize());
+		assertSame(live, GlintSystem.active(null, live));
+		assertSame(preview, GlintSystem.active(preview, live));
+	}
+
+	@Test
+	void previewBeginAndEndNeverThrow() {
+		assertDoesNotThrow(() -> GlintSystem.beginPreview(null));
+		assertDoesNotThrow(GlintSystem::endPreview);
+		assertDoesNotThrow(GlintSystem::endPreview);
+		assertNull(GlintSystem.previewSource(), "no main source before the client has started");
+		assertFalse(GlintFailsafe.tripped());
 	}
 
 	@Test
