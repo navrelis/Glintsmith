@@ -164,3 +164,4 @@
 - 2026-10-18 s14: O8 Opus accepted (diff read): one factor height/1080 for all phases, outlineReachPixels for the preview margin, 6 tests; merged 9d34a23. S3 Sonnet accepted (tiles + hero sheets viewed, check 7 ok, GIF 7.06 MB 30 fps; gap cracks 1 px only), merged 3300f3e. Lead build dev: 457 green, jar 0 studio.
 - 2026-10-18 s14: Owner: glint presets "not so good" -> chose redo all 7 vanilla-like + add rich presets -> G4 Opus L (worktree). Owner screenshot (old jar, fat GUI outlines): outline must be proportional to the item's on-screen size like first person -> O9 Opus L (worktree).
 - 2026-10-18 s14: P2b part 1 Sonnet accepted (diff read): README/DESIGN/STUDIO/curseforge docs for O7/O8/preview/IF/atlas, 3 PENDING markers, checklist 2.0.0 with TBD; preview --check 0, verify passed (agent). CHANGELOG O7/O8 bullets + O9/G4 text go to P2b part 2.
+- 2026-10-18 s14: V1 in-game check prep -> Sonnet S (v2check on the isolated instance copy; lead runs it after O9/G4).
