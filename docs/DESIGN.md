@@ -1990,20 +1990,31 @@ Glint:
 28. ImmediatelyFast 1.6.15 installed (G9), shaders off, Item layer with a preset at Scale 0.13 and a
     RAINBOW tint: the enchanted sword in the first-person hand shows the custom look (the same colours
     as that look in an item frame, not the uniform purple vanilla wash), also with Punchy. Without Iris,
-    armor stands and item frames show the custom look too. Pending. (Before 2.0.0 the GUI glint stayed
-    vanilla here; see 30.)
+    armor stands and item frames show the custom look too. Passed in game 2026-10-18 (V1 run, ImmediatelyFast
+    1.6.15, Sodium 0.8.13, Iris 1.8.14-beta.1 with shaders off, Punchy 2.8f) for the first-person hand with Punchy:
+    custom look; armor stands and item frames were not recorded separately in that run. (Before 2.0.0 the GUI glint
+    stayed vanilla here; see 30.)
 29. Atlas-independent scale (2.0.0, 5.4.1), in a pack with a large block atlas (the log line
     `Glint atlas factor 0.125 x 0.125 (block atlas 8192x4096, ...)` after loading and after F3+T), Item layer
     `preset:rainbow` at Scale 1.00: with the option on, the held, dropped and framed sword shows the
     rainbow bands as densely as in a vanilla-size atlas; off, the 1.0.0 flat wash. Armor (F5) looks the
     same on and off. With every layer at its defaults and no rule glint, the glint is vanilla whatever the
-    option. Pending.
+    option. Passed in game 2026-10-18 (V1 run, block atlas 8192 x 4096, log line `Glint atlas factor 0.125 x 0.125`):
+    option on, Scale 1.00 shows the preset pattern on held items at vanilla density; option off, the 1.0.0 flat wash;
+    armor unaffected. The rule "glint stays vanilla when nothing is customised" was not looked at separately.
 30. ImmediatelyFast 1.6.15 (G11, G12), GUI layer with a preset: enchanted items in the inventory, a chest,
     the creative tabs and the hotbar show the custom look; the hotbar sprite, item counts and durability
     bars stay intact (no erased hotbar, the T20 rule), also with GUI outlines on. Without
-    ImmediatelyFast the GUI glint is unchanged. Pending.
+    ImmediatelyFast the GUI glint is unchanged. Passed in game 2026-10-18 (V1 run, ImmediatelyFast 1.6.15, Sodium
+    0.8.13, Iris shaders off, Punchy): the inventory and the hotbar show the custom GUI glint (fire preset), not the
+    vanilla purple, and the hotbar is intact. A chest and the creative tabs were not looked at separately; the
+    without-ImmediatelyFast case was not repeated.
 31. Live preview (2.0.0, section 12), in a world with an enchanted sword in the main hand and the settings screen
-    (`/glintsmith`) open. Pending, nothing of it has been seen in game yet:
+    (`/glintsmith`) open. a and b passed in game 2026-10-18 (V1 run, ImmediatelyFast 1.6.15, Sodium 0.8.13, Iris
+    shaders off, Punchy) on the Outline and Glint tabs with the held enchanted netherite sword: the panel stands right
+    of the options, shows the sword with its outline and glint, animated, nothing overlapping or clipped, and it
+    follows the unsaved settings on screen. Still to be checked by hand: dragging and right click reset (a), c (rule
+    editor and colour picker), d (source strip), e (narrow window, GUI scale 4) and f (shader pack):
     a. The panel stands right of the options at GUI scale 2 and a 1920 x 1080 window, shows the sword in first-person
        look (upright, centred, not clipped, outline not cut off at the frame), turns slowly, and a drag turns it by
        hand; after a release it resumes after about 1.5 s; right click resets the view.
@@ -2020,7 +2031,9 @@ Glint:
        hidden on the sub screens. F1 and a resize do not break it.
     f. Repeat with Iris and a shader pack (notes `Shader pack: ...`, outline and glint still appear), with
        ImmediatelyFast (no erased hotbar behind the screen, glint in the preview) and with Punchy.
-32. Proportional outlines (2.0.0, section 3.4.1) and the new presets. Pending, nothing of it has been seen in game yet:
+32. Proportional outlines (2.0.0, section 3.4.1) and the new presets. a, b and e passed in game 2026-10-18 (V1 run,
+    ImmediatelyFast 1.6.15, Sodium 0.8.13, Iris shaders off, Punchy); c (1440 and 2160 px windows) and d (300 colours)
+    were not checked:
     a. With Proportional on (default), thickness 8.5: the held sword has the band of the old first-person look; a
        dropped item gets a thinner band the farther away it is; inventory and hotbar icons get a thin line, never
        thinner than Minimum width; armor on a nearby player or armor stand is in proportion to its size.
@@ -2030,7 +2043,11 @@ Glint:
     d. 300 distinct enchantment colours or widths in view (a chest full of enchanted books at several distances): no
        item loses its outline while its colour is on screen; no errors in the log.
     e. All twelve presets on the item layer, with and without tint: the whole item shimmers, no patches of glint on
-       black, no seams; inferno rises, storm looks like lightning, stars and sparkles are not stretched.
+       black, no seams; inferno rises, storm looks like lightning, stars and sparkles are not stretched. Passed: all
+       twelve presets and neutral with a rainbow tint show a pattern over the whole item, animated, in first person; fire
+       on armor shows the fire pattern. On armor every preset reads as a slow colour wash because of the vanilla armor
+       glint scale (by design). Known, not fixed: in the Nytheria pack a 3D mace model from a resource pack keeps a
+       purple glint on its handle while the head shows the custom glint (not investigated).
 
 ---
 
@@ -2067,8 +2084,9 @@ on screen but not saved yet. The preview does not run the live pipeline on a cop
 through the real `ItemRenderer.render` into the real glint and outline systems, with the settings of all three
 systems swapped for the duration of that one call. There are no mixins and no shaders of its own. Packages
 `navrelis.glintsmith.render.preview` (rendering) and `navrelis.glintsmith.gui.preview` (panel, state, layout).
-Nothing in this section has been checked in game; it rests on unit tests and on reading the code. The in-game checks
-are listed in 12.7 and in section 10, item 31.
+The panel, its position and look, the animation, and the following of unsaved settings were checked in game on
+2026-10-18 (section 10, item 31 a and b); the rest rests on unit tests and on reading the code. What is still to be
+checked by hand is listed in 12.7 and in section 10, item 31.
 
 ### 12.1 Mechanism
 
@@ -2233,5 +2251,7 @@ Unit tests (headless): `PreviewPoseTest` (the inverse cancels `ItemTransform.app
 corners inside the box for every yaw and several pitches), `RuleEngineScopeTest` (scope isolation and caches),
 `OutlineContextsTest` (PREVIEW mapping), `GlintSystemTest` (`active`), `GlintTexturesTest` (quiet mode),
 `PendingEditsTest`, `PreviewSnapshotTest`, `PreviewLayoutTest`, `PreviewNotesTest` and `LangFilesTest` (the keys
-`glintsmith.preview.*` in both languages). The render path itself is not covered by tests and has not been run in
-game; the check list is section 10, item 31.
+`glintsmith.preview.*` in both languages). The render path itself is not covered by tests. It was run in game on
+2026-10-18 for the panel, the animation and the unsaved settings (item 31 a, b); dragging, right click reset, the
+rule editor and colour picker, the source strip, narrow windows and GUI scale 4, and a shader pack are still to be
+checked by hand; the check list is section 10, item 31.

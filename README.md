@@ -39,8 +39,8 @@ with the settings you are changing. The same settings live in one JSON file that
   look's own width) keeps small and far items outlined. With Proportional off, a thickness has the same width in screen
   pixels in every place, the GUI included (the GUI scale does not change it), and "Scale with window size"
   (`outline.scaleWithResolution`) optionally scales that width with the window height, measured at 1080 px. That option
-  has no effect while Proportional is on, because proportional widths follow the window size by themselves. Not yet
-  checked in game.
+  has no effect while Proportional is on, because proportional widths follow the window size by themselves. Checked in
+  game (8.5 px on the held item, a thin line in the inventory, thinner bands on distant dropped items).
 - Colours: static, rainbow, pulse, gradient (up to 16 colours) or enchantment colours, where the outline fades through
   the colours of the enchantments on the item. Every vanilla enchantment has a built-in colour, every other enchantment
   gets a stable colour of its own, and you can change any of them.
@@ -56,8 +56,8 @@ with the settings you are changing. The same settings live in one JSON file that
   resource pack (`namespace:path`). The first seven are soft diagonal streaks like the vanilla glint over an even glow
   in each preset's colours; the detailed ones are rising flame tongues (inferno), swirling clouds with stars (nebula),
   four-pointed sparkles (starlight), iridescent flashes (opal) and branching lightning (storm). The presets are generated
-  by the mod's own code at start-up; no third-party art is included. The redrawn and the new presets are not yet
-  checked in game.
+  by the mod's own code at start-up; no third-party art is included. All twelve presets and `neutral` with a tint were
+  checked in game on the item layer in first person, and the fire preset on armor.
 - Tint (any colour mode, including per-enchantment), speed, scale, strength and rotation.
 - The glint keeps following the game's own Glint Speed and Glint Strength sliders; the mod's values are multiplied onto them.
 - A master switch ("Custom glint" on the Glint tab, `glint.enabled`) turns the whole feature off and leaves the vanilla
@@ -71,7 +71,8 @@ with the settings you are changing. The same settings live in one JSON file that
   packs are not affected. Glints you did not customise stay exactly vanilla (a fresh config does customise some, see
   "Built-in defaults" below). If you lowered Scale for a large atlas in
   1.0.0 (to about 0.13), set it back to 1.00, because the correction and the manual value would multiply. Switch the
-  option off to get the 1.0.0 behaviour. Not yet checked in game.
+  option off to get the 1.0.0 behaviour. Checked in game in a pack with an 8192 x 4096 px block atlas: with the option
+  on, Scale 1.00 shows the preset pattern at vanilla density on held items; with it off, the flat wash of 1.0.0.
 
 ### Model gap fix
 
@@ -117,7 +118,9 @@ A fresh config contains two example rules: a pale yellow outline for the Totem o
   the panel moves next to the footer buttons of the main screen; if there is no room at all it is hidden. The model gap
   fix is not part of the preview, because it only changes after a resource reload. Under a shader pack the preview
   shows the configured look and a note says what the pack changes in your hand. If drawing the preview ever fails, only
-  the preview switches itself off. Not yet checked in game.
+  the preview switches itself off. Checked in game with the held enchanted item on the Outline and Glint tabs: the
+  panel sits right of the options, the item, its outline and its glint are animated and follow the unsaved settings.
+  Dragging, right click reset, the source strip, narrow windows and the shader note have not been tried by hand.
 - Built-in defaults: a fresh config (no `glintsmith.json` yet) and "Reset tab" use these. Outline: a slow rainbow colour
   (white, speed 0.5), thickness 8.5 px, opacity 25 %. Glint: the frost preset with a light purple rainbow tint (speed
   0.5, strength 90 %) on items, the fire preset on entities and in the GUI, and the armor glint off. Existing config
@@ -170,7 +173,8 @@ Client side only. Do not put it on a server; the mod does nothing there and is d
 - **ImmediatelyFast.** HUD batching works with GUI outlines. An outlined GUI item flushes the batch before its outline
   is drawn, so the hotbar sprite, the items and the counts are drawn and outlined as usual. Checked in game with
   ImmediatelyFast 1.6.15. Custom glints are also applied to its buffers (first-person hand, world without Iris,
-  inventories, menus and the batched hotbar). Not yet checked in game; without ImmediatelyFast nothing changes.
+  inventories, menus and the batched hotbar); the inventory and the hotbar were checked in game too. Without
+  ImmediatelyFast nothing changes.
 - **First-person animation mods (Punchy).** The held item keeps its first-person outline and glint rules (checked in
   game with Punchy 2.8f, main hand and offhand). Items such as
   Punchy's bedrock-geometry items, chests and boats are not outlined in first person, and with player-animation-lib or

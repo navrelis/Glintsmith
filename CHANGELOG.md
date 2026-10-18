@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.0 (Fabric 1.21.1) — unreleased
+## 2.0.0 (Fabric 1.21.1) — 2026-10-18
 
 ### Added
 
