@@ -24,7 +24,8 @@ class GlintTexturesTest {
 
 	private static final List<String> BASE = List.of(
 		"vanilla", "preset:neutral", "preset:rainbow", "preset:aurora", "preset:fire", "preset:frost",
-		"preset:sparkle", "preset:gold", "preset:void");
+		"preset:sparkle", "preset:gold", "preset:void", "preset:inferno", "preset:nebula", "preset:starlight",
+		"preset:opal", "preset:storm");
 
 	private static void png(Path dir, String name) throws IOException {
 		Files.write(dir.resolve(name), PNG_HEAD);

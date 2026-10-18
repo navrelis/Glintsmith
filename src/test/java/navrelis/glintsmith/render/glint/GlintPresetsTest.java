@@ -5,8 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -91,32 +93,62 @@ class GlintPresetsTest {
 	}
 
 	/**
-	 * The glint blend is additive (src * src + dst): a bright texture washes the whole item in one colour. Vanilla's item
-	 * glint has a mean luminance of 0.23, so the presets must stay near that, with clear dark gaps, while the peaks still
-	 * reach (nearly) full brightness. The sparkle preset is allowed to be much sparser than the others.
+	 * The glint blend squares the texture colour (src * src + dst), so what an item receives is the mean of the squared
+	 * channels, the glint energy. Vanilla's item glint has an energy of about 0.16; the presets stay in a band around it
+	 * (a preset much brighter washes the item out in one colour, a much darker one is barely visible in game). Every
+	 * preset must also have visible structure: the spread between its darker and brighter texels, measured between the
+	 * 5th and the 95th percentile of the luminance, is large, and the peaks reach (nearly) full brightness.
 	 */
 	@Test
 	void presetsStayWithinTheBrightnessBudget() {
 		for (String name : GlintPresets.GENERATED) {
-			double sum = 0;
-			int dark = 0;
-			int peak = 0;
 			int[] px = GlintPresets.generate(name);
-			for (int p : px) {
-				double lum = 0.2126 * r(p) / 255.0 + 0.7152 * g(p) / 255.0 + 0.0722 * b(p) / 255.0;
-				sum += lum;
-				if (lum < 0.08) {
-					dark++;
-				}
+			double energy = 0;
+			double[] lum = new double[px.length];
+			int peak = 0;
+			for (int i = 0; i < px.length; i++) {
+				int p = px[i];
+				double rr = r(p) / 255.0;
+				double gg = g(p) / 255.0;
+				double bb = b(p) / 255.0;
+				energy += (rr * rr + gg * gg + bb * bb) / 3.0;
+				lum[i] = 0.2126 * rr + 0.7152 * gg + 0.0722 * bb;
 				peak = Math.max(peak, Math.max(r(p), Math.max(g(p), b(p))));
 			}
-			double mean = sum / px.length;
-			double darkShare = dark / (double) px.length;
-			double minMean = name.equals("sparkle") ? 0.03 : 0.15;
-			assertTrue(mean >= minMean && mean <= 0.32, name + " mean luminance " + mean);
-			assertTrue(darkShare >= 0.30, name + " dark share " + darkShare);
+			energy /= px.length;
+			Arrays.sort(lum);
+			double spread = lum[(int) (0.95 * lum.length)] - lum[(int) (0.05 * lum.length)];
+			assertTrue(energy >= 0.10 && energy <= 0.26, name + " glint energy " + energy);
+			assertTrue(spread >= 0.25, name + " is too flat: luminance spread " + spread);
 			assertTrue(peak >= 200, name + " peak " + peak + " should reach near full brightness");
 		}
+	}
+
+	@Test
+	void presetListsAgree() {
+		List<String> both = new ArrayList<>(GlintPresets.CLEAN);
+		both.addAll(GlintPresets.RICH);
+		assertEquals(GlintPresets.GENERATED, both, "generated = clean + rich, in that order");
+		assertEquals(7, GlintPresets.CLEAN.size(), "the seven original presets keep their names");
+		assertTrue(GlintPresets.CLEAN.containsAll(List.of("rainbow", "aurora", "fire", "frost", "sparkle", "gold", "void")));
+		assertEquals(List.of("inferno", "nebula", "starlight", "opal", "storm"), GlintPresets.RICH);
+		assertEquals(GlintPresets.GENERATED, GlintSettings.PRESETS.subList(1, GlintSettings.PRESETS.size()),
+			"the settings list is neutral followed by the generated presets");
+		for (String name : GlintPresets.GENERATED) {
+			assertTrue(name.matches("[a-z]+"), name);
+		}
+	}
+
+	/** Generation runs at resource reload on the render thread; all presets together take well under a second. */
+	@Test
+	void generationIsFast() {
+		GlintPresets.GENERATED.forEach(GlintPresets::generate);
+		long start = System.nanoTime();
+		for (String name : GlintPresets.GENERATED) {
+			GlintPresets.generate(name);
+		}
+		long millis = (System.nanoTime() - start) / 1_000_000L;
+		assertTrue(millis < 3000, "generating every preset took " + millis + " ms");
 	}
 
 	@Test
@@ -157,6 +189,11 @@ class GlintPresetsTest {
 		}
 	}
 
+	/**
+	 * Seamless tiling, measured on the bytes: across the wrap (last column to first, last row to first) the mean
+	 * neighbour difference may be at most twice the mean difference between neighbours inside the tile (plus one byte),
+	 * and no single step across the wrap may be harder than the hardest step between two neighbours inside the tile.
+	 */
 	@Test
 	void tileEdgesAreContinuous() {
 		for (String name : GlintPresets.GENERATED) {
@@ -165,12 +202,20 @@ class GlintPresetsTest {
 			double seamY = 0;
 			double innerX = 0;
 			double innerY = 0;
+			double maxSeam = 0;
+			double maxInner = 0;
 			for (int i = 0; i < N; i++) {
-				seamX += diff(px[i * N + (N - 1)], px[i * N]);
-				seamY += diff(px[(N - 1) * N + i], px[i]);
+				double sx = diff(px[i * N + (N - 1)], px[i * N]);
+				double sy = diff(px[(N - 1) * N + i], px[i]);
+				seamX += sx;
+				seamY += sy;
+				maxSeam = Math.max(maxSeam, Math.max(sx, sy));
 				for (int j = 0; j < N - 1; j++) {
-					innerX += diff(px[i * N + j], px[i * N + j + 1]) / (N - 1);
-					innerY += diff(px[j * N + i], px[(j + 1) * N + i]) / (N - 1);
+					double dx = diff(px[i * N + j], px[i * N + j + 1]);
+					double dy = diff(px[j * N + i], px[(j + 1) * N + i]);
+					innerX += dx / (N - 1);
+					innerY += dy / (N - 1);
+					maxInner = Math.max(maxInner, Math.max(dx, dy));
 				}
 			}
 			seamX /= N;
@@ -179,6 +224,7 @@ class GlintPresetsTest {
 			innerY /= N;
 			assertTrue(seamX <= 2.0 * innerX + 1.0, name + " horizontal seam " + seamX + " vs " + innerX);
 			assertTrue(seamY <= 2.0 * innerY + 1.0, name + " vertical seam " + seamY + " vs " + innerY);
+			assertTrue(maxSeam <= maxInner, name + " hardest seam step " + maxSeam + " vs " + maxInner);
 		}
 	}
 

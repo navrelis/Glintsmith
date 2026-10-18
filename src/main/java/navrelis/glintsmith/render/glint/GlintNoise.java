@@ -124,6 +124,63 @@ final class GlintNoise {
 	}
 
 	/**
+	 * Ridged fractal noise in [0, 1]: each octave is {@code (1 - |2 value - 1|)²}, so the result has sharp bright ridges
+	 * where the value noise crosses its middle (veins, lightning, cracks). Periodic like {@link #fbm}.
+	 */
+	static float ridged(float x, float y, int px, int py, int octaves, int seed) {
+		float sum = 0.0f;
+		float amp = 1.0f;
+		float norm = 0.0f;
+		for (int o = 0; o < octaves; o++) {
+			float n = 1.0f - Math.abs(2.0f * value(x, y, px << o, py << o, seed + o * 101) - 1.0f);
+			sum += amp * n * n;
+			norm += amp;
+			amp *= 0.5f;
+		}
+		return sum / norm;
+	}
+
+	/**
+	 * Soft parallel streaks across the tile, the building block of the vanilla-like presets. The streaks run
+	 * perpendicular to the integer normal {@code (kx, ky)}; there are {@code count} of them per wrap of the tile along
+	 * that normal, each with its own brightness, width and position (from the hash), so the spacing looks irregular.
+	 * Because {@code kx} and {@code ky} are integers the pattern is periodic in the tile.
+	 *
+	 * @param width  half width of a streak as a share of the streak spacing (about 0.1 to 0.5)
+	 * @param offset shift across the streaks in streak spacings; a periodic noise here makes the streaks wavy
+	 * @return brightness in [0, 1]: soft sum of the streaks that reach this point
+	 */
+	static float streaks(float x, float y, int kx, int ky, int count, float width, float offset, int seed) {
+		int period = count * gcd(Math.abs(kx), Math.abs(ky));
+		float t = (kx * x + ky * y) * count / TILE + offset;
+		int i = (int) Math.floor(t);
+		float f = t - i;
+		float dark = 1.0f;
+		for (int d = -1; d <= 1; d++) {
+			int j = Math.floorMod(i + d, period);
+			float a = hash(j, 0, seed);
+			float strength = 0.25f + 0.75f * a * a;
+			float centre = d + 0.5f + 0.7f * (hash(j, 1, seed) - 0.5f);
+			float w = width * (0.6f + 0.8f * hash(j, 2, seed));
+			float q = (f - centre) / w;
+			if (q > -1.0f && q < 1.0f) {
+				float bump = 1.0f - q * q;
+				dark *= 1.0f - strength * bump * bump;
+			}
+		}
+		return 1.0f - dark;
+	}
+
+	private static int gcd(int a, int b) {
+		while (b != 0) {
+			int r = a % b;
+			a = b;
+			b = r;
+		}
+		return Math.max(1, a);
+	}
+
+	/**
 	 * HSV to RGB, each output channel in [0, 1].
 	 *
 	 * @param h hue, wraps around (1 = full circle)

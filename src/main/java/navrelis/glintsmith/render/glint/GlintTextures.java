@@ -47,7 +47,8 @@ public final class GlintTextures {
 	/** The values of {@link #presetSpecs()} that do not depend on the files in the texture folder. */
 	static final List<String> BASE_SPECS = List.of(
 		"vanilla", "preset:neutral", "preset:rainbow", "preset:aurora", "preset:fire", "preset:frost",
-		"preset:sparkle", "preset:gold", "preset:void");
+		"preset:sparkle", "preset:gold", "preset:void", "preset:inferno", "preset:nebula", "preset:starlight",
+		"preset:opal", "preset:storm");
 
 	private static final byte[] PNG_MAGIC = {(byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
 	private static final int MAX_FILE_BYTES = 16 * 1024 * 1024;

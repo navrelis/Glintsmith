@@ -72,6 +72,37 @@ class GlintNoiseTest {
 	}
 
 	@Test
+	void ridgedIsInRangeAndTiles() {
+		for (int y = 0; y < 128; y += 7) {
+			for (int x = 0; x < 128; x += 7) {
+				float v = GlintNoise.ridged(x, y, 3, 3, 4, 17);
+				assertTrue(v >= 0.0f && v <= 1.0f, "ridged out of range: " + v);
+				assertEquals(v, GlintNoise.ridged(x + 128, y - 128, 3, 3, 4, 17), EPS);
+			}
+		}
+	}
+
+	@Test
+	void streaksAreInRangeTileAndVary() {
+		int[][] normals = {{2, 1}, {-1, 1}, {1, 3}, {2, -4}};
+		for (int[] k : normals) {
+			float min = 1.0f;
+			float max = 0.0f;
+			for (int y = 0; y < 128; y += 3) {
+				for (int x = 0; x < 128; x += 3) {
+					float v = GlintNoise.streaks(x, y, k[0], k[1], 3, 0.3f, 0.1f, 5);
+					assertTrue(v >= 0.0f && v <= 1.0f, "streaks out of range: " + v);
+					assertEquals(v, GlintNoise.streaks(x + 128, y, k[0], k[1], 3, 0.3f, 0.1f, 5), EPS);
+					assertEquals(v, GlintNoise.streaks(x, y + 256, k[0], k[1], 3, 0.3f, 0.1f, 5), EPS);
+					min = Math.min(min, v);
+					max = Math.max(max, v);
+				}
+			}
+			assertTrue(max - min > 0.3f, "streaks should have light and dark: " + min + " .. " + max);
+		}
+	}
+
+	@Test
 	void worleyDistancesAreOrderedAndTile() {
 		float[] a = new float[4];
 		float[] b = new float[4];

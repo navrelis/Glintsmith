@@ -33,7 +33,8 @@ class GlintSettingsTest {
 
 	@Test
 	void everyPresetIsValid() {
-		assertEquals(List.of("neutral", "rainbow", "aurora", "fire", "frost", "sparkle", "gold", "void"), GlintSettings.PRESETS);
+		assertEquals(List.of("neutral", "rainbow", "aurora", "fire", "frost", "sparkle", "gold", "void",
+			"inferno", "nebula", "starlight", "opal", "storm"), GlintSettings.PRESETS);
 		for (String name : GlintSettings.PRESETS) {
 			valid("preset:" + name);
 		}

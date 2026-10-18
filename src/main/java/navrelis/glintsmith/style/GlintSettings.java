@@ -20,7 +20,8 @@ public final class GlintSettings {
 	public static final String DEFAULT_TEXTURE = "default";
 	/** Names usable as {@code preset:<name>}. */
 	public static final List<String> PRESETS =
-		List.of("neutral", "rainbow", "aurora", "fire", "frost", "sparkle", "gold", "void");
+		List.of("neutral", "rainbow", "aurora", "fire", "frost", "sparkle", "gold", "void",
+			"inferno", "nebula", "starlight", "opal", "storm");
 	public static final String PRESET_PREFIX = "preset:";
 	public static final String FILE_PREFIX = "file:";
 
