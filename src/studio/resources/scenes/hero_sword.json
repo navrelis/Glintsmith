@@ -58,20 +58,20 @@
 			"gap_fix": "auto"
 		},
 		{
-			"id": "aurora",
-			"caption": "Aurora glint + gradient outline",
+			"id": "nebula",
+			"caption": "Nebula glint + gradient outline",
 			"outline": {
-				"color": { "mode": "gradient", "colors": ["#3CFFB4", "#4B7BFF", "#C05CFF"], "speed": 1.0 },
+				"color": { "mode": "gradient", "colors": ["#4B7BFF", "#C05CFF", "#FF5CC8"], "speed": 1.0 },
 				"thickness": 3
 			},
-			"glint": { "texture": "preset:aurora", "scale": 0.12 },
+			"glint": { "texture": "preset:nebula", "scale": 0.12 },
 			"gap_fix": "auto"
 		},
 		{
-			"id": "void_glow",
-			"caption": "Void glint + soft glow",
-			"outline": { "color": "#9B4DFF", "thickness": 6, "softness": 0.85, "opacity": 0.9 },
-			"glint": { "texture": "preset:void", "scale": 0.12 },
+			"id": "inferno_glow",
+			"caption": "Inferno glint + soft glow",
+			"outline": { "color": "#FF6A1F", "thickness": 6, "softness": 0.85, "opacity": 0.9 },
+			"glint": { "texture": "preset:inferno", "scale": 0.12 },
 			"gap_fix": "auto"
 		}
 	]

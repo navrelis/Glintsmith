@@ -40,7 +40,7 @@
 			},
 			"rotation": [0, 0, 45],
 			"phase": 8,
-			"look": "fire"
+			"look": "inferno"
 		},
 		{
 			"item": {
@@ -49,7 +49,7 @@
 			},
 			"rotation": [0, 0, 45],
 			"phase": -8,
-			"look": "frost"
+			"look": "storm"
 		},
 		{
 			"item": {
@@ -57,7 +57,7 @@
 				"enchantments": { "minecraft:unbreaking": 3 }
 			},
 			"phase": 8,
-			"look": "gold",
+			"look": "opal",
 			"pivot": [-0.08, 0, -0.48]
 		},
 		{
@@ -66,7 +66,7 @@
 				"enchantments": { "minecraft:protection": 4 }
 			},
 			"phase": -8,
-			"look": "aurora"
+			"look": "starlight"
 		},
 		{
 			"item": {
@@ -92,37 +92,37 @@
 			"gap_fix": "auto"
 		},
 		{
-			"id": "fire",
-			"caption": "Fire",
+			"id": "inferno",
+			"caption": "Inferno",
 			"outline": {
 				"color": { "mode": "pulse", "colors": ["#FF4A00", "#FFD23F"], "speed": 1.5 },
 				"thickness": 2.5
 			},
-			"glint": { "texture": "preset:fire", "scale": 0.12 },
+			"glint": { "texture": "preset:inferno", "scale": 0.12 },
 			"gap_fix": "auto"
 		},
 		{
-			"id": "frost",
-			"caption": "Frost",
+			"id": "storm",
+			"caption": "Storm",
 			"outline": { "color": "#7FD8FF", "thickness": 2.5 },
-			"glint": { "texture": "preset:frost", "scale": 0.12 },
+			"glint": { "texture": "preset:storm", "scale": 0.12 },
 			"gap_fix": "auto"
 		},
 		{
-			"id": "gold",
-			"caption": "Gold",
-			"outline": { "color": "#FFC83D", "thickness": 2.5 },
-			"glint": { "texture": "preset:gold", "scale": 0.12 },
+			"id": "opal",
+			"caption": "Opal",
+			"outline": { "color": "#9FE8D8", "thickness": 2.5 },
+			"glint": { "texture": "preset:opal", "scale": 0.12 },
 			"gap_fix": "auto"
 		},
 		{
-			"id": "aurora",
-			"caption": "Aurora",
+			"id": "starlight",
+			"caption": "Starlight",
 			"outline": {
 				"color": { "mode": "gradient", "colors": ["#3CFFB4", "#4B7BFF", "#C05CFF"], "speed": 1.0 },
 				"thickness": 2.5
 			},
-			"glint": { "texture": "preset:aurora", "scale": 0.12 },
+			"glint": { "texture": "preset:starlight", "scale": 0.12 },
 			"gap_fix": "auto"
 		},
 		{

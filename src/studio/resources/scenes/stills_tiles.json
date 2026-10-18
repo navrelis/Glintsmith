@@ -84,6 +84,41 @@
 			"caption": "Void glint",
 			"id": "glint_void"
 		},
+		{
+			"outline": { "enabled": false },
+			"glint": { "texture": "preset:inferno", "scale": 0.12 },
+			"gap_fix": "auto",
+			"caption": "Inferno glint",
+			"id": "glint_inferno"
+		},
+		{
+			"outline": { "enabled": false },
+			"glint": { "texture": "preset:nebula", "scale": 0.12 },
+			"gap_fix": "auto",
+			"caption": "Nebula glint",
+			"id": "glint_nebula"
+		},
+		{
+			"outline": { "enabled": false },
+			"glint": { "texture": "preset:starlight", "scale": 0.12 },
+			"gap_fix": "auto",
+			"caption": "Starlight glint",
+			"id": "glint_starlight"
+		},
+		{
+			"outline": { "enabled": false },
+			"glint": { "texture": "preset:opal", "scale": 0.12 },
+			"gap_fix": "auto",
+			"caption": "Opal glint",
+			"id": "glint_opal"
+		},
+		{
+			"outline": { "enabled": false },
+			"glint": { "texture": "preset:storm", "scale": 0.12 },
+			"gap_fix": "auto",
+			"caption": "Storm glint",
+			"id": "glint_storm"
+		},
 		{ "vanilla": true, "caption": "No outline", "id": "outline_vanilla" },
 		{
 			"glint": { "enabled": false },
@@ -179,6 +214,11 @@
 		{ "name": "glint_sparkle", "look": "glint_sparkle", "yaw": 25, "time": 3.2199999999999998 },
 		{ "name": "glint_gold", "look": "glint_gold", "yaw": 25, "time": 3.59 },
 		{ "name": "glint_void", "look": "glint_void", "yaw": 25, "time": 3.96 },
+		{ "name": "glint_inferno", "look": "glint_inferno", "yaw": 25, "time": 8.03 },
+		{ "name": "glint_nebula", "look": "glint_nebula", "yaw": 25, "time": 8.40 },
+		{ "name": "glint_starlight", "look": "glint_starlight", "yaw": 25, "time": 8.77 },
+		{ "name": "glint_opal", "look": "glint_opal", "yaw": 25, "time": 9.14 },
+		{ "name": "glint_storm", "look": "glint_storm", "yaw": 25, "time": 9.51 },
 		{ "name": "outline_vanilla", "look": "outline_vanilla", "yaw": 25, "time": 4.33 },
 		{ "name": "outline_static", "look": "outline_static", "yaw": 25, "time": 4.7 },
 		{ "name": "outline_rainbow", "look": "outline_rainbow", "yaw": 25, "time": 5.07 },

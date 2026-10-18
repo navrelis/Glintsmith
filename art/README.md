@@ -59,7 +59,7 @@ Always run Python with `-B` so no `__pycache__` is left in `art/` (every script 
 The scene names, sizes and shots below are what the in-game studio has to produce and what `cards.json` refers to (`gallery/SHOTLIST.md`,
 section 4, has the content of each). A **turntable** is the frames of every look in order (`name` null in `scene.json`); a **still scene**
 has **one frame (one K / W pair) per shot** and the frame's `name` is the shot name, which `scene.find_frame` and `studio.py still`
-look up (`stills_tiles` has 19 frames, `outline_soft_80` among them).
+look up (`stills_tiles` has 24 frames, `outline_soft_80` among them).
 
 | Scene | Size | What |
 | --- | --- | --- |
@@ -68,7 +68,7 @@ look up (`stills_tiles` has 19 frames, `outline_soft_80` among them).
 | `armor_stand` | 480 x 600 | turntable, 3 to 4 looks of a stand in netherite armor: `armor.gif` (400 x 500 + caption bar, at most 8 MB) |
 | `stills_hero` | 1024 x 1024 | `banner_hero` (the banner picture), `logo` (logo, icon) |
 | `stills_wide` | 1200 x 400 | `universal_vanilla`, `universal_modded` (the two rows of `card_universal.png`) |
-| `stills_tiles` | 512 x 512 | `glint_vanilla`, `glint_neutral`, `glint_rainbow`, `glint_aurora`, `glint_fire`, `glint_frost`, `glint_sparkle`, `glint_gold`, `glint_void` (`card_glint_presets.png`) and `outline_vanilla`, `outline_static`, `outline_rainbow`, `outline_pulse`, `outline_gradient`, `outline_enchant`, `outline_thick_1`, `outline_thick_3`, `outline_thick_6`, `outline_soft_80` (`card_outline_styles.png`) |
+| `stills_tiles` | 512 x 512 | `glint_vanilla`, `glint_neutral`, `glint_rainbow`, `glint_aurora`, `glint_fire`, `glint_frost`, `glint_sparkle`, `glint_gold`, `glint_void`, `glint_inferno`, `glint_nebula`, `glint_starlight`, `glint_opal`, `glint_storm` (`card_glint_presets.png`) and `outline_vanilla`, `outline_static`, `outline_rainbow`, `outline_pulse`, `outline_gradient`, `outline_enchant`, `outline_thick_1`, `outline_thick_3`, `outline_thick_6`, `outline_soft_80` (`card_outline_styles.png`) |
 | `stills_gap` | 800 x 800 | `gap_sword_off`, `gap_sword_on`, `gap_modded_off`, `gap_modded_on` (`card_gap_fix.png`) |
 
 ### The logo and the icon
@@ -201,7 +201,7 @@ so pictures stay on whole pixels. For captures taken at **GUI scale 2**, `down: 
 text stays crisp. The card text uses only ASCII, set in the game's own font read from the Minecraft 1.21.1 client jar at build time.
 
 The cards that use studio renders: `banner.png` (`stills_hero` / `banner_hero`, left of the title), `card_universal.png` (`universal_vanilla`,
-`universal_modded`: two 920 x 164 rows, `trim: "y"`, no shadow), `card_glint_presets.png` and `card_outline_styles.png` (the 9 + 10 tile shots at
+`universal_modded`: two 920 x 164 rows, `trim: "y"`, no shadow), `card_glint_presets.png` and `card_outline_styles.png` (the 14 + 10 tile shots at
 150 px, a name box under each tile), `card_gap_fix.png` (the four gap shots at 215 px). When the real renders exist, check each tile for a
 subject that is cut off or too small and move its `size`, `crop` or `trim` here.
 
@@ -257,7 +257,7 @@ the GIFs on disk; run it once after the real build.
 | `docs/curseforge/img/banner.png` | 1000 x 420 | the `banner_hero` render, title, tagline and chips |
 | `docs/curseforge/img/card_universal.png` | 1000 x 590 | two rows of studio renders: vanilla and modded items, all outlined |
 | `docs/curseforge/img/lineup.gif` | 900 x 336 | six items in a row, each with its own look, swinging, captioned, at most 8 MB |
-| `docs/curseforge/img/card_glint_presets.png` | 1000 x 632 | nine glint presets as studio stills, with the vanilla glint as the before |
+| `docs/curseforge/img/card_glint_presets.png` | 1000 x 822 | the neutral glint and all twelve generated presets (seven clean, five rich) as studio stills, with the vanilla glint as the before, in a grid of 5 x 3 (the last slot holds a note) |
 | `docs/curseforge/img/card_outline_styles.png` | 1000 x 632 | ten outline styles as studio stills: vanilla, static, rainbow, pulse, gradient, per enchantment, thickness, soft glow |
 | `docs/curseforge/img/card_targets.png` | 1000 x 590 | hand and armor (hero shots), third person, dropped items, item frames, inventory |
 | `docs/curseforge/img/armor.gif` | 400 x 536 | the armor stand turning through its looks, captioned, at most 8 MB |

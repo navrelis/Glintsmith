@@ -15,7 +15,7 @@ costs a fraction of a second per frame in pure Python.  `--size 256` is a square
 docs/STUDIO.md and art/README.md): the turntables hero_sword (512 x 512, 6 looks), lineup (1200 x 400, six items, a
 +-35 degree yaw swing) and armor_stand (480 x 600, 4 looks) with `--frames` frames in all (default 12; the real ones
 have 90 per look), and the still scenes stills_hero (1024 x 1024: banner_hero, logo), stills_wide (1200 x 400:
-universal_vanilla, universal_modded), stills_tiles (512 x 512: 9 glint_* and 10 outline_* shots) and stills_gap
+universal_vanilla, universal_modded), stills_tiles (512 x 512: 14 glint_* and 10 outline_* shots) and stills_gap
 (800 x 800: gap_sword_off / _on, gap_modded_off / _on).  A still scene has one frame (one K / W pair) per shot; the
 frame's `name` is the shot name.
 
@@ -49,7 +49,9 @@ import matte       # noqa: E402
 MARK = "SYNTHETIC TEST CAPTURE"
 INK = (42, 36, 51)
 GLOWS = {"rainbow": (170, 110, 255), "frost": (110, 200, 255), "fire": (255, 140, 60), "aurora": (70, 215, 190),
-         "void": (110, 70, 200), "gold": (240, 185, 60), "neutral": (110, 215, 160), "sparkle": (255, 225, 110)}
+         "void": (110, 70, 200), "gold": (240, 185, 60), "neutral": (110, 215, 160), "sparkle": (255, 225, 110),
+         "inferno": (255, 96, 31), "nebula": (200, 92, 220), "starlight": (150, 170, 255), "opal": (120, 220, 205),
+         "storm": (92, 140, 230)}
 LOOKS = [("rainbow", "Rainbow glint + rainbow outline"), ("frost", "Frost glint + soft cyan outline"),
          ("fire", "Fire glint + pulsing outline")]
 
@@ -263,7 +265,7 @@ def make_scene(root, scene="synth_turntable", frames=36, width=256, height=256, 
 
 HERO_LOOKS = [("vanilla", "Vanilla", "rainbow", 0.20), ("outline", "Outline only", "rainbow", 0.20),
               ("rainbow", "Rainbow glint + rainbow outline", "rainbow", 0.55), ("fire", "Fire glint + pulsing outline", "fire", 0.55),
-              ("aurora", "Aurora glint + gradient outline", "aurora", 0.55), ("void", "Void glint + soft glow", "void", 0.60)]
+              ("nebula", "Nebula glint + gradient outline", "nebula", 0.55), ("inferno", "Inferno glint + soft glow", "inferno", 0.60)]
 ARMOR_LOOKS = [("vanilla", "Vanilla", "rainbow", 0.20), ("rainbow", "Rainbow glint + rainbow outline", "rainbow", 0.55),
                ("frost", "Frost glint + cyan outline", "frost", 0.55), ("gold", "Gold glint + gold outline", "gold", 0.55)]
 LINEUP_TINTS = [(1.0, 1.0, 1.0), (0.8, 0.9, 1.1), (1.1, 0.85, 0.8), (0.9, 1.1, 0.85), (1.1, 1.0, 0.7), (0.85, 0.8, 1.1)]
@@ -284,7 +286,8 @@ SHOTS = {
     "stills_hero": ["banner_hero", "logo"],
     "stills_wide": ["universal_vanilla", "universal_modded"],
     "stills_tiles": ["glint_vanilla", "glint_neutral", "glint_rainbow", "glint_aurora", "glint_fire", "glint_frost", "glint_sparkle",
-                     "glint_gold", "glint_void", "outline_vanilla", "outline_static", "outline_rainbow", "outline_pulse",
+                     "glint_gold", "glint_void", "glint_inferno", "glint_nebula", "glint_starlight", "glint_opal", "glint_storm",
+                     "outline_vanilla", "outline_static", "outline_rainbow", "outline_pulse",
                      "outline_gradient", "outline_enchant", "outline_thick_1", "outline_thick_3", "outline_thick_6", "outline_soft_80"],
     "stills_gap": ["gap_sword_off", "gap_sword_on", "gap_modded_off", "gap_modded_on"],
 }
@@ -292,7 +295,8 @@ SHOTS = {
 # glint presets and outline styles of the tiles scene: (name, glow colour, glow strength, ink px, ink colour)
 VIOLET, RED, GREEN, AMBER = (160, 80, 240), (214, 60, 70), (31, 160, 110), (255, 138, 31)
 TILES = ([("glint_vanilla", "rainbow", 0.18, 2, INK)] +
-         [("glint_" + k, k, 0.58, 2, INK) for k in ("neutral", "rainbow", "aurora", "fire", "frost", "sparkle", "gold", "void")] +
+         [("glint_" + k, k, 0.58, 2, INK) for k in ("neutral", "rainbow", "aurora", "fire", "frost", "sparkle", "gold", "void",
+                                          "inferno", "nebula", "starlight", "opal", "storm")] +
          [("outline_vanilla", "rainbow", 0.0, 0, INK), ("outline_static", "rainbow", 0.0, 2, VIOLET),
           ("outline_rainbow", "rainbow", 0.0, 3, (90, 110, 230)), ("outline_pulse", "rainbow", 0.0, 3, AMBER),
           ("outline_gradient", "rainbow", 0.0, 3, GREEN), ("outline_enchant", "rainbow", 0.0, 3, RED),

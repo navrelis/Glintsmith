@@ -149,7 +149,7 @@
    "out": "card_glint_presets.png",
    "size": [
     1000,
-    632
+    822
    ],
    "seed": 17,
    "title": "Pick your glint",
@@ -290,10 +290,85 @@
      "label_below": "Void"
     },
     {
-     "type": "panel",
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "glint_inferno",
      "at": [
       784,
       298
+     ],
+     "size": [
+      176,
+      150
+     ],
+     "label_style": "accent",
+     "label_below": "Inferno"
+    },
+    {
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "glint_nebula",
+     "at": [
+      40,
+      488
+     ],
+     "size": [
+      176,
+      150
+     ],
+     "label_style": "accent",
+     "label_below": "Nebula"
+    },
+    {
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "glint_starlight",
+     "at": [
+      226,
+      488
+     ],
+     "size": [
+      176,
+      150
+     ],
+     "label_style": "accent",
+     "label_below": "Starlight"
+    },
+    {
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "glint_opal",
+     "at": [
+      412,
+      488
+     ],
+     "size": [
+      176,
+      150
+     ],
+     "label_style": "accent",
+     "label_below": "Opal"
+    },
+    {
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "glint_storm",
+     "at": [
+      598,
+      488
+     ],
+     "size": [
+      176,
+      150
+     ],
+     "label_style": "accent",
+     "label_below": "Storm"
+    },
+    {
+     "type": "panel",
+     "at": [
+      784,
+      488
      ],
      "size": [
       176,
@@ -305,7 +380,7 @@
      "type": "text",
      "at": [
       796,
-      312
+      502
      ],
      "width": 152,
      "text": "Tint, speed, scale, strength and angle are all adjustable.",
@@ -316,7 +391,7 @@
      "type": "text",
      "at": [
       40,
-      496
+      686
      ],
      "width": 920,
      "text": "Item, armor, entity and GUI glints are separate layers, so a rainbow chestplate and a plain sword are one setting each. Drop your own PNGs in as well."
@@ -325,10 +400,10 @@
      "type": "chips",
      "at": [
       40,
-      558
+      748
      ],
      "items": [
-      "9 PRESETS",
+      "12 PRESETS",
       "YOUR OWN PNGS",
       {
        "text": "EVERY LAYER",

@@ -68,13 +68,13 @@
 			}
 		},
 		{
-			"id": "void_glow",
-			"caption": "Void glint + soft glow",
-			"outline": { "color": "#9B4DFF", "thickness": 6, "softness": 0.85, "opacity": 0.9 },
-			"glint": { "texture": "preset:void", "scale": 0.1 },
+			"id": "inferno_glow",
+			"caption": "Inferno glint + soft glow",
+			"outline": { "color": "#FF6A1F", "thickness": 6, "softness": 0.85, "opacity": 0.9 },
+			"glint": { "texture": "preset:inferno", "scale": 0.1 },
 			"gap_fix": "auto",
 			"glint_layers": {
-				"item": { "texture": "preset:void", "scale": 0.12 }
+				"item": { "texture": "preset:inferno", "scale": 0.12 }
 			}
 		}
 	]

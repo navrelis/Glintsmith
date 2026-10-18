@@ -20,7 +20,8 @@ import org.jetbrains.annotations.Nullable;
  * Turns a scene look into a complete Glintsmith config. Nothing here touches the config file.
  * <p>
  * Base: an explicit vanilla-like baseline that does not depend on the built-in defaults of the mod (those change
- * between versions): outline on for enchanted items, static {@code #D088FC}, thickness 2, opacity 1, softness 0, all
+ * between versions): outline on for enchanted items, static {@code #D088FC}, thickness 2, opacity 1, softness 0,
+ * proportional width off (minimum thickness 1; the thickness is in output pixels), all
  * four glint layers at the vanilla values, gap fix on (auto), no durability alert and no enchantment colours. On top
  * of it every outline target is on, "only local player" off, resolution scaling off (the studio scales by the
  * supersample factor itself), no distance fade and no rules. The look's keys are merged over it
@@ -50,6 +51,8 @@ final class Looks {
 		o.thickness = 2.0f;
 		o.softness = 0.0f;
 		o.opacity = 1.0f;
+		o.proportional = false;
+		o.minThickness = 1.0f;
 		base.glint.enabled = true;
 		for (GlintsmithConfig.GlintCategorySettings g : new GlintsmithConfig.GlintCategorySettings[] {
 			base.glint.item, base.glint.armor, base.glint.entity, base.glint.gui}) {
