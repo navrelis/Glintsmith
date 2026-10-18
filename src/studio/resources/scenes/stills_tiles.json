@@ -1,0 +1,193 @@
+{
+	"scene": "stills_tiles",
+	"type": "still",
+	"width": 512,
+	"height": 512,
+	"supersample": 2,
+	"fps": 30,
+	"time_offset": 5.0,
+	"camera": {
+		"projection": "orthographic",
+		"pitch": 25,
+		"distance": 4,
+		"view_height": 1.55
+	},
+	"lights": {
+		"key": [-0.45, 0.75, 0.6],
+		"fill": [0.65, 0.2, 0.45]
+	},
+	"subjects": [
+		{
+			"type": "item",
+			"item": {
+				"item": "minecraft:netherite_sword",
+				"enchantments": { "minecraft:sharpness": 5, "minecraft:fire_aspect": 2, "minecraft:looting": 3, "minecraft:unbreaking": 3 }
+			},
+			"rotation": [0, 0, 45]
+		}
+	],
+	"looks": [
+		{ "vanilla": true, "caption": "Vanilla glint", "id": "glint_vanilla" },
+		{
+			"outline": { "enabled": false },
+			"glint": { "texture": "preset:neutral", "scale": 0.12 },
+			"gap_fix": "auto",
+			"caption": "Neutral glint",
+			"id": "glint_neutral"
+		},
+		{
+			"outline": { "enabled": false },
+			"glint": { "texture": "preset:rainbow", "scale": 0.12 },
+			"gap_fix": "auto",
+			"caption": "Rainbow glint",
+			"id": "glint_rainbow"
+		},
+		{
+			"outline": { "enabled": false },
+			"glint": { "texture": "preset:aurora", "scale": 0.12 },
+			"gap_fix": "auto",
+			"caption": "Aurora glint",
+			"id": "glint_aurora"
+		},
+		{
+			"outline": { "enabled": false },
+			"glint": { "texture": "preset:fire", "scale": 0.12 },
+			"gap_fix": "auto",
+			"caption": "Fire glint",
+			"id": "glint_fire"
+		},
+		{
+			"outline": { "enabled": false },
+			"glint": { "texture": "preset:frost", "scale": 0.12 },
+			"gap_fix": "auto",
+			"caption": "Frost glint",
+			"id": "glint_frost"
+		},
+		{
+			"outline": { "enabled": false },
+			"glint": { "texture": "preset:sparkle", "scale": 0.12 },
+			"gap_fix": "auto",
+			"caption": "Sparkle glint",
+			"id": "glint_sparkle"
+		},
+		{
+			"outline": { "enabled": false },
+			"glint": { "texture": "preset:gold", "scale": 0.12 },
+			"gap_fix": "auto",
+			"caption": "Gold glint",
+			"id": "glint_gold"
+		},
+		{
+			"outline": { "enabled": false },
+			"glint": { "texture": "preset:void", "scale": 0.12 },
+			"gap_fix": "auto",
+			"caption": "Void glint",
+			"id": "glint_void"
+		},
+		{ "vanilla": true, "caption": "No outline", "id": "outline_vanilla" },
+		{
+			"glint": { "enabled": false },
+			"gap_fix": "auto",
+			"outline": { "color": "#B05CFF", "thickness": 3 },
+			"id": "outline_static",
+			"caption": "outline_static"
+		},
+		{
+			"glint": { "enabled": false },
+			"gap_fix": "auto",
+			"outline": {
+				"color": { "mode": "rainbow", "speed": 1.0 },
+				"thickness": 3
+			},
+			"id": "outline_rainbow",
+			"caption": "outline_rainbow"
+		},
+		{
+			"glint": { "enabled": false },
+			"gap_fix": "auto",
+			"outline": {
+				"color": { "mode": "pulse", "colors": ["#FF4A00", "#FFD23F"], "speed": 1.5 },
+				"thickness": 3
+			},
+			"id": "outline_pulse",
+			"caption": "outline_pulse"
+		},
+		{
+			"glint": { "enabled": false },
+			"gap_fix": "auto",
+			"outline": {
+				"color": { "mode": "gradient", "colors": ["#3CFFB4", "#4B7BFF", "#C05CFF"], "speed": 1.0 },
+				"thickness": 3
+			},
+			"id": "outline_gradient",
+			"caption": "outline_gradient"
+		},
+		{
+			"glint": { "enabled": false },
+			"gap_fix": "auto",
+			"outline": {
+				"color": { "mode": "enchantment" },
+				"thickness": 3
+			},
+			"config": {
+				"enchantmentColors": {
+					"minecraft:sharpness": "#FF4A4A",
+					"minecraft:fire_aspect": "#FFA21F",
+					"minecraft:looting": "#3CD6FF",
+					"minecraft:unbreaking": "#B05CFF"
+				}
+			},
+			"id": "outline_enchant",
+			"caption": "outline_enchant"
+		},
+		{
+			"glint": { "enabled": false },
+			"gap_fix": "auto",
+			"outline": { "color": "#B05CFF", "thickness": 1 },
+			"id": "outline_thick_1",
+			"caption": "outline_thick_1"
+		},
+		{
+			"glint": { "enabled": false },
+			"gap_fix": "auto",
+			"outline": { "color": "#B05CFF", "thickness": 3 },
+			"id": "outline_thick_3",
+			"caption": "outline_thick_3"
+		},
+		{
+			"glint": { "enabled": false },
+			"gap_fix": "auto",
+			"outline": { "color": "#B05CFF", "thickness": 6 },
+			"id": "outline_thick_6",
+			"caption": "outline_thick_6"
+		},
+		{
+			"glint": { "enabled": false },
+			"gap_fix": "auto",
+			"outline": { "color": "#B05CFF", "thickness": 6, "softness": 0.8 },
+			"id": "outline_soft_80",
+			"caption": "outline_soft_80"
+		}
+	],
+	"shots": [
+		{ "name": "glint_vanilla", "look": "glint_vanilla", "yaw": 25, "time": 1.0 },
+		{ "name": "glint_neutral", "look": "glint_neutral", "yaw": 25, "time": 1.37 },
+		{ "name": "glint_rainbow", "look": "glint_rainbow", "yaw": 25, "time": 1.74 },
+		{ "name": "glint_aurora", "look": "glint_aurora", "yaw": 25, "time": 2.11 },
+		{ "name": "glint_fire", "look": "glint_fire", "yaw": 25, "time": 2.48 },
+		{ "name": "glint_frost", "look": "glint_frost", "yaw": 25, "time": 2.85 },
+		{ "name": "glint_sparkle", "look": "glint_sparkle", "yaw": 25, "time": 3.2199999999999998 },
+		{ "name": "glint_gold", "look": "glint_gold", "yaw": 25, "time": 3.59 },
+		{ "name": "glint_void", "look": "glint_void", "yaw": 25, "time": 3.96 },
+		{ "name": "outline_vanilla", "look": "outline_vanilla", "yaw": 25, "time": 4.33 },
+		{ "name": "outline_static", "look": "outline_static", "yaw": 25, "time": 4.7 },
+		{ "name": "outline_rainbow", "look": "outline_rainbow", "yaw": 25, "time": 5.07 },
+		{ "name": "outline_pulse", "look": "outline_pulse", "yaw": 25, "time": 5.4399999999999995 },
+		{ "name": "outline_gradient", "look": "outline_gradient", "yaw": 25, "time": 5.81 },
+		{ "name": "outline_enchant", "look": "outline_enchant", "yaw": 25, "time": 6.18 },
+		{ "name": "outline_thick_1", "look": "outline_thick_1", "yaw": 25, "time": 6.55 },
+		{ "name": "outline_thick_3", "look": "outline_thick_3", "yaw": 25, "time": 6.92 },
+		{ "name": "outline_thick_6", "look": "outline_thick_6", "yaw": 25, "time": 7.29 },
+		{ "name": "outline_soft_80", "look": "outline_soft_80", "yaw": 25, "time": 7.66 }
+	]
+}

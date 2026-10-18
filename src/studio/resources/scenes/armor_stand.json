@@ -10,29 +10,44 @@
 	"time_offset": 5.0,
 	"camera": {
 		"projection": "orthographic",
-		"pitch": 12,
+		"pitch": 10,
 		"distance": 6,
-		"view_height": 3.0
+		"view_height": 3.4
+	},
+	"lights": {
+		"key": [-0.45, 0.75, 0.6],
+		"fill": [0.65, 0.2, 0.45]
 	},
 	"subjects": [
 		{
 			"type": "armor_stand",
 			"nbt": "{ShowArms:1b,NoBasePlate:1b,Pose:{RightArm:[-15f,0f,10f],LeftArm:[-10f,0f,-10f]}}",
 			"equipment": {
-				"head": { "item": "minecraft:netherite_helmet", "enchantments": { "minecraft:protection": 4 } },
-				"chest": { "item": "minecraft:netherite_chestplate", "enchantments": { "minecraft:protection": 4 } },
-				"legs": { "item": "minecraft:netherite_leggings", "enchantments": { "minecraft:protection": 4 } },
-				"feet": { "item": "minecraft:netherite_boots", "enchantments": { "minecraft:protection": 4 } },
-				"mainhand": { "item": "minecraft:netherite_sword", "enchantments": { "minecraft:sharpness": 5 } }
+				"head": {
+					"item": "minecraft:netherite_helmet",
+					"enchantments": { "minecraft:protection": 4 }
+				},
+				"chest": {
+					"item": "minecraft:netherite_chestplate",
+					"enchantments": { "minecraft:protection": 4 }
+				},
+				"legs": {
+					"item": "minecraft:netherite_leggings",
+					"enchantments": { "minecraft:protection": 4 }
+				},
+				"feet": {
+					"item": "minecraft:netherite_boots",
+					"enchantments": { "minecraft:protection": 4 }
+				},
+				"mainhand": {
+					"item": "minecraft:netherite_sword",
+					"enchantments": { "minecraft:sharpness": 5 }
+				}
 			}
 		}
 	],
 	"looks": [
-		{
-			"id": "vanilla",
-			"caption": "Vanilla",
-			"vanilla": true
-		},
+		{ "id": "vanilla", "caption": "Vanilla", "vanilla": true },
 		{
 			"id": "armor_outline",
 			"caption": "Armor outline",
@@ -42,16 +57,25 @@
 		{
 			"id": "rainbow",
 			"caption": "Rainbow glint + rainbow outline",
-			"outline": { "color": { "mode": "rainbow" }, "thickness": 3 },
-			"glint": { "texture": "preset:rainbow" },
-			"gap_fix": "auto"
+			"outline": {
+				"color": { "mode": "rainbow", "speed": 1.0 },
+				"thickness": 3
+			},
+			"glint": { "texture": "preset:rainbow", "scale": 0.1 },
+			"gap_fix": "auto",
+			"glint_layers": {
+				"item": { "texture": "preset:rainbow", "scale": 0.12 }
+			}
 		},
 		{
 			"id": "void_glow",
 			"caption": "Void glint + soft glow",
 			"outline": { "color": "#9B4DFF", "thickness": 6, "softness": 0.85, "opacity": 0.9 },
-			"glint": { "texture": "preset:void" },
-			"gap_fix": "auto"
+			"glint": { "texture": "preset:void", "scale": 0.1 },
+			"gap_fix": "auto",
+			"glint_layers": {
+				"item": { "texture": "preset:void", "scale": 0.12 }
+			}
 		}
 	]
 }

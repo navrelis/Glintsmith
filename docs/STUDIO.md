@@ -18,7 +18,7 @@ It is a separate Gradle source set and a separate mod (`glintsmith_studio`). The
 ```
 
 * `-Pscene` is a JSON file (relative to the repository root or absolute) or the name of a scene in
-  `src/studio/resources/scenes/` (`hero_sword`, `lineup`, `armor_stand`). Gradle passes it to the game as
+  `src/studio/resources/scenes/` (`hero_sword`, `lineup`, `armor_stand`, `stills_hero`, `stills_wide`, `stills_tiles`, `stills_gap`). Gradle passes it to the game as
   `-Dglintsmith.studio.scene=...`. Without it the studio mod stays idle and the dev client is a normal client.
 * The game runs in `run-studio/` (git-ignored) with its own options, config and saves. It never touches a player's game
   directory, and the in-memory looks never write `run-studio/config/glintsmith.json`.
@@ -97,7 +97,9 @@ Ticks, the loading overlay and the integrated server keep the real clock, so the
 studio waits for it. The time of the next frame is set at the end of the previous game frame, so the frame-start hooks
 read it. Frame `n` and `n+1` are therefore exactly `1/fps` apart in every animation. One turntable revolution per look
 (`turns_per_look`, default 1) over `frames_per_look` frames, with the angle `360 × turns × f / frames_per_look` for
-`f = 0 .. frames_per_look-1`, so every look loops cleanly in rotation. The glint scroll and colour animations do not
+`f = 0 .. frames_per_look-1`, so every look loops cleanly in rotation. With `swing` set, the turn is replaced by a
+yaw swing: angle `swing × sin(360° × turns × f / frames_per_look)`, i.e. `±swing` degrees around the front view,
+which also loops cleanly. Use it for flat items (a flat item is edge-on, a sliver, at 90°). The glint scroll and colour animations do not
 loop with the turntable (their periods are unrelated); a GIF that must loop seamlessly in those too needs a matching
 duration.
 
@@ -177,6 +179,7 @@ key (values shown are the defaults where a key is optional):
   "fps": 30,
   "seconds_per_look": 3.0,             // or "frames_per_look": 90 (wins if both are given)
   "turns_per_look": 1,                 // turntable revolutions per look (may be fractional or negative)
+  "swing": 0,                          // degrees; if not 0 the turntable swings +-swing degrees (sine) instead of turning
   "time_offset": 0.0,                  // seconds added to the studio clock
   "settle_frames": 3,                  // game frames between a look change and its first studio frame
   "output": null,                      // optional output folder (absolute, or relative to the repo); default art/captures/studio/<scene>
@@ -208,7 +211,7 @@ key (values shown are the defaults where a key is optional):
       "pos": [0, 0, 0],                // centre of the item (an armor stand is centred at its mid height)
       "rotation": [0, 0, 45],          // fixed orientation in degrees, applied before the turntable (Y, then X, then Z)
       "scale": 1.0,                    // a GUI-context item is 1 block (16 px) wide at scale 1
-      "pivot": [0, 0, 0],              // point of the subject on the turntable axis (own rotated, unscaled coordinates); recentres off-centre models such as the shield
+      "pivot": [0, 0, 0],              // point of the subject on the turntable axis (own rotated, unscaled coordinates); recentres off-centre models such as the shield, whose centre is at [-0.08, 0, -0.48]
       "phase": 0,                      // turntable phase offset in degrees
       "spin": true,                    // false keeps the subject still
       "look": null                     // a look id to use for this subject instead of the frame's look
@@ -239,7 +242,7 @@ key (values shown are the defaults where a key is optional):
       },
       "glint": {                       // merged into all four glint layers (item, armor, entity, gui)
         "texture": "preset:rainbow",   // vanilla, preset:<neutral|rainbow|aurora|fire|frost|sparkle|gold|void>, file:x.png, ns:path.png
-        "tint": null, "speed": 1.0, "scale": 1.0, "strength": 1.0, "rotation": 10.0
+        "tint": null, "speed": 1.0, "scale": 1.0, "strength": 1.0, "rotation": 10.0   // scale 0.1..10, see "Glint scale" below
       },
       "glint_layers": { "armor": { "texture": "preset:void" } },   // per layer, after "glint"
       "gap_fix": "auto",               // "auto", "off", or a config.gapFix object
@@ -256,7 +259,10 @@ key (values shown are the defaults where a key is optional):
 
 (The JSON parser does not accept the comments shown above; they are documentation only.)
 
-Look base config: the Glintsmith defaults, with every outline target on (first person, third person, armor, dropped,
+Look base config: an explicit vanilla-like baseline that does not follow the built-in defaults of the mod (those change
+between versions, and the renders must not): outline on for enchanted items, static `#D088FC`, thickness 2, opacity 1,
+softness 0, all four glint layers at the vanilla values (texture none, no tint, speed / scale / strength 1, rotation 10),
+gap fix auto, no durability alert, no enchantment colours. On top of it every outline target is on (first person, third person, armor, dropped,
 item frame, GUI, other), "only local player" off, resolution scaling off (the studio scales thickness by the
 supersample itself), distance fade off, and no rules. Merge order: `vanilla`, `outline`, `glint`, `glint_layers`,
 `gap_fix`, `rules`, `config`. A colour may be a plain hex string; enum values (`mode`, `condition`) may be lower case.
@@ -270,13 +276,32 @@ Stills: `"type": "still"` renders one frame per entry of `shots`. A shot sets th
 optionally the camera `pitch`, a partial `camera` override, its own `subjects`, and the clock `time` (seconds, plus
 `time_offset`; default `(index-1)/fps + time_offset`). The shot `name` goes into `scene.json` (default `shot_NNNN`).
 
+### Glint scale
+
+The glint texture coordinates follow the model's UVs, not its size in the world, and an item sprite covers only a small
+part of the block atlas, so at the default `scale` 1 one 16 px item shows a small window of the glint texture, which
+reads as one flat colour (measured: the pattern changes with the scale, not with the item's size on screen). A smaller `scale` (the matrix is `base / scale`) puts more of the texture on the item: the scenes use 0.1 to 0.15
+for items and 0.1 for armor (the armor glint is sampled over the whole armor model texture and has a much smaller base
+scale; 0.25 and above gave blotches the size of a whole armor piece). 0.1 is the minimum the config allows.
+
+### Gap-fix stills
+
+The hairline cracks the gap fix closes are one render pixel wide whatever the zoom, so `stills_gap` renders at
+supersample 1 (a downsample would halve their contrast) and uses perspective views that graze the side faces. A gap-fix
+change reloads the resources, so the shots are ordered by look: both `off` shots, then both `on` shots. The two shots of
+a pair use the same view, so the pair can be shown as before / after (or flipped on one spot).
+
 ## Example scenes
 
 | Scene | Content |
 |---|---|
-| `hero_sword` | One enchanted netherite sword standing upright, 3/4 pitch, six looks (vanilla, static purple outline, rainbow glint + rainbow outline, fire glint + pulse outline, aurora glint + gradient outline, void glint + soft glow). 512x512, supersample 2, 30 fps, one turn per look over 3 s: 540 frames. |
-| `lineup` | Sword, pickaxe, trident, shield, netherite chestplate (item) and bow in a row, each with its own look. 1200x400, one turn over 4 s: 120 frames. |
-| `armor_stand` | Armor stand in full enchanted netherite armor holding the sword, armor outline target on. 480x600, four looks of 4 s: 480 frames. |
+| `hero_sword` | Netherite sword upright, 3/4 pitch, yaw swing of +-55 degrees (the sword never goes edge-on), six looks (vanilla, static purple outline, rainbow glint + rainbow outline, fire glint + pulse outline, aurora glint + gradient outline, void glint + soft glow), glint scale 0.12. 512x512, supersample 2, 30 fps, 2.5 s per look: 450 frames. |
+| `lineup` | Netherite sword, diamond pickaxe, trident, shield (pivoted), netherite chestplate (item) and bow in a row (spacing 0.95, view height 2.0, items about 70 % of the frame height), each with its own look, +-35 degree yaw swing. 1200x400, one swing over 4 s: 120 frames. |
+| `armor_stand` | Armor stand in full enchanted netherite armor holding the sword, armor outline target on, armor glint scale 0.1, view height 3.4 (the stand is about 60 % of the height, the sword stays inside the frame all round). 480x600, four looks of 4 s: 480 frames. |
+| `stills_hero` | 1024x1024 stills: `banner_hero` (rainbow glint + rainbow outline, 3/4 view) and `logo` (aurora glint + purple outline, front view). |
+| `stills_wide` | 1200x400 stills with one look on every item (aurora glint + gradient outline): `universal_vanilla` (diamond sword, bow, trident, shield, elytra) and `universal_modded` (`advancednetherite:netherite_diamond_ingot`, `eternal_starlight:glistering_morning_star`, `immersive_armors:warrior_helmet`, `immersive_armors:warrior_chestplate`; needs `studio-mods/`; the four modded items sit at explicit `pos` x = -1.65, -0.55, 0.55, 1.65 so they fill the width). |
+| `stills_tiles` | 512x512 tiles of one enchanted netherite sword: `glint_vanilla`, `glint_neutral`, `glint_rainbow`, `glint_aurora`, `glint_fire`, `glint_frost`, `glint_sparkle`, `glint_gold`, `glint_void`, `outline_vanilla`, `outline_static`, `outline_rainbow`, `outline_pulse`, `outline_gradient`, `outline_enchant`, `outline_thick_1`, `outline_thick_3`, `outline_thick_6`, `outline_soft_80`. Glint tiles have no outline, outline tiles keep the vanilla glint. |
+| `stills_gap` | 800x800, supersample 1, perspective close-ups at a grazing angle: `gap_sword_off`, `gap_sword_on` (netherite sword), `gap_modded_off`, `gap_modded_on` (`immersive_armors:warrior_chestplate`). The cracks are one pixel hairlines: show the stills at 1:1 or crop. |
 
 ## Files
 

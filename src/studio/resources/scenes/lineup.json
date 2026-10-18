@@ -7,64 +7,130 @@
 	"fps": 30,
 	"seconds_per_look": 4.0,
 	"turns_per_look": 1,
+	"swing": 35,
 	"time_offset": 5.0,
 	"camera": {
 		"projection": "orthographic",
-		"pitch": 20,
+		"pitch": 15,
 		"distance": 6,
-		"view_height": 2.45
+		"view_height": 2.0
 	},
-	"layout": { "type": "row", "spacing": 1.15 },
+	"lights": {
+		"key": [-0.45, 0.75, 0.6],
+		"fill": [0.65, 0.2, 0.45]
+	},
+	"layout": {
+		"type": "row",
+		"spacing": 0.95
+	},
 	"subjects": [
-		{ "item": { "item": "minecraft:netherite_sword", "enchantments": { "minecraft:sharpness": 5 } }, "rotation": [0, 0, 45], "scale": 0.8, "look": "rainbow" },
-		{ "item": { "item": "minecraft:netherite_pickaxe", "enchantments": { "minecraft:efficiency": 5 } }, "rotation": [0, 0, 45], "scale": 0.8, "phase": 30, "look": "fire" },
-		{ "item": { "item": "minecraft:trident", "enchantments": { "minecraft:loyalty": 3 } }, "rotation": [0, 0, 45], "scale": 0.8, "phase": 60, "look": "frost" },
-		{ "item": { "item": "minecraft:shield", "enchantments": { "minecraft:unbreaking": 3 } }, "scale": 0.8, "phase": 90, "look": "gold" },
-		{ "item": { "item": "minecraft:netherite_chestplate", "enchantments": { "minecraft:protection": 4 } }, "scale": 0.8, "phase": 120, "look": "aurora" },
-		{ "item": { "item": "minecraft:bow", "enchantments": { "minecraft:power": 5 } }, "scale": 0.8, "phase": 150, "look": "void" }
+		{
+			"item": {
+				"item": "minecraft:netherite_sword",
+				"enchantments": { "minecraft:sharpness": 5 }
+			},
+			"rotation": [0, 0, 45],
+			"phase": 0,
+			"look": "rainbow"
+		},
+		{
+			"item": {
+				"item": "minecraft:diamond_pickaxe",
+				"enchantments": { "minecraft:efficiency": 5 }
+			},
+			"rotation": [0, 0, 45],
+			"phase": 8,
+			"look": "fire"
+		},
+		{
+			"item": {
+				"item": "minecraft:trident",
+				"enchantments": { "minecraft:loyalty": 3 }
+			},
+			"rotation": [0, 0, 45],
+			"phase": -8,
+			"look": "frost"
+		},
+		{
+			"item": {
+				"item": "minecraft:shield",
+				"enchantments": { "minecraft:unbreaking": 3 }
+			},
+			"phase": 8,
+			"look": "gold",
+			"pivot": [-0.08, 0, -0.48]
+		},
+		{
+			"item": {
+				"item": "minecraft:netherite_chestplate",
+				"enchantments": { "minecraft:protection": 4 }
+			},
+			"phase": -8,
+			"look": "aurora"
+		},
+		{
+			"item": {
+				"item": "minecraft:bow",
+				"enchantments": { "minecraft:power": 5 }
+			},
+			"rotation": [0, 0, 45],
+			"phase": 0,
+			"look": "void"
+		}
 	],
 	"sequence": ["lineup"],
 	"looks": [
-		{
-			"id": "lineup",
-			"caption": "Every item its own look",
-			"gap_fix": "auto"
-		},
+		{ "id": "lineup", "caption": "Every item its own look", "gap_fix": "auto" },
 		{
 			"id": "rainbow",
 			"caption": "Rainbow",
-			"outline": { "color": { "mode": "rainbow" }, "thickness": 2.5 },
-			"glint": { "texture": "preset:rainbow" }
+			"outline": {
+				"color": { "mode": "rainbow", "speed": 1.0 },
+				"thickness": 2.5
+			},
+			"glint": { "texture": "preset:rainbow", "scale": 0.12 },
+			"gap_fix": "auto"
 		},
 		{
 			"id": "fire",
 			"caption": "Fire",
-			"outline": { "color": { "mode": "pulse", "colors": ["#FF4A00", "#FFD23F"], "speed": 1.5 }, "thickness": 2.5 },
-			"glint": { "texture": "preset:fire" }
+			"outline": {
+				"color": { "mode": "pulse", "colors": ["#FF4A00", "#FFD23F"], "speed": 1.5 },
+				"thickness": 2.5
+			},
+			"glint": { "texture": "preset:fire", "scale": 0.12 },
+			"gap_fix": "auto"
 		},
 		{
 			"id": "frost",
 			"caption": "Frost",
 			"outline": { "color": "#7FD8FF", "thickness": 2.5 },
-			"glint": { "texture": "preset:frost" }
+			"glint": { "texture": "preset:frost", "scale": 0.12 },
+			"gap_fix": "auto"
 		},
 		{
 			"id": "gold",
 			"caption": "Gold",
 			"outline": { "color": "#FFC83D", "thickness": 2.5 },
-			"glint": { "texture": "preset:gold" }
+			"glint": { "texture": "preset:gold", "scale": 0.12 },
+			"gap_fix": "auto"
 		},
 		{
 			"id": "aurora",
 			"caption": "Aurora",
-			"outline": { "color": { "mode": "gradient", "colors": ["#3CFFB4", "#4B7BFF", "#C05CFF"] }, "thickness": 2.5 },
-			"glint": { "texture": "preset:aurora" }
+			"outline": {
+				"color": { "mode": "gradient", "colors": ["#3CFFB4", "#4B7BFF", "#C05CFF"], "speed": 1.0 },
+				"thickness": 2.5
+			},
+			"glint": { "texture": "preset:aurora", "scale": 0.12 },
+			"gap_fix": "auto"
 		},
 		{
 			"id": "void",
 			"caption": "Void glow",
 			"outline": { "color": "#9B4DFF", "thickness": 5, "softness": 0.85, "opacity": 0.9 },
-			"glint": { "texture": "preset:void" }
+			"glint": { "texture": "preset:void", "scale": 0.12 },
+			"gap_fix": "auto"
 		}
 	]
 }
