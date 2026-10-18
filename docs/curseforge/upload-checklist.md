@@ -15,17 +15,17 @@ of the earlier releases are kept at the end of this file: 2.0.2 first, then 2.0.
 
 | Done | Item | Where |
 |---|---|---|
-| [ ] | 2.1.0 release gate: the build is made from the release commit, the tests are green, and `py -B art/verify.py` and `py -B docs/curseforge/preview.py --check` pass. Commit, test count and SHA-256 are entered in the file table below. | |
-| [ ] | The in-game check of the 2.1.0 defaults is done: a fresh install with no `config\glintsmith.json` shows the new default look, a static light purple outline #E6B2FF at 7.5 px on the held, dropped and framed items, worn armor and GUI items, plus the neutral glint with a light purple rainbow tint on all four layers. The config the mod writes equals the owner's config. Run on the isolated instance copy. | `CHANGELOG.md` section 2.1.0 |
+| [x] | 2.1.0 release gate: the build is made from the release commit, the tests are green, and `py -B art/verify.py` and `py -B docs/curseforge/preview.py --check` pass. Commit, test count and SHA-256 are entered in the file table below. Done: built from commit 04b6f29; 502 tests green; `art/verify.py` and `preview.py --check` pass. | |
+| [ ] | The in-game check of the 2.1.0 defaults is done: a fresh install with no `config\glintsmith.json` shows the new default look, a static light purple outline #E6B2FF at 7.5 px on the held, dropped and framed items, worn armor and GUI items, plus the neutral glint with a light purple rainbow tint on all four layers. The config the mod writes equals the owner's config. Run on the isolated instance copy. Not run: the owner chose to release 2.1.0 without the in-game check (2026-10-18). The defaults are pinned by DefaultConfigTest (a fresh config equals the owner's config file). The check script is ready for a later run on the isolated instance copy. | `CHANGELOG.md` section 2.1.0 |
 | [x] | `gradle.properties` says `mod_version=2.1.0` and the `CHANGELOG.md` 2.1.0 heading carries the release date. Done: `gradle.properties` 2.1.0 and the CHANGELOG 2.1.0 heading is dated 2026-10-18. | |
-| [ ] | Known and not changed by 2.1.0: the studio cards and GIFs on the page still show the 2.0.x default look. They were rendered with explicit studio configs, so they still show what the mod can do. | |
+| [x] | Known and not changed by 2.1.0: the studio cards and GIFs on the page still show the 2.0.x default look. They were rendered with explicit studio configs, so they still show what the mod can do. | |
 
 ## The file
 
 | Field | Value |
 |---|---|
 | File to upload | `build/libs/glintsmith-2.1.0.jar` (not the `-sources` jar and not a `-dev` jar if one is in the folder) |
-| SHA-256 of the checked build | TBD (filled in by the lead after the release build) |
+| SHA-256 of the checked build | `15e615d38d686268a28301a2218f272b1113e09f284afc6c22ca41c1937d0a74` (`build/libs/glintsmith-2.1.0.jar`, commit 04b6f29, 502 tests green; not checked in game, see above) |
 | Display name | `glintsmith-2.1.0.jar` (the earlier uploads used the file name) |
 | Version | 2.1.0 |
 | Release type | Release |

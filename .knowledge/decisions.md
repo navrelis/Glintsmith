@@ -59,3 +59,4 @@
 - s17: tag v2.0.1 on the final release-docs commit; the uploaded jar is the in-game-tested b86b290e built from 8529521 (later commits change only docs/.knowledge, the build is reproducible).
 - 2026-10-18 s18: versioning = semver MAJOR.MINOR.PATCH: PATCH = bug fixes only, MINOR = new features that keep old configs/behaviour working, MAJOR = breaking change (config not readable as is, feature removed/changed, Minecraft version dropped). Highest kind of change in a release wins. Trident preview fix -> 2.0.2 (owner asked; this rule explained).
 - s18: owner config as built-in defaults -> 2.1.0 (MINOR): a fresh install looks different, saved configs keep their values, nothing breaks.
+- s19: owner chose to release 2.1.0 without the in-game defcheck (owner message in chat); defaults are pinned by DefaultConfigTest; defcheck script stays ready for a later run.
