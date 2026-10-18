@@ -84,6 +84,11 @@ with the settings you are changing. The same settings live in one JSON file that
   generated item models, and macOS gets its own values because its drivers bleed without UV shrink) or custom (your values). With "precise spans" the sides are built from more, smaller faces, which is exact but creates
   many more quads on HD textures; it is off by default. In game, automatic mode closed the step-corner cracks without
   slivers.
+- Edge guard (since 2.0.1, always on while the gap fix is on): the front and back faces of a flat item stop 1/64 of a
+  texture pixel short of the texture's border, and the side faces never sample on a texel border across the item's
+  thickness. Without the game's UV shrink, a pixel at the item's edge could otherwise take the colour of the
+  neighbouring texture on the block atlas (a single stray pixel, which the outline then rings). The texture stays exactly
+  aligned with the side faces, so the guard reopens none of the cracks, and it works the same on atlases of any size.
 - Automatic mode switches itself off when the mod `modelfix` (Model Gap Fix) is installed, because that mod already closes
   the seams. Custom mode still applies next to it, on top of that mod's own changes; precise spans do nothing then.
 - If the fix throws an error while a model is generated, it logs it once and stays off for the session.

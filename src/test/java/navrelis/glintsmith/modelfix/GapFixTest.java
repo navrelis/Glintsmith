@@ -1,5 +1,6 @@
 package navrelis.glintsmith.modelfix;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -147,6 +148,70 @@ class GapFixTest {
 			GapFix.adjustSideElement(face, reversedFrom, reversedTo, -5.0F, 0.1F);
 			assertTrue(reversedFrom.y >= reversedTo.y, face + " must not flip y");
 		}
+	}
+
+	@Test
+	void layerGuardCutsGeometryAndUvsByTheSameAmount() {
+		Vector3f from = new Vector3f(0, 0, 7.5F);
+		Vector3f to = new Vector3f(16, 16, 8.5F);
+		float[] south = {0, 0, 16, 16};
+		float[] north = {16, 0, 0, 16};
+		GapFix.guardLayerElement(from, to, 0.25F, 0.125F, south, north);
+		assertVec(0.25F, 0.125F, 7.5F, from);
+		assertVec(15.75F, 15.875F, 8.5F, to);
+		assertArrayEquals(new float[]{0.25F, 0.125F, 15.75F, 15.875F}, south, EPS);
+		// The back face keeps its mirrored u, so its texels stay where they were.
+		assertArrayEquals(new float[]{15.75F, 0.125F, 0.25F, 15.875F}, north, EPS);
+	}
+
+	@Test
+	void edgeGuardIsSmallButAboveSamplingPrecision() {
+		// About 1/256 texel is the usual sub-texel precision of texture sampling; 1/16 would show as a gap at the border.
+		assertTrue(GapFix.EDGE_GUARD_TEXELS > 1.0F / 256.0F);
+		assertTrue(GapFix.EDGE_GUARD_TEXELS < 1.0F / 16.0F);
+		assertTrue(GapFix.SIDE_THICKNESS_INSET_TEXELS > 0.0F && GapFix.SIDE_THICKNESS_INSET_TEXELS < 0.5F);
+	}
+
+	@Test
+	void sideThicknessInsetOnlyTouchesTheThicknessAxis() {
+		// UP/DOWN: u along the edge, v across the thickness.
+		float[] up = {2, 5, 7, 6};
+		GapFix.insetSideThickness(Direction.UP, up, 0.25F);
+		assertArrayEquals(new float[]{2, 5.25F, 7, 5.75F}, up, EPS);
+		float[] down = {2, 5, 7, 6};
+		GapFix.insetSideThickness(Direction.DOWN, down, 0.25F);
+		assertArrayEquals(new float[]{2, 5.25F, 7, 5.75F}, down, EPS);
+		// EAST/WEST: u across the thickness, v along the edge (vanilla stores it bottom first: t + 1, then s).
+		float[] east = {3, 9, 4, 4};
+		GapFix.insetSideThickness(Direction.EAST, east, 0.25F);
+		assertArrayEquals(new float[]{3.25F, 9, 3.75F, 4}, east, EPS);
+		float[] west = {4, 9, 3, 4};
+		GapFix.insetSideThickness(Direction.WEST, west, 0.25F);
+		assertArrayEquals(new float[]{3.75F, 9, 3.25F, 4}, west, EPS);
+		float[] front = {0, 0, 16, 16};
+		GapFix.insetSideThickness(Direction.SOUTH, front, 0.25F);
+		assertArrayEquals(new float[]{0, 0, 16, 16}, front, EPS);
+	}
+
+	@Test
+	void insetStopsAtTheMiddle() {
+		float[] uvs = {3, 0, 4, 1};
+		GapFix.insetPair(uvs, 0, 2, 5.0F);
+		assertEquals(3.5F, uvs[0], EPS);
+		assertEquals(3.5F, uvs[2], EPS);
+	}
+
+	@Test
+	void spriteBorderDetection() {
+		assertTrue(GapFix.isOnSpriteBorder(Direction.EAST, new Vector3f(0, 6, 7.5F)));
+		assertTrue(GapFix.isOnSpriteBorder(Direction.WEST, new Vector3f(16, 6, 7.5F)));
+		assertTrue(GapFix.isOnSpriteBorder(Direction.UP, new Vector3f(2, 16, 7.5F)));
+		assertTrue(GapFix.isOnSpriteBorder(Direction.DOWN, new Vector3f(2, 0, 7.5F)));
+		// Vanilla computes the plane as pixel * 16 / size, which is not always exactly 16 in floats.
+		assertTrue(GapFix.isOnSpriteBorder(Direction.WEST, new Vector3f(48.0F * (16.0F / 48.0F), 6, 7.5F)));
+		assertFalse(GapFix.isOnSpriteBorder(Direction.EAST, new Vector3f(1, 0, 7.5F)));
+		assertFalse(GapFix.isOnSpriteBorder(Direction.UP, new Vector3f(0, 15, 7.5F)));
+		assertFalse(GapFix.isOnSpriteBorder(Direction.SOUTH, new Vector3f(0, 0, 8.5F)));
 	}
 
 	@Test

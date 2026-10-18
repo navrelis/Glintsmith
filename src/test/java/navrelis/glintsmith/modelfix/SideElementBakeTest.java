@@ -32,8 +32,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
- * Generates the side elements of a small stair-step sprite with vanilla's real {@link ItemModelGenerator} (our mixin
- * applied) and bakes them with vanilla's {@link FaceBakery}, then compares the quads against plain vanilla.
+ * Generates the side elements and the front and back faces of a small stair-step sprite with vanilla's real
+ * {@link ItemModelGenerator} (our mixin applied) and bakes them with vanilla's {@link FaceBakery}, then compares the quads
+ * against plain vanilla.
  */
 class SideElementBakeTest {
 	/** Opaque pixels, row by row from the top: a two pixel tall left edge and a diagonal staircase. */
@@ -54,6 +55,7 @@ class SideElementBakeTest {
 	private static SpriteContents contents;
 	private static TextureAtlasSprite sprite;
 	private static Method createSideElements;
+	private static Method processFrames;
 
 	private final GapFix.Settings saved = GapFix.current();
 
@@ -71,6 +73,8 @@ class SideElementBakeTest {
 		};
 		createSideElements = ItemModelGenerator.class.getDeclaredMethod("createSideElements", SpriteContents.class, String.class, int.class);
 		createSideElements.setAccessible(true);
+		processFrames = ItemModelGenerator.class.getDeclaredMethod("processFrames", int.class, String.class, SpriteContents.class);
+		processFrames.setAccessible(true);
 	}
 
 	@AfterAll
@@ -111,17 +115,68 @@ class SideElementBakeTest {
 	}
 
 	@Test
-	void noOpSettingsGiveVanillaQuads() throws Exception {
+	void disabledSettingsGiveVanillaQuads() throws Exception {
 		List<BakedQuad> vanilla = bakeAll(generate(GapFix.vanilla()));
-		GapFix.Settings[] noOps = {
-			new GapFix.Settings(true, 1.0F, 0.0F, 0.0F, false),
-			new GapFix.Settings(false, 1.0F, 0.05F, 0.05F, false),
-		};
-		for (GapFix.Settings settings : noOps) {
-			List<BakedQuad> quads = bakeAll(generate(settings));
-			assertEquals(vanilla.size(), quads.size());
-			for (int i = 0; i < vanilla.size(); i++) {
-				assertSameQuad(vanilla.get(i), quads.get(i), settings + " quad " + i);
+		GapFix.Settings disabled = new GapFix.Settings(false, 1.0F, 0.05F, 0.05F, false);
+		List<BakedQuad> quads = bakeAll(generate(disabled));
+		assertEquals(vanilla.size(), quads.size());
+		for (int i = 0; i < vanilla.size(); i++) {
+			assertSameQuad(vanilla.get(i), quads.get(i), disabled + " quad " + i);
+		}
+		BlockElement layer = frames(disabled).get(0);
+		BlockElement vanillaLayer = frames(GapFix.vanilla()).get(0);
+		assertBits(vanillaLayer.from, layer.from);
+		assertBits(vanillaLayer.to, layer.to);
+	}
+
+	@Test
+	void zeroAdjustmentOnlyAppliesTheEdgeGuard() throws Exception {
+		assertOnlyCornersMove(0.0F, 0.0F);
+	}
+
+	@Test
+	void sideElementsOnTheSpriteBorderMeetTheGuardedFrontFace() throws Exception {
+		float guard = GapFix.EDGE_GUARD_TEXELS * 16.0F / SIZE;
+		int border = 0;
+		for (BlockElement element : generate(new GapFix.Settings(true, 0.0F, 0.0F, 0.0F, false))) {
+			Direction face = face(element);
+			float plane = face == Direction.UP || face == Direction.DOWN ? element.from.y : element.from.x;
+			if (Math.abs(plane - guard) < 1.0E-5F || Math.abs(plane - (16.0F - guard)) < 1.0E-5F) {
+				border++;
+			} else {
+				assertTrue(plane > guard && plane < 16.0F - guard, face + " plane " + plane + " lies between guard and border");
+			}
+		}
+		// The test sprite touches all four borders: left column (EAST), top right (WEST and UP), bottom row (DOWN).
+		assertTrue(border >= 4, "border side elements: " + border);
+	}
+
+	@Test
+	void frontAndBackFacesStayOffTheSpriteBorderWithAnExactTexelMapping() throws Exception {
+		// AUTO on Windows and Linux: no UV shrink, so the baked UVs show the model's mapping directly. Without the edge
+		// guard the corners sample exactly on the sprite border, where a pixel can pick up the neighbouring sprite.
+		GapFix.Settings settings = new GapFix.Settings(true, 0.0F, 0.005F, 0.0001F, false);
+		BlockElement layer = frames(settings).get(0);
+		float guard = GapFix.EDGE_GUARD_TEXELS * 16.0F / SIZE;
+		assertEquals(guard, layer.from.x, 1.0E-6F);
+		assertEquals(guard, layer.from.y, 1.0E-6F);
+		assertEquals(16.0F - guard, layer.to.x, 1.0E-5F);
+		assertEquals(16.0F - guard, layer.to.y, 1.0E-5F);
+		float atlasPerModel = (sprite.getU1() - sprite.getU0()) / 16.0F;
+		for (Direction direction : new Direction[]{Direction.SOUTH, Direction.NORTH}) {
+			BlockElementFace face = layer.faces.get(direction);
+			BakedQuad quad = new FaceBakery().bakeQuad(layer.from, layer.to, face, sprite, direction, IDENTITY, null, true);
+			int[] vertices = quad.getVertices();
+			for (int v = 0; v < 4; v++) {
+				float x = Float.intBitsToFloat(vertices[v * 8]) * 16.0F;
+				float y = Float.intBitsToFloat(vertices[v * 8 + 1]) * 16.0F;
+				float u = (Float.intBitsToFloat(vertices[v * 8 + 4]) - sprite.getU0()) / atlasPerModel;
+				float vv = (Float.intBitsToFloat(vertices[v * 8 + 5]) - sprite.getV0()) / atlasPerModel;
+				// Vanilla stores the back face's u mirrored, which cancels the north face's own mirror: u = x on both.
+				assertEquals(x, u, 1.0E-3F, direction + " vertex " + v + " u");
+				assertEquals(16.0F - y, vv, 1.0E-3F, direction + " vertex " + v + " v");
+				assertTrue(u >= guard * 0.5F && u <= 16.0F - guard * 0.5F, direction + " vertex " + v + " u " + u + " stays off the border");
+				assertTrue(vv >= guard * 0.5F && vv <= 16.0F - guard * 0.5F, direction + " vertex " + v + " v " + vv + " stays off the border");
 			}
 		}
 	}
@@ -157,22 +212,38 @@ class SideElementBakeTest {
 	}
 
 	/**
-	 * Each adjusted quad must face the same way, keep vertex order and per-vertex UVs, move {@code indent} against its
-	 * baked normal and grow {@code expansion} away from its centre on both in-plane axes. Values are in model units.
+	 * Each adjusted quad must face the same way, keep vertex order, keep its UVs along the edge, move its UVs across the
+	 * thickness inwards by the side thickness inset, move {@code indent} (plus the edge guard on the sprite border)
+	 * against its baked normal and grow {@code expansion} away from its centre on both in-plane axes. Values are in model
+	 * units.
 	 */
 	private void assertOnlyCornersMove(float expansion, float indent) throws Exception {
 		List<BlockElement> vanillaElements = generate(GapFix.vanilla());
 		List<BakedQuad> vanilla = bakeAll(vanillaElements);
 		List<BakedQuad> adjusted = bakeAll(generate(new GapFix.Settings(true, 1.0F, expansion, indent, false)));
 		assertEquals(vanilla.size(), adjusted.size());
+		float guard = GapFix.EDGE_GUARD_TEXELS * 16.0F / SIZE;
+		float inset = GapFix.SIDE_THICKNESS_INSET_TEXELS * 16.0F / SIZE;
+		// Baked UVs: vanilla's shrink pulls the UVs towards the face's UV centre by its ratio, then the sprite maps model
+		// units to atlas units.
+		float bakedInset = inset * (1.0F - sprite.uvShrinkRatio()) * (sprite.getU1() - sprite.getU0()) / 16.0F;
 		for (int q = 0; q < vanilla.size(); q++) {
 			BakedQuad a = vanilla.get(q);
 			BakedQuad b = adjusted.get(q);
-			String what = "e=" + expansion + " i=" + indent + " " + face(vanillaElements.get(q)) + " quad " + q;
+			Direction key = face(vanillaElements.get(q));
+			String what = "e=" + expansion + " i=" + indent + " " + key + " quad " + q;
 			assertEquals(a.getDirection(), b.getDirection(), what + " facing");
 			assertEquals(a.getDirection(), geometricFacing(b), what + " winding");
 			int[] va = a.getVertices();
 			int[] vb = b.getVertices();
+			float normalMove = indent + (GapFix.isOnSpriteBorder(key, vanillaElements.get(q).from) ? guard : 0.0F);
+			// UP and DOWN faces span the thickness on v (vertex int 5), EAST and WEST on u (vertex int 4).
+			int thick = key == Direction.UP || key == Direction.DOWN ? 5 : 4;
+			int along = thick == 5 ? 4 : 5;
+			float thickCentre = 0.0F;
+			for (int v = 0; v < 4; v++) {
+				thickCentre += Float.intBitsToFloat(va[v * 8 + thick]) / 4.0F;
+			}
 			int normalAxis = a.getDirection().getAxis().ordinal();
 			int normalSign = a.getDirection().getAxisDirection().getStep();
 			float[] centre = new float[3];
@@ -183,14 +254,16 @@ class SideElementBakeTest {
 			}
 			for (int v = 0; v < 4; v++) {
 				int o = v * 8;
-				assertEquals(va[o + 4], vb[o + 4], what + " vertex " + v + " u");
-				assertEquals(va[o + 5], vb[o + 5], what + " vertex " + v + " v");
+				assertEquals(va[o + along], vb[o + along], what + " vertex " + v + " UV along the edge");
+				float thickBefore = Float.intBitsToFloat(va[o + thick]);
+				float thickExpected = thickBefore + Math.signum(thickCentre - thickBefore) * bakedInset;
+				assertEquals(thickExpected, Float.intBitsToFloat(vb[o + thick]), 1.0E-6F, what + " vertex " + v + " UV across the thickness");
 				for (int axis = 0; axis < 3; axis++) {
 					float before = Float.intBitsToFloat(va[o + axis]);
 					float after = Float.intBitsToFloat(vb[o + axis]);
 					float expected;
 					if (axis == normalAxis) {
-						expected = before - normalSign * indent / 16.0F;
+						expected = before - normalSign * normalMove / 16.0F;
 					} else {
 						expected = before + Math.signum(before - centre[axis]) * expansion / 16.0F;
 					}
@@ -204,6 +277,13 @@ class SideElementBakeTest {
 		GapFix.apply(settings);
 		@SuppressWarnings("unchecked")
 		List<BlockElement> elements = (List<BlockElement>) createSideElements.invoke(new ItemModelGenerator(), contents, "layer0", 0);
+		return elements;
+	}
+
+	private static List<BlockElement> frames(GapFix.Settings settings) throws Exception {
+		GapFix.apply(settings);
+		@SuppressWarnings("unchecked")
+		List<BlockElement> elements = (List<BlockElement>) processFrames.invoke(new ItemModelGenerator(), 0, "layer0", contents);
 		return elements;
 	}
 

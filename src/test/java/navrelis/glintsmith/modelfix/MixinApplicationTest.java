@@ -25,6 +25,12 @@ class MixinApplicationTest {
 	}
 
 	@Test
+	void layerGuardHandlerIsApplied() throws Exception {
+		assertTrue(hasMethod(Class.forName(GENERATOR), "modifyReturnValue$", "$glintsmith$guardLayer"),
+			"ItemModelGeneratorMixin (edge guard) was not applied");
+	}
+
+	@Test
 	void spanHandlerIsApplied() throws Exception {
 		assertTrue(hasMethod(Class.forName(GENERATOR), "wrapOperation$", "$glintsmith$matchContiguousSpan"),
 			"ItemModelGeneratorSpanMixin was not applied");

@@ -22,6 +22,25 @@ public final class GapFix {
 	public record Settings(boolean enabled, float uvShrinkMultiplier, float sideExpansion, float sideIndent, boolean preciseSpans) {
 	}
 
+	/**
+	 * Edge guard: how far, in texels of the item's sprite, the front and back faces of a generated item stop short of the
+	 * sprite border, and how far the side faces on that border move inwards to meet them. Without UV shrink, a pixel on
+	 * the border samples the neighbouring sprite of the block atlas. Measured in the studio, 1/256 already stops that on
+	 * 2048, 8192 and 16384 atlases; 1/64 leaves margin for float precision on the largest atlases.
+	 */
+	public static final float EDGE_GUARD_TEXELS = 1.0F / 64.0F;
+
+	/**
+	 * How far, in texels, the UVs of a side face move inwards across the item's thickness. That axis samples a single
+	 * texel row or column, so the inset changes no colour; it only keeps the face's front and back edge off the texel
+	 * border, which otherwise bleeds into the neighbouring texel or sprite. Along the edge the UVs stay exact: an inset
+	 * there opened cracks in the studio.
+	 */
+	public static final float SIDE_THICKNESS_INSET_TEXELS = 0.25F;
+
+	/** Tolerance for "lies on the sprite border", in model units. */
+	private static final float BORDER_EPSILON = 1.0E-4F;
+
 	private static volatile Settings current = autoSettings();
 
 	/** Set when a mixin handler threw; the fix then stays off for the rest of the session. */
@@ -118,6 +137,62 @@ public final class GapFix {
 			default -> {
 			}
 		}
+	}
+
+	/**
+	 * Edge guard for the layer element of a generated item (the box holding its front and back face): pulls its four
+	 * in-plane sides in by {@code dx} and {@code dy} model units and moves the UVs of both faces by the same amount, so
+	 * every texel stays exactly where the side faces expect it and only a sliver at the sprite border is cut off. The
+	 * UV arrays are changed in place and keep their direction (the back face runs from u = 16 to u = 0).
+	 */
+	public static void guardLayerElement(Vector3f from, Vector3f to, float dx, float dy, float[]... faceUvs) {
+		from.x += dx;
+		from.y += dy;
+		to.x -= dx;
+		to.y -= dy;
+		for (float[] uvs : faceUvs) {
+			insetPair(uvs, 0, 2, dx);
+			insetPair(uvs, 1, 3, dy);
+		}
+	}
+
+	/**
+	 * Whether a side element of a generated item lies on the border of its sprite. Called with vanilla's coordinates,
+	 * before {@link #adjustSideElement}: EAST and WEST elements are planes of constant x, UP and DOWN of constant y.
+	 */
+	public static boolean isOnSpriteBorder(Direction face, Vector3f from) {
+		float plane = switch (face) {
+			case UP, DOWN -> from.y;
+			case EAST, WEST -> from.x;
+			default -> Float.NaN;
+		};
+		return Math.abs(plane) < BORDER_EPSILON || Math.abs(plane - 16.0F) < BORDER_EPSILON;
+	}
+
+	/**
+	 * Moves the UVs of a side face inwards by {@code inset} model units across the item's thickness only. UP and DOWN
+	 * faces run along u and span the thickness on v; EAST and WEST faces the other way round. Changes {@code uvs} in
+	 * place.
+	 */
+	public static void insetSideThickness(Direction face, float[] uvs, float inset) {
+		switch (face) {
+			case UP, DOWN -> insetPair(uvs, 1, 3, inset);
+			case EAST, WEST -> insetPair(uvs, 0, 2, inset);
+			default -> {
+			}
+		}
+	}
+
+	/** Moves {@code uvs[a]} and {@code uvs[b]} towards each other by {@code d} each, keeping their order; stops at the middle. */
+	static void insetPair(float[] uvs, int a, int b, float d) {
+		float low = Math.min(uvs[a], uvs[b]);
+		float high = Math.max(uvs[a], uvs[b]);
+		float mid = (low + high) * 0.5F;
+		float newLow = Math.min(low + d, mid);
+		float newHigh = Math.max(high - d, mid);
+		boolean ascending = uvs[a] <= uvs[b];
+		uvs[a] = ascending ? newLow : newHigh;
+		uvs[b] = ascending ? newHigh : newLow;
 	}
 
 	/** The UV shrink ratio to use for a sprite: vanilla's, scaled by the multiplier on the blocks atlas only. */

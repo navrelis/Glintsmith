@@ -2077,10 +2077,10 @@ values act on it: the UV shrink multiplier on the block atlas, the side expansio
 
 * The CUSTOM defaults mirror AUTO on Windows and Linux.
 * macOS keeps vanilla's UV shrink and a larger indent, because its drivers bleed without the shrink.
-* The trade-off of UV shrink 0 on the other platforms: pixels on the front quad's outer edge can sample the
-  neighbouring sprite of the atlas, which leaves a single wrongly coloured pixel that then gets its own outline ring.
-  Measured in the studio lineup scene: 61 of 120 frames with AUTO, 0 with gap fix off or a multiplier of 1.0. Open
-  (changing AUTO trades cracks against bleed); not changed in 2.0.1.
+* UV shrink 0 on the other platforms keeps the front quad's texels exactly on the side quads, but on its own it
+  bleeds: pixels on the front quad's outer edge sample the neighbouring sprite of the atlas, and the thickness edges of
+  side quads sample the neighbouring texel or sprite. Each leaves a single wrongly coloured pixel that then gets its own
+  outline ring. The edge guard below fixes that (2.0.1); the AUTO values are unchanged.
 * On the other platforms the side quads grow by 0.005 on both in-plane axes. An in-game sweep showed that
   0.005 closes the 1 px step-corner cracks of generated item models, while 0.01 and above left jagged
   slivers along the step edges.
@@ -2089,6 +2089,38 @@ values act on it: the UV shrink multiplier on the block atlas, the side expansio
   the expansion and indent depend on that order.
 * AUTO is switched off while the mod `modelfix` is installed; CUSTOM stacks on top of it and precise spans
   are inactive (README, section Compatibility).
+
+### Edge guard (2.0.1)
+
+Always on while the gap fix is enabled (AUTO and CUSTOM, every platform); no setting. Constants in `GapFix`, applied in
+`ItemModelGeneratorMixin`:
+
+* `EDGE_GUARD_TEXELS` = 1/64 texel. `processFrames`: the layer element (front and back face) is pulled in by that much
+  on all four in-plane sides, and both faces' UVs by the same amount (`guardLayerElement`). Position and UV move
+  together, so every texel stays where the side quads expect it; only a 1/64 texel sliver at the sprite border is cut.
+* `createSideElements`: side elements on the sprite border (EAST at x = 0, WEST at x = 16, UP at y = 16, DOWN at y = 0,
+  checked on vanilla's coordinates) move inwards by the same 1/64 texel, so they meet the cut front face and no rim gap
+  opens (`isOnSpriteBorder`, then `adjustSideElement` with indent only, before the regular expansion and indent).
+* `SIDE_THICKNESS_INSET_TEXELS` = 0.25 texel: the UVs of every side face move inwards across the item's thickness only
+  (`insetSideThickness`; v for UP/DOWN, u for EAST/WEST). That axis samples one texel row or column, so no colour
+  changes. The UVs along the edge stay exact: an inset there opened cracks in the studio (+25 % crack pixels at 1/256).
+* Why geometric and not a smaller multiplier: the multiplier's inset is `m * 32 / atlas size` texels at the front edge,
+  so it shrinks on large atlases, and every m > 0 misaligns the front texels (cracks). Why 1/64: 1/256 already measured
+  clean on every atlas; 1/64 leaves margin for float precision on 16k atlases (a UV ulp near 1.0 is about 0.001
+  texel there). Without the border indent, 1/64 left a visible 1 px line along opaque borders in close-ups.
+* Measured in the studio (2026-10-18; lineup scene, 120 frames: frames with stray pixels; crack scene, 60 perspective
+  stills of six items at 800 x 800: background pixels a 3 x 3 closing fills):
+
+| Variant | Strays, atlas 2048 | Strays, 8192 | Strays, 16384 | Crack px (2048) |
+|---|---|---|---|---|
+| Gap fix off | 0 | | | 8329 |
+| AUTO without guard (2.0.0) | 20 | 47 | 94 | 1994 |
+| Multiplier 1.0 (vanilla shrink) | 0 | 4 | 14 | 5531 |
+| Multiplier 0.125 | 0 | 4 | 87 | 2136 |
+| AUTO with edge guard | 0 | 0 | 0 | 1991 |
+
+Large atlases came from a test resource pack with one 4096 or 8192 px block texture (atlas 8192 x 4096 and
+16384 x 8192).
 
 ---
 
