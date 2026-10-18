@@ -159,9 +159,9 @@ Composite locations at a glance:
 
 ### 3.1 Phases
 
-`OutlinePhase { NONE, WORLD, HAND, GUI }`. A tee is created only while a phase is open. Each phase has
-its own `PhaseState`: a mask buffer source, a style table, a bbox accumulator, a matrix snapshot and a
-`hasGeometry` flag. Phases never share a buffer source, so nesting (for example Iris rendering hands
+`OutlinePhase { NONE, WORLD, HAND, GUI, PREVIEW }` (PREVIEW since 2.0.0, section 12). A tee is created only while a
+phase is open. Each phase has its own `PhaseState`: a mask buffer source, a style table, a bbox accumulator, a matrix
+snapshot and a `hasGeometry` flag. Phases never share a buffer source, so nesting (for example Iris rendering hands
 inside `renderLevel`) cannot flush another phase's geometry. Only one phase is "current" at a time; the
 innermost open phase wins.
 
@@ -170,6 +170,7 @@ innermost open phase wins.
 | WORLD | `WorldRenderEvents.START`, if any world target is enabled, no shader pack is active and the failsafe has not tripped | world composite (O6), else `WorldRenderEvents.LAST`, else frame end (discard) | THIRD_PERSON, ARMOR, DROPPED, ITEM_FRAME, OTHER. Any other display context seen in world is treated as OTHER. |
 | HAND | O2 wrap of `renderHandsWithItems`, if FIRST_PERSON is enabled | end of that wrap (vanilla), or `GameRenderer.renderLevel` RETURN (Iris) | FIRST_PERSON. Both hand pairs count: FIRST_PERSON_* and THIRD_PERSON_* contexts drawn inside the phase (see below). |
 | GUI | O5 wrap of private `GuiGraphics.renderItem(...)`, if GUI is enabled | end of that wrap | GUI |
+| PREVIEW (2.0.0) | `OutlineSystem.beginPreview`, called by `PreviewRenderer` around one item render of the settings screen | `OutlineSystem.endPreview` | FIRST_PERSON, whatever the context (section 12.2) |
 
 Display context to target mapping (used by T5, and separately by T6):
 
@@ -1925,6 +1926,24 @@ Glint:
     the creative tabs and the hotbar show the custom look; the hotbar sprite, item counts and durability
     bars stay intact (no erased hotbar, the T20 rule), also with GUI outlines on. Without
     ImmediatelyFast the GUI glint is unchanged. Pending.
+31. Live preview (2.0.0, section 12), in a world with an enchanted sword in the main hand and the settings screen
+    (`/glintsmith`) open. Pending, nothing of it has been seen in game yet:
+    a. The panel stands right of the options at GUI scale 2 and a 1920 x 1080 window, shows the sword in first-person
+       look (upright, centred, not clipped, outline not cut off at the frame), turns slowly, and a drag turns it by
+       hand; after a release it resumes after about 1.5 s; right click resets the view.
+    b. Changing a colour, thickness, the glint texture or tint in the tabs changes the preview at once; typing a texture
+       spec (`preset:fi`, `preset:fire`) shows no WARN lines in the log. The held sword in the world is unchanged until
+       Done. Cancel and discard leave the saved look untouched.
+    c. Open a rule that matches the sword, change its outline colour or glint, open the colour picker from it: the
+       preview follows the unsaved rule and the unsaved pick; Cancel in the picker or the editor takes it back. The
+       rule editor note shows for a rule that does not match or has no first-person target.
+    d. Source strip: held item / sample sword (kept after closing the screen); empty hand shows the sword and the note;
+       a filled map shows no outline and a note; the title screen (Mod Menu) shows a plain glinting sword and the
+       `No world loaded` note. Master outline switch off, first person off: the notes say so.
+    e. Narrow window or GUI scale 4: the panel shrinks, moves next to the footer buttons of the main screen and is
+       hidden on the sub screens. F1 and a resize do not break it.
+    f. Repeat with Iris and a shader pack (notes `Shader pack: ...`, outline and glint still appear), with
+       ImmediatelyFast (no erased hotbar behind the screen, glint in the preview) and with Punchy.
 
 ---
 
@@ -1951,3 +1970,176 @@ values act on it: the UV shrink multiplier on the block atlas, the side expansio
   the expansion and indent depend on that order.
 * AUTO is switched off while the mod `modelfix` is installed; CUSTOM stacks on top of it and precise spans
   are inactive (README, section Compatibility).
+
+---
+
+## 12. Live preview (2.0.0)
+
+The settings screen draws the item in the player's main hand as it looks in first person under the settings that are
+on screen but not saved yet. The preview does not run the live pipeline on a copy of the world: it renders one item
+through the real `ItemRenderer.render` into the real glint and outline systems, with the settings of all three
+systems swapped for the duration of that one call. There are no mixins and no shaders of its own. Packages
+`navrelis.glintsmith.render.preview` (rendering) and `navrelis.glintsmith.gui.preview` (panel, state, layout).
+Nothing in this section has been checked in game; it rests on unit tests and on reading the code. The in-game checks
+are listed in 12.7 and in section 10, item 31.
+
+### 12.1 Mechanism
+
+`PreviewRenderer.draw(GuiGraphics, x0, y0, x1, y1, stack, snapshot, yaw, pitch, marginGui, outline)` per frame:
+
+1. The model is `ItemRenderer.getModel(stack, level, player, 0)`; the context is `FIRST_PERSON_RIGHT_HAND`, so the
+   rules, the glint category and the outline target classify the item exactly like the item in the hand (FIRST_PERSON,
+   category ITEM). The display transform of that context (`translate · rotationXYZ · scale`) is cancelled again by
+   `PreviewPose.applyInverse` on the pose, so the item is shown upright and centred, not as held. A transform that
+   cannot be inverted (a scale axis below 1e-4, a non-finite component; `PreviewPose.invertible`) falls back to
+   context `NONE` without cancelling.
+2. The size comes from the item's real bounds: `PreviewBounds.measure` renders the item once into a recording
+   `MultiBufferSource` / `VertexConsumer` that keeps only vertex positions (an item that throws or draws nothing gives
+   the unit cube). The result is cached per (item, model identity, context), at most 16 entries, cleared when the
+   settings screen closes (`PreviewRenderer.clearCache`). The measuring render is skipped while an outline phase is
+   open (unit cube for that frame), because it would be captured.
+3. `PreviewPose.fit` returns the largest scale at which the bounds stay inside the box less the margin for every yaw
+   at the current pitch (the radius of the x/z extent against the half height, mixed by the pitch) and within +-110 GUI
+   units of depth, at least 1. The turntable is `scale(s, -s, s) · pitch(X) · yaw(Y) · translate(-centre)` on a pose
+   at the box centre with z = 150 like GUI items, so the item stays between z 40 and 260. The pose is a private
+   `PoseStack` seeded with the GUI pose, so an item renderer that throws cannot unbalance `GuiGraphics.pose()`.
+4. `g.flush()`, scissor to the box, `Lighting.setupForEntityInInventory()`; the item is drawn into
+   `GlintSystem.previewSource()`, the game's main source (not `g.bufferSource()`): the glint swap (G5a, and G9 for
+   ImmediatelyFast's subclass) only acts on that source. After the render the source is flushed with the depth test
+   off, the way `GuiGraphics.flush()` does it.
+5. Three scopes surround exactly that one render and are closed in reverse order in `finally`:
+   * `RuleEngine.beginScope(snapshot)`: every `resolve`, `outlineColor` and `enchantmentColorsOf` call reads the
+     snapshot. Scoped lookups use their own caches (`SCOPE_STYLES`, `SCOPE_COLORS`, 256 entries each, cleared when the
+     snapshot instance changes) and never touch the live caches or the one-entry fast path, so the world render
+     after the preview still hits its cached results.
+   * `GlintSystem.beginPreview(snapshot)`: `substitute` takes its `GlintRuntimeSettings` from
+     `active(previewSettings, settings)`, built once per snapshot instance. The atlas factor reaches the renderer only
+     through those settings (5.4.1), so the preview shows the option "Atlas-independent scale" like the hand. The
+     texture manager is put in quiet mode, so a texture spec that is being typed (invalid most of the time) logs no
+     warnings. The other entry points (`substituteBuffered`, `substituteGui`) keep the live settings; the preview never
+     draws into Iris's or ImmediatelyFast's GUI sources. `GlintSystem.onFrameBegin` clears the preview settings as a
+     safety net.
+   * `OutlineSystem.beginPreview(snapshot)`: opens the PREVIEW phase (12.2), unless the caller asked for no outline
+     (a filled map) or the failsafe has tripped; it never nests into an open phase. The live settings do not gate the
+     phase: the scoped rule engine decides (outline master switch, first-person target, rules).
+6. A throw anywhere in `draw` sets `PreviewRenderer.disabled`, logs one ERROR line (`Glintsmith/Preview`: "Preview
+   disabled for this session after an error") and leaves everything else alone; the scopes are closed by their
+   `finally`. The outline and glint failsafes stay separate: a tripped `OutlineFailsafe` still draws the item and
+   the glint and shows the note `unavailable`.
+
+### 12.2 The PREVIEW outline phase
+
+`OutlinePhase` gets a fifth value, `PREVIEW`, with its own lazily created `PhaseState` (the section 3.1 table has the
+other phases). `OutlineSystem.beginPreview` opens it and `endPreview` closes it; both are called from `PreviewRenderer`
+only, and the phase needs no mixin:
+
+* `OutlineContexts.forPhase(PREVIEW, any context)` is FIRST_PERSON; `phaseAccepts(PREVIEW, t)` holds only for
+  FIRST_PERSON. `capture` skips the live `accepts` gate for this phase (the live settings are not asked); the style
+  comes from the scoped rule engine.
+* The thickness scale is the HAND formula of the snapshot (`OutlineRuntimeSettings.thicknessScale(HAND, ...)`, so
+  "scale with window height" works as in the hand), from `OutlineRuntimeSettings.from(snapshot)`, which is cached per
+  snapshot instance.
+* The composite is the GUI one: a flat mask without scene depth (`MaskDepth.NONE`, no depth test, no distance fade),
+  clipped to the current scissor box, which is the preview box. There is no depth copy, no occluder and no
+  shader-pack special case. `finishItem` flushes the item's buffer source at the end of the render for PREVIEW as for
+  GUI items (the ImmediatelyFast rule of section 6).
+* `onFrameEnd` discards leftover geometry of the phase; `onClientStopping` closes it.
+* The signatures of `world`, `open(PhaseState)`, `compositeWorld`, `PhaseState.open` and `discard()` are unchanged and
+  no `Util.getMillis()` call was added to `onFrameBegin` or `time()`: the dev studio reflects on or redirects them
+  (`docs/STUDIO.md`).
+
+### 12.3 The snapshot and the pending edits chain
+
+The renderer never sees a `GlintsmithConfig` that a screen is still editing. `PreviewSnapshot.update(live)` serialises
+the config with `ConfigManager.toJson`; if the JSON equals the last one it returns the cached instance, otherwise
+`ConfigManager.fromJson(json).sanitize()`. The snapshot is therefore detached (later edits cannot change a render in
+progress), sanitised the way a saved config is (out-of-range values clamped, invalid ones repaired), and keeps its
+identity while nothing changes; every scoped cache above is keyed by that identity. If serialising throws, the previous
+snapshot stays (a `copy()`, or defaults, if there was none). Cost: one Gson `toJson` per frame while a panel is
+visible; a 20 Hz throttle is the planned answer if that shows up in a profile.
+
+Edits that are not in the working config yet (rule editor, colour style screen, colour picker) are written in only for
+the moment the snapshot is taken. Each of these screens implements `PreviewHost`:
+
+```
+PreviewSession previewSession();
+void withPendingEdits(Consumer<GlintsmithConfig> action);   // action sees the working config with every pending edit written in
+default Component previewNote(ItemStack shown)               // a note of the screen itself, or null
+```
+
+The root `GlintsmithScreen` is the base of the chain: its `withPendingEdits` passes the working config, which already is
+the edited copy. `RuleEditScreen` calls its parent's `withPendingEdits` and inside it
+`PendingEdits.withRule(cfg, original, edited, action)`: the edited rule replaces the original (found by identity) or is
+appended when it is new, `cfg.rules` is swapped for a new list and the old list reference is restored in `finally`.
+`ColorStyleScreen` and `ColorPickerScreen` do the same for one value with `PendingEdits.withValue(get, set, pending,
+action)`, through a raw getter and setter that `SettingRows` and `OutlineTab` pass in (a screen opened without them
+shows no pending edit). The chain nests (picker, style screen, rule editor, root); every level restores in `finally`,
+innermost first, also when the action throws. Cancel needs no undo, because nothing was written permanently.
+
+`PreviewSession` is created once per root screen and handed down to every sub screen, so the turntable keeps its angle
+across screens. It holds the yaw (30 degrees per second, a step of at most 100 ms, paused for 1.5 s after a drag), the
+pitch (starts at 15, dragging moves it within +-60), the snapshot, and the notes (recomputed only when the snapshot,
+the shown stack, the shader pack state or a fallback flag changes). The choice held item / sample sword is a static
+field of the session class: it survives closing and reopening the screen for the rest of the game.
+
+### 12.4 What is shown
+
+* Held item: `PreviewItems.held`, the main hand; with an empty hand the sample sword and the note `empty_hand`.
+* Sample sword: a netherite sword with Sharpness V, Unbreaking III and Mending, built once per registry access
+  (`level.registryAccess()`, else the connection's). Without a world, or when no enchantment can be applied, a plain
+  netherite sword with `ENCHANTMENT_GLINT_OVERRIDE` is used, so the glint still shows; note `no_world`.
+* A filled map is shown without an outline (it is not outlined in the hand either) and the note `map`.
+* Notes (`PreviewNotes.keys`, pure Java, in priority order): `unavailable` (outline failsafe tripped or preview
+  disabled); one reason why there is no outline, which exclude each other (`outlines_off`, `first_person_off`,
+  `no_outline`, `map`); `shader_hand_off` (shader pack active and the hand phase not allowed under it); `shader_glint`
+  (shader pack active and the item has a custom glint); `no_world`; `empty_hand`. The panel shows the first note under
+  the item name and lists all of them in its tooltip. The rule editor adds `rule_not_first_person` (the rule has
+  targets but not first person) or `rule_no_match` (the edited rule does not match the shown item) through
+  `previewNote`.
+* The margin around the item, in GUI pixels, leaves room for the outline:
+  `ceil(min(32, thickness · (1 + softness) · thicknessScale) / guiScale) + 2`, or 2 without an outline.
+
+### 12.5 Panel and layout
+
+`PreviewPanel` is a widget that the screens draw after the option list, because the list paints its background over
+the whole width and would cover it. It draws the frame, the item, a two-line caption (hover name, first note) and the
+strip "◀ Held item ▶" / "◀ Sample sword ▶". A left drag turns the item, a click on the strip switches the source (UI
+click sound), a right click resets the view; a release outside the panel is found by polling the mouse button. It never
+takes keyboard focus. If `PreviewRenderer.available()` is false it draws the frame and the note `unavailable` only.
+`PreviewLayout` (pure Java, GUI pixels):
+
+| Mode | Where | Rule |
+|---|---|---|
+| SIDE | right of the 310 px option column: x = width/2 + 177, y = header + 4 | width = min(180, width - 6 - x), hidden below 72. Item box height = min(width, available - 22 caption - 14 strip - 4); below 40 the strip is dropped, then the caption; hidden below 40 |
+| FOOTER | main screen only, when SIDE does not fit: bottom left, x = 4 | a square of min(space left of the centred footer rows - 8, footer height - 8); hidden below 32; no caption, no strip |
+| HIDDEN | too small | the panel is not drawn and takes no input |
+
+The main screen tries SIDE, then FOOTER; the rule editor, the colour style screen and the colour picker try SIDE only.
+Resizing and GUI scale changes lay it out again; the session survives. `GlintsmithScreen` clears the bounds cache when
+it closes (Done, or discarding on Cancel).
+
+### 12.6 Limits (known and by design)
+
+* **Model gap fix** is not previewed: it changes baked models and only takes effect after a resource reload.
+* **Shader packs**: the preview shows the configured look, drawn by the vanilla programs. A pack changes the real hand
+  (hand outlines depend on the "Hand with shader pack" switch, the glint stays vanilla); the notes `shader_hand_off`
+  and `shader_glint` say so, the preview itself does not imitate the pack. Whether a GUI-time render of a first-person
+  context shows glint and outline correctly while Iris has a pack active is **[UNVERIFIED in game]**.
+* **First-person animation mods** that hook first-person rendering may add transforms; the bounds fit absorbs offsets
+  **[UNVERIFIED in game]**. The lighting is a taste (the entity-in-inventory setup) and may be tuned.
+* **Depth** relies on the GUI background being drawn at z of about 0 and on the item staying within z 40 to 260.
+* Items whose renderer draws outside `MultiBufferSource` have no outline, as in the hand. A BEWLR that casts the source
+  to a `BufferSource` throws in the measuring render and gets the unit cube.
+* **Cost** while the panel is visible: one item render, one small mask and two distance passes over about the box
+  size, plus the JSON fingerprint (12.3). Nothing runs when no panel is visible; the PREVIEW phase is created at the
+  first use.
+* The dev studio does not use the preview; it has its own scene render (`docs/STUDIO.md`).
+
+### 12.7 Tests and what is still open in game
+
+Unit tests (headless): `PreviewPoseTest` (the inverse cancels `ItemTransform.apply`, invertibility, fit keeps the
+corners inside the box for every yaw and several pitches), `RuleEngineScopeTest` (scope isolation and caches),
+`OutlineContextsTest` (PREVIEW mapping), `GlintSystemTest` (`active`), `GlintTexturesTest` (quiet mode),
+`PendingEditsTest`, `PreviewSnapshotTest`, `PreviewLayoutTest`, `PreviewNotesTest` and `LangFilesTest` (the keys
+`glintsmith.preview.*` in both languages). The render path itself is not covered by tests and has not been run in
+game; the check list is section 10, item 31.

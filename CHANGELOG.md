@@ -4,6 +4,14 @@
 
 ### Added
 
+- Live preview in the settings screen: a framed panel right of the options shows the item in your main hand, drawn as it
+  looks in first person with the settings on screen, before you save. It follows every change at once, including
+  unsaved edits in the rule editor, the colour style screen and the colour picker, and it turns slowly on its own. Drag
+  to turn the item, right click resets the view, and a strip under the panel switches between the held item and an
+  enchanted netherite sword (a plain glinting sword when no world is loaded). Short notes under the item say why
+  something is not shown: outlines off, no outline for this item, a map, a shader pack, an empty hand, or a rule that
+  does not match. In narrow windows the panel moves next to the footer buttons of the main screen, and it is hidden
+  when there is no room. The model gap fix is not part of the preview, because it only changes after a resource reload.
 - Glint option "Atlas-independent scale" (on by default, also for existing configs): customised item glints keep the
   vanilla pattern density when mods or resource packs make the block texture atlas larger. Before, in big modpacks
   (for example an 8192 x 4096 atlas) a preset at Scale 1.00 looked like a flat colour wash on items and Scale had to be

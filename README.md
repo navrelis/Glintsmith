@@ -7,8 +7,8 @@ replaces the enchantment glint with textures and colours of your choice, and clo
 flat item models. All three work for every item of every mod. There are no item whitelists and no resource-pack
 overrides per item: what an item looks like on screen is what the mod works from.
 
-Everything is set up in one in-game screen (English and German). The same settings live in one JSON file that is
-reloaded while the game runs.
+Everything is set up in one in-game screen (English and German), which shows a live preview of the item in your hand
+with the settings you are changing. The same settings live in one JSON file that is reloaded while the game runs.
 
 ## Features
 
@@ -44,12 +44,15 @@ reloaded while the game runs.
 - Tint (any colour mode, including per-enchantment), speed, scale, strength and rotation.
 - The glint keeps following the game's own Glint Speed and Glint Strength sliders; the mod's values are multiplied onto them.
 - A master switch turns the whole feature off and leaves the vanilla glint untouched.
-
-Known limit: item glints are textured through the item's own UVs on the block atlas, like vanilla. In packs with a very
-large block atlas (for example 8192 x 4096 px) an item covers only a tiny part of the atlas, so at Scale 1.00 a preset
-can look like a flat colour wash instead of its bands or sparkles. Lower the glint Scale to fix it (about 0.13 for held
-and dropped items and about 0.2 for armor worked in such a pack). Armor textures are not on the block atlas, so armor
-is affected far less.
+- Atlas-independent scale (Glint tab, on by default): item glints are textured through the item's own UVs on the block
+  atlas, like vanilla. In packs with a very large block atlas (for example 8192 x 4096 px) an item covers only a tiny
+  part of the atlas, so a preset at Scale 1.00 would look like a flat colour wash instead of its bands or sparkles. The
+  mod reads the size of the block atlas after every resource reload and corrects the scale of customised item glints, so
+  Scale 1.00 looks like vanilla density in any pack. It applies to items in hand, on the ground, in item frames and in
+  the GUI. Armor, elytra and entity models use their own textures and are not changed, and high-resolution resource
+  packs are not affected. Glints you did not customise stay exactly vanilla. If you lowered Scale for a large atlas in
+  1.0.0 (to about 0.13), set it back to 1.00, because the correction and the manual value would multiply. Switch the
+  option off to get the 1.0.0 behaviour. Not yet checked in game.
 
 ### Model gap fix
 
@@ -86,6 +89,16 @@ A fresh config contains two example rules: a pale yellow outline for the Totem o
 
 - Own settings screen built from vanilla widgets, with tabs Outline, Glint, Model fix, Rules and Enchantments, a colour
   picker and tooltips on every setting. English and German.
+- Live preview: a framed panel right of the options shows the item in your main hand as it looks in first person
+  (outline and glint), with the settings on screen before you save them. Unsaved edits in the rule editor, the colour
+  style screen and the colour picker show up in it too. The item turns slowly by itself; drag to turn it, right click to
+  reset the view. A strip under the panel switches between the held item and a sample enchanted netherite sword (a
+  plain glinting sword when no world is loaded). Notes under the item say why something is not shown: outlines off, no
+  outline for this item, a map in the hand, a shader pack, an empty hand, a rule that does not match. In narrow windows
+  the panel moves next to the footer buttons of the main screen; if there is no room at all it is hidden. The model gap
+  fix is not part of the preview, because it only changes after a resource reload. Under a shader pack the preview
+  shows the configured look and a note says what the pack changes in your hand. If drawing the preview ever fails, only
+  the preview switches itself off. Not yet checked in game.
 - Opens from the Mod Menu entry (Mod Menu is optional), with `/glintsmith`, or with a key (see below).
 - `config/glintsmith.json` is read again about once a second when it changes on disk, and with `/glintsmith reload`. A file
   that cannot be parsed is ignored: the previous settings stay and the problem is logged and shown.
@@ -122,7 +135,7 @@ Client side only. Do not put it on a server; the mod does nothing there and is d
 | Mod Menu | optional (11.0.5 was used) |
 | Sodium | optional, supported (0.8.13 was used) |
 | Iris | optional, supported (1.8.14-beta.1 was used) |
-| ImmediatelyFast | optional, HUD batching supported (1.6.15 was used) |
+| ImmediatelyFast | optional, HUD batching and custom glints supported (1.6.15 was used) |
 
 ## Compatibility
 
@@ -130,7 +143,8 @@ Client side only. Do not put it on a server; the mod does nothing there and is d
   `TeeVertexConsumer` does not support optimized vertex writing; it is harmless.
 - **ImmediatelyFast.** HUD batching works with GUI outlines. An outlined GUI item flushes the batch before its outline
   is drawn, so the hotbar sprite, the items and the counts are drawn and outlined as usual. Checked in game with
-  ImmediatelyFast 1.6.15.
+  ImmediatelyFast 1.6.15. Custom glints are also applied to its buffers (first-person hand, world without Iris,
+  inventories, menus and the batched hotbar). Not yet checked in game; without ImmediatelyFast nothing changes.
 - **First-person animation mods (Punchy).** The held item keeps its first-person outline and glint rules (checked in
   game with Punchy 2.8f, main hand and offhand). Items such as
   Punchy's bedrock-geometry items, chests and boats are not outlined in first person, and with player-animation-lib or
@@ -156,7 +170,7 @@ Client side only. Do not put it on a server; the mod does nothing there and is d
 - **Model Gap Fix (`modelfix`).** Compatible. Only the precise spans part of the gap fix is left out while it is installed,
   because that mod replaces the same game method; the other parts of the gap fix work as usual. In automatic mode the gap fix
   stays off, and `modelfix` handles the seams. In custom mode the settings of Glintsmith stack on top of `modelfix` (logged
-  once at INFO), and precise spans are inactive. This is covered by unit tests; it was not tested in game for 1.0.0,
+  once at INFO), and precise spans are inactive. This is covered by unit tests; it has not been tested in game,
   because `modelfix` was not in the test pack.
 - **Failure behaviour.** Outlines, glint and gap fix each have a failsafe: after an error in a render hook the feature
   logs it once and stays off for the session; the game keeps rendering the vanilla way.
@@ -181,7 +195,7 @@ Needs Java 21. The Gradle wrapper downloads everything else.
 ./gradlew test           # unit tests only
 ```
 
-The mod jar is `build/libs/glintsmith-1.0.0.jar`. Stack: Fabric Loom, official Mojang mappings, Java 21. Sodium, Mod Menu and
+The mod jar is `build/libs/glintsmith-2.0.0.jar`. Stack: Fabric Loom, official Mojang mappings, Java 21. Sodium, Mod Menu and
 Iris are compile-only dependencies and are never bundled.
 
 | Package `navrelis.glintsmith` | Contents |
@@ -191,9 +205,11 @@ Iris are compile-only dependencies and are never bundled.
 | `render.outline` | mask, distance passes, composite, Iris detection, failsafe |
 | `render.glint` | slot render types, presets, noise, texture loading |
 | `modelfix`, `mixin.modelfix` | the gap fix |
-| `gui`, `integration` | settings screen, colour picker, commands, keys, Mod Menu entry |
+| `render.preview` | live preview renderer: pose and fitting of the item, bounds, scoped render of one item |
+| `gui`, `gui.preview`, `integration` | settings screen, colour picker, commands, keys, Mod Menu entry; preview panel, layout, notes and pending edits |
 
-`docs/DESIGN.md` describes the render design (frame timeline, outline pipeline, glint substitution, shaders).
+`docs/DESIGN.md` describes the render design (frame timeline, outline pipeline, glint substitution, shaders, live preview).
+`docs/STUDIO.md` describes the development-only studio that renders the images and GIFs of the mod page; it is not part of the jar.
 `docs/curseforge/` is the material for the CurseForge page.
 
 ## Credits and acknowledgements
