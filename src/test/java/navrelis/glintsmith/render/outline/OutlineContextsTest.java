@@ -78,6 +78,23 @@ class OutlineContextsTest {
 	}
 
 	@Test
+	void thePreviewPhaseOutlinesEveryContextAsFirstPerson() {
+		for (ItemDisplayContext context : ItemDisplayContext.values()) {
+			assertEquals(OutlineTarget.FIRST_PERSON, OutlineContexts.forPhase(OutlinePhase.PREVIEW, context), context.name());
+		}
+		assertEquals(OutlineTarget.FIRST_PERSON, OutlineContexts.forPhase(OutlinePhase.PREVIEW, null));
+	}
+
+	@Test
+	void thePreviewPhaseOnlyAcceptsFirstPerson() {
+		for (OutlineTarget target : OutlineTarget.values()) {
+			assertEquals(target == OutlineTarget.FIRST_PERSON, OutlineContexts.phaseAccepts(OutlinePhase.PREVIEW, target),
+				target.name());
+		}
+		assertFalse(OutlineContexts.phaseAccepts(OutlinePhase.PREVIEW, null));
+	}
+
+	@Test
 	void phaseAcceptance() {
 		assertTrue(OutlineContexts.phaseAccepts(OutlinePhase.WORLD, OutlineTarget.ARMOR));
 		assertTrue(OutlineContexts.phaseAccepts(OutlinePhase.WORLD, OutlineTarget.OTHER));

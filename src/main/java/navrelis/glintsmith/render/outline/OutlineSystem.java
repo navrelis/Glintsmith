@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import navrelis.glintsmith.config.ConfigManager;
+import navrelis.glintsmith.config.GlintsmithConfig;
 import navrelis.glintsmith.render.outline.compat.IrisCompat;
 import navrelis.glintsmith.style.OutlineLook;
 import navrelis.glintsmith.style.OutlineTarget;
@@ -59,8 +60,15 @@ public final class OutlineSystem {
 	private static PhaseState hand;
 	@Nullable
 	private static PhaseState gui;
+	/** Created on first use: most sessions never open the settings screen's preview. */
+	@Nullable
+	private static PhaseState preview;
+	/** The snapshot {@link #previewSettings} was built from. */
+	@Nullable
+	private static GlintsmithConfig previewOwner;
+	private static OutlineRuntimeSettings previewSettings = OutlineRuntimeSettings.DISABLED;
 
-	private static final PhaseState[] OPEN = new PhaseState[3];
+	private static final PhaseState[] OPEN = new PhaseState[4];
 	private static int openCount;
 	@Nullable
 	private static PhaseState current;
@@ -127,6 +135,13 @@ public final class OutlineSystem {
 		return settings;
 	}
 
+	/**
+	 * @return whether an outline phase is open, so that an item rendered now may be captured
+	 */
+	public static boolean phaseOpen() {
+		return current != null;
+	}
+
 	private static boolean ready() {
 		return world != null && !OutlineFailsafe.tripped() && settings.enabled();
 	}
@@ -181,8 +196,9 @@ public final class OutlineSystem {
 	}
 
 	/**
-	 * Releases the tee of a finished item render. A GUI item that left geometry in the mask is drawn right away, at
-	 * the point where vanilla {@code GuiGraphics.renderItem} flushes it (still with the item's lighting).
+	 * Releases the tee of a finished item render. A GUI item (or the preview item) that left geometry in the mask is
+	 * drawn right away, at the point where vanilla {@code GuiGraphics.renderItem} flushes it (still with the item's
+	 * lighting).
 	 * <p>
 	 * Why: HUD batching (ImmediatelyFast) suppresses that flush and keeps the item, together with everything drawn
 	 * before it (hotbar sprite, earlier slots, stack counts), in a batch that is drawn at the end of the HUD layer or
@@ -200,7 +216,8 @@ public final class OutlineSystem {
 		PhaseState phase = tee.phase();
 		MultiBufferSource delegate = tee.delegate();
 		pool.release(tee);
-		if (phase != null && phase.phase == OutlinePhase.GUI && phase.hasGeometry && !OutlineFailsafe.tripped()) {
+		if (phase != null && (phase.phase == OutlinePhase.GUI || phase.phase == OutlinePhase.PREVIEW) && phase.hasGeometry
+			&& !OutlineFailsafe.tripped()) {
 			drawPendingGui.accept(delegate);
 		}
 	}
@@ -417,6 +434,61 @@ public final class OutlineSystem {
 		}
 	}
 
+	// ---- settings screen preview
+
+	/**
+	 * Opens the PREVIEW phase for one item render; outlines it like the first-person hand under {@code snapshot}.
+	 * The live settings do not gate it: the rule engine, scoped to the same snapshot by the caller, decides.
+	 *
+	 * @return whether the phase was opened; if so, {@link #endPreview()} must follow
+	 */
+	public static boolean beginPreview(GlintsmithConfig snapshot) {
+		if (world == null || OutlineFailsafe.tripped() || snapshot == null) {
+			return false;
+		}
+		try {
+			if (preview == null) {
+				preview = new PhaseState(OutlinePhase.PREVIEW, false);
+			}
+			if (preview.open || current != null) {
+				return false; // never nest into another phase
+			}
+			if (snapshot != previewOwner) {
+				previewSettings = OutlineRuntimeSettings.from(snapshot);
+				previewOwner = snapshot;
+			}
+			preview.discard();
+			open(preview);
+			Minecraft minecraft = Minecraft.getInstance();
+			preview.thicknessScale = previewSettings.thicknessScale(OutlinePhase.HAND,
+				minecraft.getMainRenderTarget().height, minecraft.getWindow().getGuiScale());
+			return true;
+		} catch (Throwable t) {
+			OutlineFailsafe.trip("outline preview begin", t);
+			return false;
+		}
+	}
+
+	/**
+	 * Closes the PREVIEW phase and composites it (flat mask, no depth), clipped to the current scissor box. Call after
+	 * the preview item was flushed.
+	 */
+	public static void endPreview() {
+		PhaseState phase = preview;
+		if (phase == null || !phase.open) {
+			return;
+		}
+		try {
+			close(phase);
+			if (OutlineFailsafe.tripped()) {
+				return;
+			}
+			OutlineCompositor.composite(phase, OutlineCompositor.MaskDepth.NONE, false, 0.0f, 0.0f);
+		} catch (Throwable t) {
+			OutlineFailsafe.trip("outline preview composite", t);
+		}
+	}
+
 	// ---- O6: BufferSource flushes
 
 	/**
@@ -496,6 +568,9 @@ public final class OutlineSystem {
 			}
 			world.discard();
 			gui.discard();
+			if (preview != null) {
+				preview.discard();
+			}
 			handPending = false;
 			hand.discard();
 			inFullFlush = false;
@@ -575,7 +650,9 @@ public final class OutlineSystem {
 		@Nullable LivingEntity holder) {
 		OutlineRuntimeSettings s = settings;
 		boolean local = holder != null && holder == Minecraft.getInstance().player;
-		if (!s.accepts(phase.phase, target, local)) {
+		// The preview follows its snapshot, not the live settings; the scoped rule engine applies the snapshot's switches.
+		boolean previewPhase = phase.phase == OutlinePhase.PREVIEW;
+		if (!previewPhase && !s.accepts(phase.phase, target, local)) {
 			return source;
 		}
 		if (IrisCompat.loaded() && IrisCompat.shadowPass()) {
@@ -707,9 +784,11 @@ public final class OutlineSystem {
 			closePhase(world);
 			closePhase(hand);
 			closePhase(gui);
+			closePhase(preview);
 			world = null;
 			hand = null;
 			gui = null;
+			preview = null;
 			OutlineTargets.release();
 			OutlineShaders.close();
 			FullscreenQuad.close();

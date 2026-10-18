@@ -38,6 +38,8 @@ public final class OutlineContexts {
 	 * the local player's first-person view. First-person animation mods (for example Punchy) draw the held item
 	 * through {@code ItemInHandRenderer.renderItem} with a THIRD_PERSON context, because they attach it to a
 	 * player-model arm; those renders count as FIRST_PERSON. Other contexts (debug pivots, GUI) stay out.
+	 * <p>
+	 * The PREVIEW phase holds exactly one item render, the preview item, which is shown as held in first person.
 	 */
 	public static OutlineTarget forPhase(OutlinePhase phase, ItemDisplayContext context) {
 		if (phase == null) {
@@ -49,6 +51,7 @@ public final class OutlineContexts {
 			case HAND -> target == OutlineTarget.FIRST_PERSON || target == OutlineTarget.THIRD_PERSON
 				? OutlineTarget.FIRST_PERSON : null;
 			case GUI -> target == OutlineTarget.GUI ? target : null;
+			case PREVIEW -> OutlineTarget.FIRST_PERSON;
 			case NONE -> null;
 		};
 	}
@@ -65,6 +68,7 @@ public final class OutlineContexts {
 				|| target == OutlineTarget.DROPPED || target == OutlineTarget.ITEM_FRAME || target == OutlineTarget.OTHER;
 			case HAND -> target == OutlineTarget.FIRST_PERSON;
 			case GUI -> target == OutlineTarget.GUI;
+			case PREVIEW -> target == OutlineTarget.FIRST_PERSON;
 			case NONE -> false;
 		};
 	}

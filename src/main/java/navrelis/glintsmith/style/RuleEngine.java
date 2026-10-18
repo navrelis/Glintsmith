@@ -26,9 +26,14 @@ import net.minecraft.world.item.enchantment.ItemEnchantments;
  * <b>Render thread only.</b> The caches are plain {@link HashMap}s without synchronisation. They are cleared when the
  * config changes (a listener is registered when this class loads) and must be cleared by {@link #invalidate()} when
  * tags reload (hooked up by the resource reload code).
+ * <p>
+ * A <b>scope</b> ({@link #beginScope}) makes every lookup use another config, for example the settings screen's
+ * preview snapshot, until {@link #endScope()}. Scoped lookups have their own caches and never read or write the live
+ * caches or the fast path, so the world render after the preview still hits its cached results.
  */
 public final class RuleEngine {
 	private static final int MAX_ENTRIES = 4096;
+	private static final int MAX_SCOPE_ENTRIES = 256;
 	private static final int[] NO_COLORS = new int[0];
 
 	private static final Map<StyleKey, ResolvedStyle> STYLES = new HashMap<>();
@@ -51,6 +56,12 @@ public final class RuleEngine {
 	private static ItemEnchantments lastColorStored;
 	private static int[] lastColors = NO_COLORS;
 
+	// Scope: null = the live config. scopeOwner is the config the SCOPE_* caches were filled for.
+	private static GlintsmithConfig scope;
+	private static GlintsmithConfig scopeOwner;
+	private static final Map<StyleKey, ResolvedStyle> SCOPE_STYLES = new HashMap<>();
+	private static final Map<EnchantKey, int[]> SCOPE_COLORS = new HashMap<>();
+
 	static {
 		ConfigManager.instance().addListener(config -> invalidate());
 	}
@@ -71,6 +82,44 @@ public final class RuleEngine {
 		lastColorEnchantments = null;
 		lastColorStored = null;
 		lastColors = NO_COLORS;
+		SCOPE_STYLES.clear();
+		SCOPE_COLORS.clear();
+		scopeOwner = null;
+	}
+
+	/**
+	 * Makes every lookup use {@code config} (sanitised) until {@link #endScope()}. A config other than the one of the
+	 * last scope drops the scoped caches, so pass the same instance as long as nothing changed. Null is ignored.
+	 */
+	public static void beginScope(GlintsmithConfig config) {
+		if (config == null) {
+			return;
+		}
+		if (config != scopeOwner) {
+			SCOPE_STYLES.clear();
+			SCOPE_COLORS.clear();
+			scopeOwner = config;
+		}
+		scope = config;
+	}
+
+	/**
+	 * Back to the live config. Safe to call without a scope.
+	 */
+	public static void endScope() {
+		scope = null;
+	}
+
+	/**
+	 * @return whether a {@link #beginScope scope} is open
+	 */
+	public static boolean inScope() {
+		return scope != null;
+	}
+
+	private static GlintsmithConfig config() {
+		GlintsmithConfig scoped = scope;
+		return scoped != null ? scoped : ConfigManager.current();
 	}
 
 	/**
@@ -79,6 +128,9 @@ public final class RuleEngine {
 	public static ResolvedStyle resolve(ItemStack stack, OutlineTarget target, GlintCategory category) {
 		if (stack == null || stack.isEmpty()) {
 			return ResolvedStyle.NONE;
+		}
+		if (scope != null) {
+			return resolveScoped(stack, target, category, scope);
 		}
 		Item item = stack.getItem();
 		ItemEnchantments enchantments = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
@@ -116,6 +168,29 @@ public final class RuleEngine {
 		return result;
 	}
 
+	/** {@link #resolve} under a scope: own cache, no fast path. */
+	private static ResolvedStyle resolveScoped(ItemStack stack, OutlineTarget target, GlintCategory category, GlintsmithConfig config) {
+		ItemEnchantments enchantments = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
+		ItemEnchantments stored = stack.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY);
+		boolean foil = stack.hasFoil();
+		StyleKey lookup = STYLE_LOOKUP;
+		lookup.set(stack.getItem(), enchantments, stored, foil, target, category);
+		ResolvedStyle result = SCOPE_STYLES.get(lookup);
+		if (result == null) {
+			StyleKey key = lookup.copy();
+			if (SCOPE_STYLES.size() >= MAX_SCOPE_ENTRIES) {
+				SCOPE_STYLES.clear();
+			}
+			try {
+				result = RuleMatcher.resolve(factsOf(stack, enchantments, stored, foil), target, category, config);
+			} catch (RuntimeException e) {
+				result = ResolvedStyle.NONE;
+			}
+			SCOPE_STYLES.put(key, result);
+		}
+		return result;
+	}
+
 	/**
 	 * The animated ARGB outline colour of a stack: enchantment colours, durability alert, then opacity.
 	 */
@@ -125,7 +200,7 @@ public final class RuleEngine {
 			int max = stack.getMaxDamage();
 			if (max > 0) {
 				float remaining = 1.0f - (float) stack.getDamageValue() / max;
-				color = ConfigManager.current().durabilityAlert.apply(color, remaining, timeSeconds);
+				color = config().durabilityAlert.apply(color, remaining, timeSeconds);
 			}
 		}
 		return Colors.multiplyAlpha(color, look.opacity());
@@ -150,33 +225,51 @@ public final class RuleEngine {
 		}
 		ItemEnchantments enchantments = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
 		ItemEnchantments stored = stack.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY);
+		GlintsmithConfig scoped = scope;
+		if (scoped != null) {
+			return colorsOf(enchantments, stored, SCOPE_COLORS, MAX_SCOPE_ENTRIES, scoped.enchantmentColors);
+		}
 		if (lastColorEnchantments == enchantments && lastColorStored == stored) {
 			return lastColors;
 		}
+		int[] colors = colorsOf(enchantments, stored, ENCHANTMENT_COLORS, MAX_ENTRIES, ConfigManager.current().enchantmentColors);
+		lastColorEnchantments = enchantments;
+		lastColorStored = stored;
+		lastColors = colors;
+		return colors;
+	}
+
+	private static int[] colorsOf(ItemEnchantments enchantments, ItemEnchantments stored, Map<EnchantKey, int[]> cache,
+		int maxEntries, Map<String, String> overrides) {
 		EnchantKey lookup = ENCHANT_LOOKUP;
 		lookup.set(enchantments, stored);
-		int[] colors = ENCHANTMENT_COLORS.get(lookup);
+		int[] colors = cache.get(lookup);
 		if (colors == null) {
 			EnchantKey key = lookup.copy();
-			if (ENCHANTMENT_COLORS.size() >= MAX_ENTRIES) {
-				ENCHANTMENT_COLORS.clear();
+			if (cache.size() >= maxEntries) {
+				cache.clear();
 			}
 			Set<String> ids = new HashSet<>();
 			collectIds(enchantments, ids);
 			collectIds(stored, ids);
 			String[] sorted = ids.toArray(new String[0]);
 			Arrays.sort(sorted);
-			Map<String, String> overrides = ConfigManager.current().enchantmentColors;
 			colors = new int[sorted.length];
 			for (int i = 0; i < sorted.length; i++) {
 				colors[i] = EnchantmentColors.colorFor(sorted[i], overrides);
 			}
-			ENCHANTMENT_COLORS.put(key, colors);
+			cache.put(key, colors);
 		}
-		lastColorEnchantments = enchantments;
-		lastColorStored = stored;
-		lastColors = colors;
 		return colors;
+	}
+
+	/**
+	 * The facts the rules see for a stack, built fresh (not cached). Empty stacks give facts without enchantments.
+	 */
+	public static ItemFacts factsOf(ItemStack stack) {
+		ItemEnchantments enchantments = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
+		ItemEnchantments stored = stack.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY);
+		return factsOf(stack, enchantments, stored, stack.hasFoil());
 	}
 
 	private static ItemFacts factsOf(ItemStack stack, ItemEnchantments enchantments, ItemEnchantments stored, boolean foil) {

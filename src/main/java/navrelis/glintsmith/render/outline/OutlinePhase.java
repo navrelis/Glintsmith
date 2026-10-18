@@ -13,5 +13,10 @@ public enum OutlinePhase {
 	 */
 	HAND,
 	/** One {@code GuiGraphics.renderItem} call, composited right after its own flush. */
-	GUI
+	GUI,
+	/**
+	 * The settings screen's preview item, outlined like the first-person hand (every context counts as FIRST_PERSON),
+	 * with a flat mask like GUI. Composited right after the preview's own flush.
+	 */
+	PREVIEW
 }
