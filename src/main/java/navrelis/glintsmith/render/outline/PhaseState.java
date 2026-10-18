@@ -25,8 +25,13 @@ final class PhaseState {
 	final ScreenBounds bounds = new ScreenBounds();
 	boolean hasGeometry;
 	boolean open;
-	/** Thickness factor ({@link OutlineRuntimeSettings#thicknessScale}, the same in every phase), set when the phase opens. */
-	float thicknessScale = 1.0f;
+	/**
+	 * The settings the phase's items get their thickness from ({@link OutlineRuntimeSettings#itemThickness}): the live
+	 * ones, or the preview's snapshot. Set when the phase opens.
+	 */
+	OutlineRuntimeSettings settings = OutlineRuntimeSettings.DISABLED;
+	/** Height of the main render target when the phase opened, in pixels. */
+	int framebufferHeight;
 	/** z terms of the projection the mask was drawn with ({@link #captureProjection}); valid if {@link #hasProjection}. */
 	float projZ;
 	float projW;

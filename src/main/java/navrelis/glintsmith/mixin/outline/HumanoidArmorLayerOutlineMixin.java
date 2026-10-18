@@ -23,7 +23,7 @@ public abstract class HumanoidArmorLayerOutlineMixin {
 	)
 	private void glintsmith$outlineArmor(PoseStack pose, MultiBufferSource source, LivingEntity entity, EquipmentSlot slot,
 		int light, HumanoidModel<?> model, Operation<Void> original) {
-		MultiBufferSource tee = OutlineSystem.beginArmor(entity, slot, source);
+		MultiBufferSource tee = OutlineSystem.beginArmor(entity, slot, pose, source);
 		try {
 			original.call(pose, tee, entity, slot, light, model);
 		} finally {

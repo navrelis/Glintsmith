@@ -55,6 +55,8 @@ class ConfigTest {
 		assertFalse(c.outline.disableWithShaders);
 		assertTrue(c.outline.handWithShaderPack);
 		assertTrue(c.outline.scaleWithResolution);
+		assertTrue(c.outline.proportional);
+		assertEquals(1.0f, c.outline.minThickness);
 		assertEquals(0.0f, c.outline.fadeStart);
 		assertEquals(0.0f, c.outline.fadeEnd);
 		assertTrue(c.warnings().isEmpty());
@@ -710,6 +712,30 @@ class ConfigTest {
 		assertEquals(16.0f, t.get(OutlineTarget.ITEM_FRAME));
 		assertEquals(7.25f, t.get(OutlineTarget.GUI));
 		assertNull(t.get(OutlineTarget.OTHER));
+	}
+
+	@Test
+	void minThicknessIsClampedAndRoundTrips() {
+		GlintsmithConfig c = new GlintsmithConfig();
+		c.outline.minThickness = 100.0f;
+		assertEquals(8.0f, c.sanitize().outline.minThickness);
+		c.outline.minThickness = 0.1f;
+		assertEquals(0.5f, c.sanitize().outline.minThickness);
+		c.outline.minThickness = -2.0f;
+		assertEquals(0.5f, c.sanitize().outline.minThickness);
+		c.outline.minThickness = Float.NaN;
+		assertEquals(1.0f, c.sanitize().outline.minThickness);
+		c.outline.minThickness = 2.75f;
+		c.outline.proportional = false;
+		String json = ConfigManager.toJson(c.sanitize());
+		assertTrue(json.contains("\"minThickness\""));
+		GlintsmithConfig parsed = ConfigManager.fromJson(json).sanitize();
+		assertEquals(2.75f, parsed.outline.minThickness);
+		assertFalse(parsed.outline.proportional);
+		assertEquals(2.75f, c.copy().outline.minThickness);
+		GlintsmithConfig missing = ConfigManager.fromJson("{\"outline\": {\"thickness\": 4}}").sanitize();
+		assertEquals(1.0f, missing.outline.minThickness, "older files get the default");
+		assertTrue(missing.outline.proportional);
 	}
 
 	@Test

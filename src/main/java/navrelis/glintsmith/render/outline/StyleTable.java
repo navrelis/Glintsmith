@@ -36,7 +36,8 @@ final class StyleTable {
 	 * @param argb outline colour, alpha already multiplied by the opacity
 	 * @param thickness in framebuffer pixels (already scaled); clamped by {@link #clampThickness}
 	 * @param softness 0..1
-	 * @return 1..255, or 0 if the colour is fully transparent or the table is full
+	 * @return 1..255, or 0 if the colour is fully transparent or the table is full and holds no style of this colour
+	 *         (a full table answers a new width of a known colour with its nearest style of that colour)
 	 */
 	int indexFor(int argb, float thickness, float softness) {
 		if ((argb >>> 24) == 0) {
@@ -56,7 +57,7 @@ final class StyleTable {
 		}
 		if (count >= MAX_STYLES) {
 			rejected++;
-			return 0;
+			return nearestOfColor(argb, packed);
 		}
 		int index = ++count;
 		slotColor[h] = argb;
@@ -70,6 +71,32 @@ final class StyleTable {
 			maxRadius = radius;
 		}
 		return index;
+	}
+
+	/**
+	 * For a full table: the style of the same colour whose thickness and softness are closest to {@code packed}, so
+	 * that an item of a look already on screen keeps an outline (only slightly wider or narrower) when proportional
+	 * thickness has filled the table with many widths of it. Linear, but only runs while the table is full.
+	 *
+	 * @return 1..255, or 0 if no style has this colour
+	 */
+	private int nearestOfColor(int argb, int packed) {
+		int best = 0;
+		int bestDistance = Integer.MAX_VALUE;
+		int t8 = packed & 0xFF;
+		int s8 = (packed >>> 8) & 0xFF;
+		for (int index = 1; index <= count; index++) {
+			if (colors[index] != argb) {
+				continue;
+			}
+			int p = params[index];
+			int distance = Math.abs((p & 0xFF) - t8) + Math.abs(((p >>> 8) & 0xFF) - s8);
+			if (distance < bestDistance) {
+				bestDistance = distance;
+				best = index;
+			}
+		}
+		return best;
 	}
 
 	/**

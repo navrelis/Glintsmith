@@ -22,7 +22,7 @@ public abstract class ElytraLayerOutlineMixin {
 	private void glintsmith$outlineElytra(PoseStack pose, MultiBufferSource source, int light, LivingEntity entity,
 		float limbSwing, float limbSwingAmount, float partialTick, float ageInTicks, float netHeadYaw, float headPitch,
 		Operation<Void> original) {
-		MultiBufferSource tee = OutlineSystem.beginArmor(entity, EquipmentSlot.CHEST, source);
+		MultiBufferSource tee = OutlineSystem.beginArmor(entity, EquipmentSlot.CHEST, pose, source);
 		try {
 			original.call(pose, tee, light, entity, limbSwing, limbSwingAmount, partialTick, ageInTicks, netHeadYaw, headPitch);
 		} finally {

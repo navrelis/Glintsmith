@@ -143,13 +143,19 @@ public final class PreviewSession {
 	 * Free space the renderer keeps around the item for the outline, in GUI pixels:
 	 * {@code ceil(reach / guiScale) + 2}, or 2 without an outline. {@code reach} is
 	 * {@link OutlineRuntimeSettings#outlineReachPixels}: the outline's extent in framebuffer pixels with the thickness
-	 * factor every phase uses, quantised and capped like the composite. Call after {@link #notes}.
+	 * rules every phase uses, quantised and capped like the composite. With proportional outlines it depends on how
+	 * large the item is drawn ({@code itemScaleGui}); the reach grows with the size, so the margin for an upper bound of
+	 * the size is enough for every smaller one. Call after {@link #notes}.
+	 *
+	 * @param itemScaleGui how large the preview draws the item: GUI pixels per block
 	 */
-	public float marginGui(int framebufferHeight, double guiScale) {
+	public float marginGui(int framebufferHeight, double guiScale, float itemScaleGui) {
 		if (outlineLook == null || outlineSettings == null || !(guiScale > 0.0) || !Double.isFinite(guiScale)) {
 			return 2.0f;
 		}
-		int reach = outlineSettings.outlineReachPixels(outlineLook.thickness(), outlineLook.softness(), framebufferHeight);
+		float pixelsPerUnit = (float) (itemScaleGui * guiScale);
+		int reach = outlineSettings.outlineReachPixels(outlineLook.thickness(), outlineLook.softness(), framebufferHeight,
+			pixelsPerUnit);
 		return (float) Math.ceil(reach / guiScale) + 2.0f;
 	}
 }

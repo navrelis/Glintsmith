@@ -116,9 +116,10 @@ public final class PreviewPanel extends AbstractWidget {
 				hostNote = host.previewNote(shown);
 				hostNoteFor = notes;
 			}
-			float margin = session.marginGui(minecraft.getMainRenderTarget().height, minecraft.getWindow().getGuiScale());
+			int framebufferHeight = minecraft.getMainRenderTarget().height;
+			double guiScale = minecraft.getWindow().getGuiScale();
 			PreviewRenderer.draw(graphics, x + 1, y + 1, x + w - 1, y + h - 1, shown, snapshot, session.yaw, session.pitch,
-				margin, !shown.is(Items.FILLED_MAP));
+				itemScale -> session.marginGui(framebufferHeight, guiScale, itemScale), !shown.is(Items.FILLED_MAP));
 		} catch (RuntimeException e) {
 			if (!failureLogged) {
 				failureLogged = true;

@@ -59,21 +59,33 @@ public final class PreviewRenderer {
 	}
 
 	/**
+	 * The space to keep free around the item for its outline.
+	 */
+	@FunctionalInterface
+	public interface Margin {
+		/**
+		 * @param itemScaleGui how large the item would be drawn: GUI pixels per block
+		 * @return space to keep free on each side of the box, in GUI pixels; must not shrink as the item grows
+		 */
+		float marginGui(float itemScaleGui);
+	}
+
+	/**
 	 * Draws {@code stack} into the box {@code x0,y0 .. x1,y1} (GUI coordinates) as it looks in the hand under
 	 * {@code snapshot}, turned by {@code yawDeg} and tilted by {@code pitchDeg}.
 	 *
 	 * @param snapshot a sanitised config that stays the same instance while nothing changes (scoped caches are kept
 	 *        per instance)
-	 * @param marginGui space kept free on each side of the box, for the outline
+	 * @param margin space kept free on each side of the box, for the outline (it may depend on the item's size)
 	 * @param outline whether to outline the item at all
 	 */
 	public static void draw(GuiGraphics g, int x0, int y0, int x1, int y1, ItemStack stack, GlintsmithConfig snapshot,
-		float yawDeg, float pitchDeg, float marginGui, boolean outline) {
+		float yawDeg, float pitchDeg, Margin margin, boolean outline) {
 		if (disabled || stack == null || stack.isEmpty() || x1 - x0 < MIN_BOX || y1 - y0 < MIN_BOX) {
 			return;
 		}
 		try {
-			drawItem(g, x0, y0, x1, y1, stack, snapshot, yawDeg, pitchDeg, marginGui, outline);
+			drawItem(g, x0, y0, x1, y1, stack, snapshot, yawDeg, pitchDeg, margin, outline);
 		} catch (Throwable t) {
 			disabled = true;
 			LOGGER.error("[Glintsmith] Preview disabled for this session after an error", t);
@@ -88,7 +100,7 @@ public final class PreviewRenderer {
 	}
 
 	private static void drawItem(GuiGraphics g, int x0, int y0, int x1, int y1, ItemStack stack, GlintsmithConfig snapshot,
-		float yawDeg, float pitchDeg, float marginGui, boolean outline) {
+		float yawDeg, float pitchDeg, Margin margin, boolean outline) {
 		Minecraft minecraft = Minecraft.getInstance();
 		ItemRenderer itemRenderer = minecraft.getItemRenderer();
 		BakedModel model = itemRenderer.getModel(stack, minecraft.level, minecraft.player, 0);
@@ -101,6 +113,11 @@ public final class PreviewRenderer {
 			cancel = null;
 		}
 		float[] b = bounds(stack, model, context, cancel);
+		// A proportional outline's room depends on the item's size, and the size on the room: keep the room the item
+		// would need at its largest (fitted without room), which is enough for the smaller item that then fits.
+		PreviewPose.Fit largest = PreviewPose.fit(b[0], b[1], b[2], b[3], b[4], b[5], x1 - x0, y1 - y0, 0.0f, pitchDeg,
+			MAX_DEPTH);
+		float marginGui = margin.marginGui(largest.scale());
 		PreviewPose.Fit fit = PreviewPose.fit(b[0], b[1], b[2], b[3], b[4], b[5], x1 - x0, y1 - y0, marginGui, pitchDeg,
 			MAX_DEPTH);
 
