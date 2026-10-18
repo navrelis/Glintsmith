@@ -166,3 +166,4 @@
 - 2026-10-18 s14: P2b part 1 Sonnet accepted (diff read): README/DESIGN/STUDIO/curseforge docs for O7/O8/preview/IF/atlas, 3 PENDING markers, checklist 2.0.0 with TBD; preview --check 0, verify passed (agent). CHANGELOG O7/O8 bullets + O9/G4 text go to P2b part 2.
 - 2026-10-18 s14: V1 in-game check prep -> Sonnet S (v2check on the isolated instance copy; lead runs it after O9/G4).
 - 2026-10-18 s14: V1 Sonnet accepted: v2check generator/wrapper/runbook (51 shots, presets read from GlintPresets, O9 field detected), dry run 0; real run waits for the merged jar.
+- 2026-10-18 s14: G4 Opus accepted (sheets viewed: full even coverage vs old 30-60 % black; 12 presets 128x128, ~80 ms; 461 green in worktree), merged 4f2ea11. O9 Opus reviewed (OutlineScale math read, 475 green in worktree, studio measured): correction 1 sent (minThickness setting, studio baseline proportional=false).
