@@ -11,6 +11,7 @@ import navrelis.glintsmith.render.outline.OutlineSystem;
 import navrelis.glintsmith.style.Colors;
 import navrelis.glintsmith.style.DurabilityAlert;
 import navrelis.glintsmith.style.OutlineSettings;
+import navrelis.glintsmith.style.OutlineTarget;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
@@ -23,6 +24,8 @@ public final class OutlineTab extends ConfigTab {
 	private static final float FADE_MAX = 256.0f;
 	private static final int COLOR_PICK_WIDTH = 182;
 	private static final int COLOR_BOX_WIDTH = 100;
+	/** Width of the "own thickness" toggle of a place; the slider takes the rest of the row. */
+	private static final int PLACE_TOGGLE_WIDTH = 150;
 
 	public OutlineTab(GlintsmithConfig config) {
 		super(config, Ui.t("glintsmith.tab.outline"));
@@ -71,6 +74,15 @@ public final class OutlineTab extends ConfigTab {
 		SettingRows.sliderRow(list, "glintsmith.outline.fade_end", 0.0f, FADE_MAX, 1.0f,
 			SettingRows.blocksOrOff("glintsmith.outline.fade_end"), outline.fadeEnd, v -> outline.fadeEnd = v);
 
+		list.addHeading(Ui.t("glintsmith.outline.thickness_places"));
+		addPlaceThickness(outline, OutlineTarget.FIRST_PERSON, "glintsmith.outline.target.first_person");
+		addPlaceThickness(outline, OutlineTarget.THIRD_PERSON, "glintsmith.outline.target.third_person");
+		addPlaceThickness(outline, OutlineTarget.ARMOR, "glintsmith.outline.target.armor");
+		addPlaceThickness(outline, OutlineTarget.DROPPED, "glintsmith.outline.target.dropped");
+		addPlaceThickness(outline, OutlineTarget.ITEM_FRAME, "glintsmith.outline.target.item_frame");
+		addPlaceThickness(outline, OutlineTarget.GUI, "glintsmith.outline.target.gui");
+		addPlaceThickness(outline, OutlineTarget.OTHER, "glintsmith.outline.target.other");
+
 		list.addHeading(Ui.t("glintsmith.outline.shader_heading"));
 		list.addPair(
 			Ui.toggle(Ui.HALF, "glintsmith.outline.shaders", outline.disableWithShaders, v -> outline.disableWithShaders = v),
@@ -84,6 +96,15 @@ public final class OutlineTab extends ConfigTab {
 			SettingRows.slider(Ui.HALF, "glintsmith.outline.durability.threshold", 0.0f, 1.0f, 0.01f,
 				SettingRows.percent("glintsmith.outline.durability.threshold"), alert.threshold, v -> alert.threshold = v));
 		addAlertColorRow(alert);
+	}
+
+	/** A row with the "own thickness" toggle of one place and its slider. */
+	private void addPlaceThickness(GlintsmithConfig.Outline outline, OutlineTarget target, String nameKey) {
+		SettingRows.toggledSliderRow(list, PLACE_TOGGLE_WIDTH, "glintsmith.outline.thickness_own",
+			own -> Ui.t(own ? "glintsmith.outline.thickness_own.own" : "glintsmith.outline.thickness_own.global", Ui.t(nameKey)),
+			"glintsmith.outline.thickness_place", OutlineSettings.MIN_THICKNESS, OutlineSettings.MAX_THICKNESS, 0.1f,
+			SettingRows.decimals("glintsmith.outline.thickness_place", 1), outline.targetThickness.get(target),
+			() -> outline.thickness, v -> outline.targetThickness.set(target, v));
 	}
 
 	private void addAlertColorRow(DurabilityAlert alert) {

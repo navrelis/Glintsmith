@@ -48,3 +48,4 @@ Sources studied (reference only, clones live in the session scratchpad, never in
 - 2026-10-18 Owner asked for a 1.1.0 with outline "see-through" control, then dropped it after hearing that the Opacity slider (Outline tab and per rule) already exists. No 1.1.0 planned.
 - 2026-10-18 Owner: new version 2.0.0 with a live preview window in the settings screen: the item in the hand rendered with the current settings, updating live while settings change. Release order: 1.0.0 upload once the CurseForge project exists, then 2.0.0 when finished.
 - 2026-10-18 Owner: CurseForge project id 1751215.
+- 2026-10-18 Owner: outline thickness controllable per place; his current config (rainbow outline 8.5 px opacity 0.25, frost item glint with rainbow tint, armor glint layer off, fire entity/GUI) becomes the built-in default for now.

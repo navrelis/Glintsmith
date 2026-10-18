@@ -14,13 +14,14 @@ import java.util.Set;
 
 import navrelis.glintsmith.config.GlintsmithConfig;
 import navrelis.glintsmith.config.OutlineCondition;
+import navrelis.glintsmith.config.TestConfigs;
 import org.junit.jupiter.api.Test;
 
 class RuleMatcherTest {
 	private static final OutlineTarget HAND = OutlineTarget.FIRST_PERSON;
 
 	private static GlintsmithConfig config() {
-		GlintsmithConfig c = new GlintsmithConfig();
+		GlintsmithConfig c = TestConfigs.vanilla();
 		c.rules = new ArrayList<>();
 		return c.sanitize();
 	}
@@ -254,6 +255,91 @@ class RuleMatcherTest {
 		ItemFacts book = new ItemFacts("minecraft:enchanted_book", Set.of(), Set.of("minecraft:mending"), Set.of(), true, true);
 		assertNull(resolve(book, c).outline());
 		assertNotNull(resolve(sword(true), c).outline());
+	}
+
+	// ---- thickness per place ----
+
+	private static OutlineLook outlineAt(OutlineTarget target, GlintsmithConfig c) {
+		return RuleMatcher.resolve(sword(true), target, GlintCategory.ITEM, c.sanitize()).outline();
+	}
+
+	private static GlintsmithConfig everywhere() {
+		GlintsmithConfig c = config();
+		c.outline.targets.armor = true;
+		c.outline.targets.gui = true;
+		c.outline.targets.other = true;
+		return c;
+	}
+
+	@Test
+	void placeThicknessIsUsedForThatPlaceOnly() {
+		GlintsmithConfig c = everywhere();
+		c.outline.thickness = 3.0f;
+		c.outline.targetThickness.set(OutlineTarget.GUI, 9.0f);
+		c.outline.targetThickness.set(OutlineTarget.ARMOR, 1.5f);
+		assertEquals(9.0f, outlineAt(OutlineTarget.GUI, c).thickness());
+		assertEquals(1.5f, outlineAt(OutlineTarget.ARMOR, c).thickness());
+		for (OutlineTarget other : new OutlineTarget[] {OutlineTarget.FIRST_PERSON, OutlineTarget.THIRD_PERSON,
+			OutlineTarget.DROPPED, OutlineTarget.ITEM_FRAME, OutlineTarget.OTHER}) {
+			assertEquals(3.0f, outlineAt(other, c).thickness(), other.name());
+		}
+	}
+
+	@Test
+	void everyPlaceReadsItsOwnThickness() {
+		GlintsmithConfig c = everywhere();
+		c.outline.thickness = 2.0f;
+		float value = 4.0f;
+		for (OutlineTarget target : OutlineTarget.values()) {
+			c.outline.targetThickness.set(target, value);
+			value += 1.0f;
+		}
+		value = 4.0f;
+		for (OutlineTarget target : OutlineTarget.values()) {
+			assertEquals(value, outlineAt(target, c).thickness(), target.name());
+			value += 1.0f;
+		}
+	}
+
+	@Test
+	void aPlaceWithoutOwnThicknessUsesTheGlobalOne() {
+		GlintsmithConfig c = everywhere();
+		c.outline.thickness = 6.5f;
+		c.outline.targetThickness.set(OutlineTarget.GUI, 12.0f);
+		c.outline.targetThickness.set(OutlineTarget.GUI, null);
+		for (OutlineTarget target : OutlineTarget.values()) {
+			assertEquals(6.5f, outlineAt(target, c).thickness(), target.name());
+		}
+		c.outline.targetThickness = null;
+		assertEquals(6.5f, RuleMatcher.resolve(sword(true), HAND, GlintCategory.ITEM, c).outline().thickness(),
+			"RuleMatcher copes with a missing section even without sanitize");
+	}
+
+	@Test
+	void aRuleThicknessOverridesThePlaceThickness() {
+		GlintsmithConfig c = everywhere();
+		c.outline.thickness = 3.0f;
+		c.outline.targetThickness.set(OutlineTarget.GUI, 9.0f);
+		Rule r = rule("thick", "minecraft:diamond_sword");
+		r.outline = new OutlineSettings();
+		r.outline.thickness = 5.0f;
+		c.rules.add(r);
+		assertEquals(5.0f, outlineAt(OutlineTarget.GUI, c).thickness());
+		assertEquals(5.0f, outlineAt(OutlineTarget.FIRST_PERSON, c).thickness());
+
+		// a rule that leaves the thickness alone keeps the place thickness
+		r.outline.thickness = null;
+		r.outline.softness = 0.5f;
+		assertEquals(9.0f, outlineAt(OutlineTarget.GUI, c).thickness());
+		assertEquals(3.0f, outlineAt(OutlineTarget.FIRST_PERSON, c).thickness());
+	}
+
+	@Test
+	void placeThicknessIsClampedLikeEveryOtherThickness() {
+		GlintsmithConfig c = everywhere();
+		c.outline.targetThickness.set(OutlineTarget.GUI, 100.0f);
+		// bypass sanitize on purpose: RuleMatcher itself must be safe
+		assertEquals(16.0f, RuleMatcher.resolve(sword(true), OutlineTarget.GUI, GlintCategory.ITEM, c).outline().thickness());
 	}
 
 	// ---- glint ----

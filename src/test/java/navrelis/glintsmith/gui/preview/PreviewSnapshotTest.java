@@ -33,7 +33,7 @@ class PreviewSnapshotTest {
 		GlintsmithConfig after = snapshot.update(live);
 		assertNotSame(before, after);
 		assertEquals(7.0f, after.outline.thickness);
-		assertEquals(2.0f, before.outline.thickness);
+		assertEquals(8.5f, before.outline.thickness);
 		assertSame(after, snapshot.update(live));
 	}
 
@@ -50,10 +50,10 @@ class PreviewSnapshotTest {
 		assertNotSame(live.outline, copy.outline);
 		assertNotSame(rule, copy.rules.get(copy.rules.size() - 1));
 
-		live.outline.opacity = 0.25f;
+		live.outline.opacity = 0.5f;
 		rule.name = "changed";
 		rule.outline = OutlineSettings.enabled(false);
-		assertEquals(1.0f, copy.outline.opacity);
+		assertEquals(0.25f, copy.outline.opacity);
 		Rule copied = copy.rules.get(copy.rules.size() - 1);
 		assertEquals("mine", copied.name);
 		assertEquals(null, copied.outline);

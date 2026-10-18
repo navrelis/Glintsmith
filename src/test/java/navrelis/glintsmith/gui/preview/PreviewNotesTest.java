@@ -9,6 +9,7 @@ import java.util.Set;
 
 import navrelis.glintsmith.config.GlintsmithConfig;
 import navrelis.glintsmith.config.OutlineCondition;
+import navrelis.glintsmith.config.TestConfigs;
 import navrelis.glintsmith.style.GlintSettings;
 import navrelis.glintsmith.style.ItemFacts;
 import navrelis.glintsmith.style.Rule;
@@ -21,7 +22,7 @@ class PreviewNotesTest {
 		Set.of(), Set.of(), false, false);
 
 	private static GlintsmithConfig config() {
-		GlintsmithConfig c = new GlintsmithConfig();
+		GlintsmithConfig c = TestConfigs.vanilla();
 		c.rules = new ArrayList<>();
 		return c.sanitize();
 	}

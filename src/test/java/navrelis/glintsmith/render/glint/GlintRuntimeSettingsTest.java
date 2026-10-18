@@ -12,6 +12,7 @@ import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 
 import navrelis.glintsmith.config.GlintsmithConfig;
+import navrelis.glintsmith.config.TestConfigs;
 import navrelis.glintsmith.style.ColorStyle;
 import navrelis.glintsmith.style.GlintCategory;
 import navrelis.glintsmith.style.GlintLook;
@@ -22,8 +23,9 @@ import navrelis.glintsmith.style.Rule;
 import navrelis.glintsmith.style.RuleMatcher;
 
 class GlintRuntimeSettingsTest {
+	/** Nothing customised: the built-in defaults are a custom look, so this is spelled out. */
 	private static GlintsmithConfig defaults() {
-		return new GlintsmithConfig().sanitize();
+		return TestConfigs.vanilla().sanitize();
 	}
 
 	private static GlintsmithConfig.GlintCategorySettings category(GlintsmithConfig config, GlintCategory c) {
@@ -46,6 +48,31 @@ class GlintRuntimeSettingsTest {
 			assertEquals(1.0f, look.strength());
 			assertEquals(10.0f, look.rotation());
 		}
+	}
+
+	@Test
+	void theBuiltInDefaultsAreACustomLook() {
+		GlintRuntimeSettings s = GlintRuntimeSettings.from(new GlintsmithConfig().sanitize());
+		assertTrue(s.anyCustom());
+		assertEquals("preset:frost", s.item().texture());
+		assertNotNull(s.item().tint());
+		assertEquals(0.5f, s.item().speed());
+		assertEquals(0.9f, s.item().strength());
+		assertFalse(s.armor().enabled());
+		assertEquals("preset:fire", s.entity().texture());
+		assertEquals("preset:fire", s.gui().texture());
+		assertTrue(s.atlasScale());
+	}
+
+	@Test
+	void vanillaIsEveryLayerAtVanillaWhateverTheBuiltInDefaultsAre() {
+		GlintRuntimeSettings v = GlintRuntimeSettings.VANILLA;
+		assertFalse(v.anyCustom());
+		assertTrue(v.atlasScale());
+		for (GlintCategory c : GlintCategory.values()) {
+			assertTrue(v.get(c).isDefault(), c.name());
+		}
+		assertEquals(GlintRuntimeSettings.from(defaults()), v);
 	}
 
 	@Test

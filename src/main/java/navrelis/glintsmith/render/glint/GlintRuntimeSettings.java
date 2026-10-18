@@ -32,7 +32,7 @@ public record GlintRuntimeSettings(
 	boolean atlasScale
 ) {
 	/** Everything vanilla. */
-	public static final GlintRuntimeSettings VANILLA = from(new GlintsmithConfig().sanitize());
+	public static final GlintRuntimeSettings VANILLA = from(null);
 
 	/**
 	 * The defaults of one glint layer.

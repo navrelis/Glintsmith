@@ -58,20 +58,36 @@ class ConfigTest {
 		assertEquals(0.0f, c.outline.fadeStart);
 		assertEquals(0.0f, c.outline.fadeEnd);
 		assertTrue(c.warnings().isEmpty());
-		assertEquals(ColorMode.STATIC, c.outline.color.mode);
-		assertEquals(List.of("#D088FC"), c.outline.color.colors);
-		assertEquals(2.0f, c.outline.thickness);
+		assertEquals(ColorMode.RAINBOW, c.outline.color.mode);
+		assertEquals(List.of("#FFFFFF"), c.outline.color.colors);
+		assertEquals(0.5f, c.outline.color.speed);
+		assertEquals(1.0f, c.outline.color.saturation);
+		assertEquals(1.0f, c.outline.color.brightness);
+		assertEquals(8.5f, c.outline.thickness);
 		assertEquals(0.0f, c.outline.softness);
-		assertEquals(1.0f, c.outline.opacity);
+		assertEquals(0.25f, c.outline.opacity);
+		for (OutlineTarget target : OutlineTarget.values()) {
+			assertNull(c.outline.targetThickness.get(target), "no own thickness for " + target);
+		}
 		assertTrue(c.glint.enabled);
-		assertEquals(10.0f, c.glint.item.rotation);
-		assertNull(c.glint.armor.texture);
+		assertTrue(c.glint.atlasIndependentScale);
+		assertLayer(c.glint.item, true, "preset:frost", 0.5f, 1.0f, 0.9f, 10.0f);
+		assertEquals(ColorMode.RAINBOW, c.glint.item.tint.mode);
+		assertEquals(List.of("#D088FC"), c.glint.item.tint.colors);
+		assertEquals(1.0f, c.glint.item.tint.speed);
+		assertLayer(c.glint.armor, false, "preset:fire", 1.0f, 1.0f, 1.0f, 10.0f);
+		assertNull(c.glint.armor.tint);
+		assertLayer(c.glint.entity, true, "preset:fire", 1.0f, 1.0f, 1.0f, 10.0f);
+		assertNull(c.glint.entity.tint);
+		assertLayer(c.glint.gui, true, "preset:fire", 1.0f, 1.0f, 1.0f, 10.0f);
 		assertNull(c.glint.gui.tint);
+		assertTrue(c.gapFix.enabled);
 		assertEquals(GapFixMode.AUTO, c.gapFix.mode);
 		assertEquals(0.0001f, c.gapFix.sideIndent);
 		assertEquals(0.005f, c.gapFix.sideExpansion);
 		assertTrue(c.durabilityAlert.enabled);
 		assertEquals(0.10f, c.durabilityAlert.threshold);
+		assertEquals("#FF2A2A", c.durabilityAlert.color);
 		assertTrue(c.enchantmentColors.isEmpty());
 		assertEquals(2, c.rules.size());
 		Rule totem = c.rules.get(0);
@@ -86,6 +102,16 @@ class ConfigTest {
 		assertTrue(books.enabled);
 		assertNull(totem.error);
 		assertNull(books.error);
+	}
+
+	private static void assertLayer(GlintsmithConfig.GlintCategorySettings layer, boolean enabled, String texture, float speed,
+		float scale, float strength, float rotation) {
+		assertEquals(enabled, layer.enabled);
+		assertEquals(texture, layer.texture);
+		assertEquals(speed, layer.speed);
+		assertEquals(scale, layer.scale);
+		assertEquals(strength, layer.strength);
+		assertEquals(rotation, layer.rotation);
 	}
 
 	@Test
@@ -354,7 +380,11 @@ class ConfigTest {
 		c.outline.opacity = Float.NaN;
 		c.sanitize();
 		assertEquals(0.5f, c.outline.thickness);
-		assertEquals(1.0f, c.outline.opacity);
+		assertEquals(0.25f, c.outline.opacity, "NaN becomes the default");
+
+		c.outline.thickness = Float.NaN;
+		c.sanitize();
+		assertEquals(8.5f, c.outline.thickness, "NaN becomes the default");
 	}
 
 	@Test
@@ -495,7 +525,7 @@ class ConfigTest {
 		ConfigManager m = ConfigManager.forPath(file());
 		GlintsmithConfig c = m.load();
 		assertNotNull(m.lastError());
-		assertEquals(2.0f, c.outline.thickness);
+		assertEquals(8.5f, c.outline.thickness);
 		assertEquals(2, c.rules.size());
 	}
 
@@ -600,7 +630,113 @@ class ConfigTest {
 		}
 		assertEquals(1, notifications.get());
 		assertNotNull(m.lastError());
-		assertEquals(2.0f, m.get().outline.thickness);
+		assertEquals(8.5f, m.get().outline.thickness);
+	}
+
+	// ---- thickness per place ----
+
+	@Test
+	void targetThicknessIsNullEverywhereWhenMissingFromTheFile() {
+		GlintsmithConfig c = ConfigManager.fromJson("{\"outline\": {\"thickness\": 3}}").sanitize();
+		assertNotNull(c.outline.targetThickness);
+		for (OutlineTarget target : OutlineTarget.values()) {
+			assertNull(c.outline.targetThickness.get(target), target.name());
+		}
+		for (OutlineTarget target : OutlineTarget.values()) {
+			assertNull(ConfigManager.fromJson("{}").sanitize().outline.targetThickness.get(target), target.name());
+		}
+	}
+
+	@Test
+	void targetThicknessRoundTripsAndKeepsNull() {
+		GlintsmithConfig c = new GlintsmithConfig();
+		c.outline.targetThickness.set(OutlineTarget.GUI, 3.5f);
+		c.outline.targetThickness.set(OutlineTarget.FIRST_PERSON, 12.0f);
+		c.sanitize();
+
+		String json = ConfigManager.toJson(c);
+		assertTrue(json.contains("\"targetThickness\""));
+		GlintsmithConfig parsed = ConfigManager.fromJson(json).sanitize();
+		assertEquals(json, ConfigManager.toJson(parsed));
+		GlintsmithConfig.TargetThickness t = parsed.outline.targetThickness;
+		assertEquals(3.5f, t.get(OutlineTarget.GUI));
+		assertEquals(12.0f, t.get(OutlineTarget.FIRST_PERSON));
+		assertNull(t.get(OutlineTarget.THIRD_PERSON));
+		assertNull(t.get(OutlineTarget.ARMOR));
+		assertNull(t.get(OutlineTarget.DROPPED));
+		assertNull(t.get(OutlineTarget.ITEM_FRAME));
+		assertNull(t.get(OutlineTarget.OTHER));
+
+		GlintsmithConfig copy = c.copy();
+		assertEquals(3.5f, copy.outline.targetThickness.get(OutlineTarget.GUI));
+		assertNull(copy.outline.targetThickness.get(OutlineTarget.ARMOR));
+		copy.outline.targetThickness.set(OutlineTarget.GUI, null);
+		assertEquals(3.5f, c.outline.targetThickness.get(OutlineTarget.GUI), "the copy is independent");
+	}
+
+	@Test
+	void everyPlaceHasItsOwnTargetThickness() {
+		GlintsmithConfig.TargetThickness t = new GlintsmithConfig.TargetThickness();
+		float value = 1.0f;
+		for (OutlineTarget target : OutlineTarget.values()) {
+			t.set(target, value);
+			value += 1.0f;
+		}
+		value = 1.0f;
+		for (OutlineTarget target : OutlineTarget.values()) {
+			assertEquals(value, t.get(target), target.name());
+			value += 1.0f;
+		}
+		t.set(OutlineTarget.ARMOR, null);
+		assertNull(t.get(OutlineTarget.ARMOR));
+		assertEquals(1.0f, t.get(OutlineTarget.FIRST_PERSON));
+	}
+
+	@Test
+	void sanitizeClampsTargetThicknessAndTurnsNaNIntoNull() {
+		GlintsmithConfig c = new GlintsmithConfig();
+		c.outline.targetThickness.set(OutlineTarget.FIRST_PERSON, 100.0f);
+		c.outline.targetThickness.set(OutlineTarget.THIRD_PERSON, -3.0f);
+		c.outline.targetThickness.set(OutlineTarget.ARMOR, Float.NaN);
+		c.outline.targetThickness.set(OutlineTarget.DROPPED, 0.0f);
+		c.outline.targetThickness.set(OutlineTarget.ITEM_FRAME, 16.0f);
+		c.outline.targetThickness.set(OutlineTarget.GUI, 7.25f);
+		c.sanitize();
+		GlintsmithConfig.TargetThickness t = c.outline.targetThickness;
+		assertEquals(OutlineSettings.MAX_THICKNESS, t.get(OutlineTarget.FIRST_PERSON));
+		assertEquals(OutlineSettings.MIN_THICKNESS, t.get(OutlineTarget.THIRD_PERSON));
+		assertNull(t.get(OutlineTarget.ARMOR));
+		assertEquals(OutlineSettings.MIN_THICKNESS, t.get(OutlineTarget.DROPPED));
+		assertEquals(16.0f, t.get(OutlineTarget.ITEM_FRAME));
+		assertEquals(7.25f, t.get(OutlineTarget.GUI));
+		assertNull(t.get(OutlineTarget.OTHER));
+	}
+
+	@Test
+	void aNullTargetThicknessSectionBecomesAnEmptyOne() {
+		GlintsmithConfig c = ConfigManager.fromJson("{\"outline\": {\"targetThickness\": null, \"thickness\": 4}}").sanitize();
+		assertNotNull(c.outline.targetThickness);
+		assertEquals(4.0f, c.outline.thickness);
+		for (OutlineTarget target : OutlineTarget.values()) {
+			assertNull(c.outline.targetThickness.get(target), target.name());
+		}
+
+		GlintsmithConfig manual = new GlintsmithConfig();
+		manual.outline.targetThickness = null;
+		manual.sanitize();
+		assertNotNull(manual.outline.targetThickness);
+	}
+
+	@Test
+	void aLayerWrittenInTheFileKeepsItsOwnValuesAndOnlyMissingLayersGetTheDefaults() {
+		// A saved file lists every field, so a missing texture there means vanilla, not the built-in default texture.
+		GlintsmithConfig c = ConfigManager.fromJson("{\"glint\": {\"item\": {\"speed\": 2}, \"entity\": {}}}").sanitize();
+		assertNull(c.glint.item.texture);
+		assertNull(c.glint.item.tint);
+		assertEquals(2.0f, c.glint.item.speed);
+		assertNull(c.glint.entity.texture);
+		assertEquals("preset:fire", c.glint.gui.texture, "a layer the file does not mention keeps the built-in default");
+		assertFalse(c.glint.armor.enabled);
 	}
 
 	// ---- atlas-independent glint scale (2.0.0) ----

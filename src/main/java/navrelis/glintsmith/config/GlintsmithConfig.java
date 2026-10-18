@@ -7,6 +7,7 @@ import java.util.Map;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import navrelis.glintsmith.style.ColorMode;
 import navrelis.glintsmith.style.ColorStyle;
 import navrelis.glintsmith.style.Colors;
 import navrelis.glintsmith.style.DurabilityAlert;
@@ -16,6 +17,7 @@ import navrelis.glintsmith.style.Num;
 import navrelis.glintsmith.style.OutlineSettings;
 import navrelis.glintsmith.style.OutlineTarget;
 import navrelis.glintsmith.style.Rule;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Root of {@code glintsmith.json}. Plain public fields, serialised by Gson.
@@ -139,13 +141,15 @@ public final class GlintsmithConfig {
 		public OutlineCondition condition = OutlineCondition.ENCHANTED;
 		public Targets targets = new Targets();
 		public boolean onlyLocalPlayer = false;
-		public ColorStyle color = ColorStyle.of(ColorStyle.DEFAULT_COLOR);
+		public ColorStyle color = defaultColor();
 		/** Screen pixels, 0.5..16. */
-		public float thickness = 2.0f;
+		public float thickness = 8.5f;
+		/** Own thickness per place; null entries use {@link #thickness}. Rules that set a thickness still override both. */
+		public TargetThickness targetThickness = new TargetThickness();
 		/** 0..1. */
 		public float softness = 0.0f;
 		/** 0..1. */
-		public float opacity = 1.0f;
+		public float opacity = 0.25f;
 		public boolean disableWithShaders = false;
 		/** Keep first-person outlines while an Iris shader pack is active. */
 		public boolean handWithShaderPack = true;
@@ -159,6 +163,14 @@ public final class GlintsmithConfig {
 		public Outline() {
 		}
 
+		/** The default outline colour: a slow rainbow. */
+		private static ColorStyle defaultColor() {
+			ColorStyle style = ColorStyle.of("#FFFFFF");
+			style.mode = ColorMode.RAINBOW;
+			style.speed = 0.5f;
+			return style;
+		}
+
 		void sanitize() {
 			if (condition == null) {
 				condition = OutlineCondition.ENCHANTED;
@@ -167,12 +179,16 @@ public final class GlintsmithConfig {
 				targets = new Targets();
 			}
 			if (color == null) {
-				color = ColorStyle.of(ColorStyle.DEFAULT_COLOR);
+				color = defaultColor();
 			}
 			color.sanitize();
-			thickness = Num.clamp(thickness, OutlineSettings.MIN_THICKNESS, OutlineSettings.MAX_THICKNESS, 2.0f);
+			thickness = Num.clamp(thickness, OutlineSettings.MIN_THICKNESS, OutlineSettings.MAX_THICKNESS, 8.5f);
+			if (targetThickness == null) {
+				targetThickness = new TargetThickness();
+			}
+			targetThickness.sanitize();
 			softness = Num.clamp(softness, 0.0f, 1.0f, 0.0f);
-			opacity = Num.clamp(opacity, 0.0f, 1.0f, 1.0f);
+			opacity = Num.clamp(opacity, 0.0f, 1.0f, 0.25f);
 			fadeStart = Num.clamp(fadeStart, 0.0f, 256.0f, 0.0f);
 			fadeEnd = Num.clamp(fadeEnd, 0.0f, 256.0f, 0.0f);
 			if (fadeEnd != 0.0f && fadeEnd <= fadeStart) {
@@ -217,6 +233,79 @@ public final class GlintsmithConfig {
 	}
 
 	/**
+	 * Own outline thickness per place. Null means the place uses the global {@link Outline#thickness}, which is the
+	 * default everywhere. Rules that set a thickness still override these.
+	 */
+	public static final class TargetThickness {
+		@Nullable
+		public Float firstPerson = null;
+		@Nullable
+		public Float thirdPerson = null;
+		@Nullable
+		public Float armor = null;
+		@Nullable
+		public Float dropped = null;
+		@Nullable
+		public Float itemFrame = null;
+		@Nullable
+		public Float gui = null;
+		@Nullable
+		public Float other = null;
+
+		public TargetThickness() {
+		}
+
+		/**
+		 * @return the own thickness of the place, null to use the global one
+		 */
+		@Nullable
+		public Float get(OutlineTarget target) {
+			return switch (target) {
+				case FIRST_PERSON -> firstPerson;
+				case THIRD_PERSON -> thirdPerson;
+				case ARMOR -> armor;
+				case DROPPED -> dropped;
+				case ITEM_FRAME -> itemFrame;
+				case GUI -> gui;
+				case OTHER -> other;
+			};
+		}
+
+		/**
+		 * Sets the own thickness of a place.
+		 *
+		 * @param value the thickness, null to use the global one
+		 */
+		public void set(OutlineTarget target, @Nullable Float value) {
+			switch (target) {
+				case FIRST_PERSON -> firstPerson = value;
+				case THIRD_PERSON -> thirdPerson = value;
+				case ARMOR -> armor = value;
+				case DROPPED -> dropped = value;
+				case ITEM_FRAME -> itemFrame = value;
+				case GUI -> gui = value;
+				case OTHER -> other = value;
+			}
+		}
+
+		/** Clamps every own thickness to the allowed range; NaN becomes null. */
+		void sanitize() {
+			firstPerson = clamp(firstPerson);
+			thirdPerson = clamp(thirdPerson);
+			armor = clamp(armor);
+			dropped = clamp(dropped);
+			itemFrame = clamp(itemFrame);
+			gui = clamp(gui);
+			other = clamp(other);
+		}
+
+		@Nullable
+		private static Float clamp(@Nullable Float value) {
+			return Num.clamp(value, OutlineSettings.MIN_THICKNESS, OutlineSettings.MAX_THICKNESS);
+		}
+	}
+
+	/**
 	 * Glint settings: a master switch and the defaults of the four glint layers.
 	 */
 	public static final class Glint {
@@ -228,10 +317,10 @@ public final class GlintsmithConfig {
 		 * default: they get it on.
 		 */
 		public boolean atlasIndependentScale = true;
-		public GlintCategorySettings item = new GlintCategorySettings();
-		public GlintCategorySettings armor = new GlintCategorySettings();
-		public GlintCategorySettings entity = new GlintCategorySettings();
-		public GlintCategorySettings gui = new GlintCategorySettings();
+		public GlintCategorySettings item = GlintCategorySettings.itemDefaults();
+		public GlintCategorySettings armor = GlintCategorySettings.armorDefaults();
+		public GlintCategorySettings entity = GlintCategorySettings.layerDefaults();
+		public GlintCategorySettings gui = GlintCategorySettings.layerDefaults();
 
 		public Glint() {
 		}
@@ -250,16 +339,16 @@ public final class GlintsmithConfig {
 
 		void sanitize(List<String> warnings) {
 			if (item == null) {
-				item = new GlintCategorySettings();
+				item = GlintCategorySettings.itemDefaults();
 			}
 			if (armor == null) {
-				armor = new GlintCategorySettings();
+				armor = GlintCategorySettings.armorDefaults();
 			}
 			if (entity == null) {
-				entity = new GlintCategorySettings();
+				entity = GlintCategorySettings.layerDefaults();
 			}
 			if (gui == null) {
-				gui = new GlintCategorySettings();
+				gui = GlintCategorySettings.layerDefaults();
 			}
 			item.sanitize(warnings, "glint.item");
 			armor.sanitize(warnings, "glint.armor");
@@ -288,6 +377,32 @@ public final class GlintsmithConfig {
 		public float rotation = 10.0f;
 
 		public GlintCategorySettings() {
+		}
+
+		/** The default of the item layer: a slowly moving frost texture with a light purple rainbow tint. */
+		static GlintCategorySettings itemDefaults() {
+			GlintCategorySettings s = new GlintCategorySettings();
+			s.texture = "preset:frost";
+			ColorStyle tint = ColorStyle.of(ColorStyle.DEFAULT_COLOR);
+			tint.mode = ColorMode.RAINBOW;
+			s.tint = tint;
+			s.speed = 0.5f;
+			s.strength = 0.9f;
+			return s;
+		}
+
+		/** The default of the armor layer: switched off. */
+		static GlintCategorySettings armorDefaults() {
+			GlintCategorySettings s = layerDefaults();
+			s.enabled = false;
+			return s;
+		}
+
+		/** The default of the entity and GUI layers: the fire texture, everything else vanilla. */
+		static GlintCategorySettings layerDefaults() {
+			GlintCategorySettings s = new GlintCategorySettings();
+			s.texture = "preset:fire";
+			return s;
 		}
 
 		void sanitize(List<String> warnings, String path) {

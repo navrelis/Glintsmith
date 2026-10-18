@@ -183,6 +183,37 @@ public final class SettingRows {
 	}
 
 	/**
+	 * A toggle and a slider on one row: the value is null (taken from elsewhere) while the toggle is off, and the slider
+	 * only works while it is on.
+	 *
+	 * @param key base key of the toggle; its tooltip is {@code key.tooltip}
+	 * @param toggleLabel the toggle text for the given state (the place name is part of it)
+	 * @param sliderKey key of the slider, which has its own tooltip
+	 * @param shownWhenOff supplies the value the greyed out slider shows, and the value it starts from when switched on
+	 */
+	public static void toggledSliderRow(OptionList list, int toggleWidth, String key, Function<Boolean, Component> toggleLabel,
+		String sliderKey, float min, float max, float step, Function<Float, Component> label, @Nullable Float current,
+		Supplier<Float> shownWhenOff, Consumer<Float> setter) {
+		boolean own = current != null;
+		FloatSlider slider = slider(Ui.WIDTH - toggleWidth - Ui.GAP, sliderKey, min, max, step, label,
+			own ? current : shownWhenOff.get(), setter);
+		slider.active = own;
+		CycleButton<Boolean> toggle = CycleButton.<Boolean>builder(toggleLabel)
+			.withValues(List.of(false, true))
+			.withInitialValue(own)
+			.displayOnlyValue()
+			.withTooltip(v -> Ui.tip(key))
+			.create(0, 0, toggleWidth, Ui.HEIGHT, Component.empty(), (button, nowOwn) -> {
+				slider.active = nowOwn;
+				if (nowOwn) {
+					slider.setFloatValue(shownWhenOff.get());
+				}
+				setter.accept(nowOwn ? slider.floatValue() : null);
+			});
+		list.addRow(toggle, slider);
+	}
+
+	/**
 	 * A colour style button that can be switched to "inherit" (style null).
 	 *
 	 * @param shownWhenInherited the style shown, greyed out, while the value is inherited

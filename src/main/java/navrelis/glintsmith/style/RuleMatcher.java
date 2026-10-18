@@ -17,7 +17,9 @@ import navrelis.glintsmith.config.OutlineCondition;
  * when they say no, there is no outline and no rule can bring it back.</li>
  * <li>The base {@code enabled} comes from {@code outline.condition}: ALL, NONE, or ENCHANTED (the stack has
  * enchantments or shows the vanilla glint). Rules overlay on that.</li>
- * <li>Colour, thickness, softness and opacity start from the global values and are clamped at the end.</li>
+ * <li>Colour, thickness, softness and opacity start from the global values and are clamped at the end. The thickness
+ * starts from the own thickness of the target ({@code outline.targetThickness}) if it has one, else from the global
+ * {@code outline.thickness}; a rule that sets a thickness overrides either.</li>
  * </ul>
  * <h3>Glint</h3>
  * <ul>
@@ -61,7 +63,8 @@ public final class RuleMatcher {
 				case ENCHANTED -> facts.enchanted() || facts.hasFoil();
 			};
 			color = global.color;
-			thickness = global.thickness;
+			Float own = global.targetThickness == null ? null : global.targetThickness.get(target);
+			thickness = own != null ? own : global.thickness;
 			softness = global.softness;
 			opacity = global.opacity;
 		}
