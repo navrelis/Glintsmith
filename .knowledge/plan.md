@@ -65,7 +65,7 @@ Status: open / in progress / in review / done. Size S = short (1 unit), L = long
 | L1 | New logo (owner: not attractive) | 3 studio-rendered logo concepts (512/64/32 + animated <= 2 MB) in build/logo-concepts/, owner picks, then wired into logo.py/cards.json | - | Opus | L | done s16 (b846ff6; owner picked concept A golden blade) |
 | T9b-6 | Docs: Iris world glint verified | 4 DESIGN markers -> verified; README/description/CHANGELOG state world glint with Iris (shaders off); preview --check | G1 check | Sonnet | S | done (session 11) |
 | B1 | Lineup stray outline dot (2.0.1) | root cause + failing test + fix; build green; lineup re-render without empty-centre rings; CHANGELOG 2.0.1 | - | Opus | S | done 129f299 (flat GUI/PREVIEW mask culls like the source; 486 green); merged with dev adb5e8e |
-| B2 | Gap fix edge guard (2.0.1) | 1/64-texel geometric edge guard always on with the gap fix, failing test first, cracks unchanged, 0 strays at atlas 2048/8192/16384; CHANGELOG known issue -> Fixed, DESIGN 11 | B1 | Opus (session gap-fix, branch claude/busy-wilson-9ce123) | S | in progress (owner go 2026-10-18) |
+| B2 | Gap fix edge guard (2.0.1) | 1/64-texel geometric edge guard always on with the gap fix, failing test first, cracks unchanged, 0 strays at atlas 2048/8192/16384; CHANGELOG known issue -> Fixed, DESIGN 11 | B1 | Opus (session gap-fix, branch claude/busy-wilson-9ce123) | S | done 7dc772e (lead read diff, build 495 green; strays 0 at atlas 2048/8192/16384, cracks 1994 -> 1991) |
 | B3 | Lineup re-render + GIF | after B1+B2 in dev: studio lineup with the release studio-mods jars, strays.py 0 frames, lineup GIF < 2,000,000 bytes + cards rebuilt, verify/preview --check 0 | B1, B2 | Sonnet | S | open |
 
 Parallel: T2 (Opus) with T3 + T4 (Sonnet) after T1. T5 (Opus) with T6/T7 (Sonnet), files disjoint.
@@ -101,4 +101,4 @@ Session 15: + A2 Sonnet L 2 -> Sonnet ~79.5, Opus ~31.5 (about 28 % Opus).
 Session 15: + checklist Sonnet S 1 -> Sonnet ~81.5, Opus ~31.5 (about 28 % Opus). Final build 486 green, jar b91aea4f (3219f73).
 Session 15 (owner follow-up): + G2MB Sonnet S 1, L1 Opus L 2 -> Sonnet ~82.5, Opus ~33.5 (about 29 % Opus).
 Session 16: + L1 wiring Opus S 1 -> Sonnet ~82.5, Opus ~34.5 (about 30 % Opus).
-Session 17 (stray dot, 2.0.1): Opus B1 S 1, Sonnet B1 docs S 1, Opus B2 S 1 (running) -> Sonnet ~83.5, Opus ~36.5 (about 30 % Opus).
+Session 17 (stray dot, 2.0.1): Opus B1 S 1, Sonnet B1 docs S 1, Opus B2 S 1, Sonnet B3 S 1 (running) -> Sonnet ~84.5, Opus ~36.5 (about 30 % Opus).
