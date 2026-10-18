@@ -1,38 +1,39 @@
-# CurseForge upload checklist: Glintsmith 2.0.2
+# CurseForge upload checklist: Glintsmith 2.1.0
 
 Glintsmith 1.0.0 was uploaded on 2026-10-18 to CurseForge project 1751215 (file 9234824) with the owner's uploader
 `F:\Coding\CurseForgeUpload\curseforge-upload.ps1`; 2.0.0 was uploaded on 2026-10-18 as file 9235330; 2.0.1 was uploaded
-on 2026-10-18 as file 9238522; 2.0.2 is uploaded the same way. Field names follow the CurseForge file form as I know it;
-check each one against the form you see, they change from time to time. Items marked (unverified) are suggestions I could
-not check.
+on 2026-10-18 as file 9238522; 2.0.2 was uploaded on 2026-10-18 as file 9238814; 2.1.0 is uploaded the same way. Field
+names follow the CurseForge file form as I know it; check each one against the form you see, they change from time to
+time. Items marked (unverified) are suggestions I could not check.
 
 Paths are relative to the repository root.
 
-This is the checklist for the 2.0.2 update (a one-fix release) of the existing project. The values of the earlier
-releases are kept at the end of this file: 2.0.1 first, then 2.0.0, then 1.0.0.
+This is the checklist for the 2.1.0 update (a minor release: new built-in defaults) of the existing project. The values
+of the earlier releases are kept at the end of this file: 2.0.2 first, then 2.0.1, then 2.0.0, then 1.0.0.
 
-## Before 2.0.2 goes public
+## Before 2.1.0 goes public
 
 | Done | Item | Where |
 |---|---|---|
-| [x] | 2.0.2 release gate: the build is made from the release commit, the tests are green, and `py -B art/verify.py` and `py -B docs/curseforge/preview.py --check` pass. Commit, test count and SHA-256 are entered in the file table below. Done: built from commit 07fae66; 499 tests green; `art/verify.py` and `preview.py --check` pass. | |
-| [x] | The in-game check of the 2.0.2 fix is done: an enchanted trident in the main hand is drawn whole and centred in the live preview of the settings screen over a full turn, and the enchanted bow and sword are still inside the panel. Run on the isolated instance copy. Done: tridentcheck run of 2026-10-18 on the isolated instance copy with exactly the release jar (840c1d78). 18 of 18 shots, 80 steps, 0 failed, owner instance unchanged. The enchanted trident (8 shots over a full turn) is whole and centred in the panel, the plain trident (4), enchanted bow (4) and netherite sword (2) stay inside the panel. One harmless Sodium WARN that the preview's measuring buffer does not support optimized vertex writing. | `CHANGELOG.md` section 2.0.2 |
-| [x] | `gradle.properties` says `mod_version=2.0.2` and the `CHANGELOG.md` 2.0.2 heading carries the release date. Done: `gradle.properties` 2.0.2 and the CHANGELOG 2.0.2 heading is dated 2026-10-18. | |
+| [ ] | 2.1.0 release gate: the build is made from the release commit, the tests are green, and `py -B art/verify.py` and `py -B docs/curseforge/preview.py --check` pass. Commit, test count and SHA-256 are entered in the file table below. | |
+| [ ] | The in-game check of the 2.1.0 defaults is done: a fresh install with no `config\glintsmith.json` shows the new default look, a static light purple outline #E6B2FF at 7.5 px on the held, dropped and framed items, worn armor and GUI items, plus the neutral glint with a light purple rainbow tint on all four layers. The config the mod writes equals the owner's config. Run on the isolated instance copy. | `CHANGELOG.md` section 2.1.0 |
+| [x] | `gradle.properties` says `mod_version=2.1.0` and the `CHANGELOG.md` 2.1.0 heading carries the release date. Done: `gradle.properties` 2.1.0 and the CHANGELOG 2.1.0 heading is dated 2026-10-18. | |
+| [ ] | Known and not changed by 2.1.0: the studio cards and GIFs on the page still show the 2.0.x default look. They were rendered with explicit studio configs, so they still show what the mod can do. | |
 
 ## The file
 
 | Field | Value |
 |---|---|
-| File to upload | `build/libs/glintsmith-2.0.2.jar` (not the `-sources` jar and not a `-dev` jar if one is in the folder) |
-| SHA-256 of the checked build | `840c1d78208719fa74f5a618526fe54e71eb94222ef9b8862ded963b6b97f544` (`build/libs/glintsmith-2.0.2.jar`, commit 07fae66, 499 tests green; checked in game on 2026-10-18 with exactly this jar) |
-| Display name | `glintsmith-2.0.2.jar` (the earlier uploads used the file name) |
-| Version | 2.0.2 |
+| File to upload | `build/libs/glintsmith-2.1.0.jar` (not the `-sources` jar and not a `-dev` jar if one is in the folder) |
+| SHA-256 of the checked build | TBD (filled in by the lead after the release build) |
+| Display name | `glintsmith-2.1.0.jar` (the earlier uploads used the file name) |
+| Version | 2.1.0 |
 | Release type | Release |
 | Game version | 1.21.1 |
 | Mod loader | Fabric |
 | Java | 21 |
 | Environment | Client only (`"environment": "client"`) |
-| Changelog | paste the section `2.0.2` of `CHANGELOG.md` |
+| Changelog | paste the section `2.1.0` of `CHANGELOG.md` |
 
 ### Relations
 
@@ -69,6 +70,33 @@ The project exists (1751215) and the release type is Release. Still open:
 1. Whether the comparison table stays on the page. It names other projects; every statement in it is taken from their public pages, and where a page is silent the table says "not stated". Read it again against the live pages.
 2. Whether to tell the authors of Custom Glow Enchantment Outline and Model Gap Fix about the comparison (courtesy; nothing requires it).
 3. Add the project page's address to `fabric.mod.json` (`contact.homepage` currently points to GitHub) in the next build, and to the README if wanted.
+
+## Earlier release: Glintsmith 2.0.2 (uploaded 2026-10-18, file 9238814)
+
+The values below are the final ones of the 2.0.2 release.
+
+### Before 2.0.2 went public
+
+| Done | Item | Where |
+|---|---|---|
+| [x] | 2.0.2 release gate: the build is made from the release commit, the tests are green, and `py -B art/verify.py` and `py -B docs/curseforge/preview.py --check` pass. Commit, test count and SHA-256 are entered in the file table below. Done: built from commit 07fae66; 499 tests green; `art/verify.py` and `preview.py --check` pass. | |
+| [x] | The in-game check of the 2.0.2 fix is done: an enchanted trident in the main hand is drawn whole and centred in the live preview of the settings screen over a full turn, and the enchanted bow and sword are still inside the panel. Run on the isolated instance copy. Done: tridentcheck run of 2026-10-18 on the isolated instance copy with exactly the release jar (840c1d78). 18 of 18 shots, 80 steps, 0 failed, owner instance unchanged. The enchanted trident (8 shots over a full turn) is whole and centred in the panel, the plain trident (4), enchanted bow (4) and netherite sword (2) stay inside the panel. One harmless Sodium WARN that the preview's measuring buffer does not support optimized vertex writing. | `CHANGELOG.md` section 2.0.2 |
+| [x] | `gradle.properties` says `mod_version=2.0.2` and the `CHANGELOG.md` 2.0.2 heading carries the release date. Done: `gradle.properties` 2.0.2 and the CHANGELOG 2.0.2 heading is dated 2026-10-18. | |
+
+### The file (2.0.2)
+
+| Field | Value |
+|---|---|
+| File to upload | `build/libs/glintsmith-2.0.2.jar` (not the `-sources` jar and not a `-dev` jar if one is in the folder) |
+| SHA-256 of the checked build | `840c1d78208719fa74f5a618526fe54e71eb94222ef9b8862ded963b6b97f544` (`build/libs/glintsmith-2.0.2.jar`, commit 07fae66, 499 tests green; checked in game on 2026-10-18 with exactly this jar) |
+| Display name | `glintsmith-2.0.2.jar` (the earlier uploads used the file name) |
+| Version | 2.0.2 |
+| Release type | Release |
+| Game version | 1.21.1 |
+| Mod loader | Fabric |
+| Java | 21 |
+| Environment | Client only (`"environment": "client"`) |
+| Changelog | paste the section `2.0.2` of `CHANGELOG.md` |
 
 ## Earlier release: Glintsmith 2.0.1 (uploaded 2026-10-18, file 9238522)
 

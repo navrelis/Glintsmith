@@ -76,7 +76,7 @@ Status: open / in progress / in review / done. Size S = short (1 unit), L = long
 | RL7 | 2.0.2 release | version 2.0.2 + docs (Sonnet), VERSIONING.md (Sonnet), release jar reproducible, tridentcheck on the release jar, checklist SHA, tag v2.0.2, CurseForge upload | B4 | Sonnet + Lead | S | done: 07fae66 jar 840c1d78 (499 green), tridentcheck 18/18 shots 0 failed, tag v2.0.2, CurseForge file 9238814 |
 | D1 | Owner config as built-in defaults (2.1.0) | defaults = owner glintsmith.json (outline armor+gui on, static #E6B2FF, 7.5; four glint layers neutral + rainbow tint 0.9, armor glint on); DefaultConfigTest structural equality (red first); old-default tests get explicit baselines; docs + CHANGELOG Unreleased; build green | - | Sonnet | L | done (s19, 1 correction; 502 green) |
 | D2 | Fresh-config in-game check (defcheck) | scripts in the lead scratchpad only (main checkout untouched): no config in the copy, mod writes its defaults, shots fp/inventory/dropped/armor/preview, written file copied out; dry run 0 | - | Sonnet | S | done (s19: scratchpad 12c21bcc/v210/defcheck, dry run 0 with the 2.0.2 jar; lead reviewed) |
-| RL8 | 2.1.0 release | version bump + checklist, release jar, defcheck run (written config = owner file), tag v2.1.0, CurseForge upload | D1, D2 | Sonnet + Lead | S | open |
+| RL8 | 2.1.0 release | version bump + checklist, release jar, defcheck run (written config = owner file), tag v2.1.0, CurseForge upload | D1, D2 | Sonnet + Lead | S | in progress (bump done s19; release build + defcheck + upload next) |
 
 Parallel: T2 (Opus) with T3 + T4 (Sonnet) after T1. T5 (Opus) with T6/T7 (Sonnet), files disjoint.
 
@@ -115,4 +115,4 @@ Session 17 (stray dot, 2.0.1): Opus B1 S 1, Sonnet B1 docs S 1, Opus B2 S 1, Son
 Session 17 (2.0.1 release, owner go): + Sonnet RL1 S 1, RL2 S 1 -> Sonnet ~86.5, Opus ~36.5 (about 30 % Opus).
 Session 17: + Sonnet RL2 correction (in its S), RL6 checklist values S 0.5 -> Sonnet ~87, Opus ~36.5 (about 30 % Opus).
 Session 18: Opus B4 S 1 (side session); Sonnet checklist tick S 1, 2.0.2 bump S 1, VERSIONING S 1 (+1 corr), checklist SHA S 1, D1 L 2, D2 S 1 -> about 29 % Opus.
-Session 19: D1 finish Sonnet S 1, D2 restart Sonnet S 1 -> about 28 % Opus.
+Session 19: D1 finish Sonnet S 1 (+corr), D2 restart Sonnet S 1, RL8a bump Sonnet S 1 -> about 28 % Opus.
