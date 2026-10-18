@@ -73,6 +73,7 @@ Status: open / in progress / in review / done. Size S = short (1 unit), L = long
 | RL4 | 2.0.1 merge + tag | dev pushed, main fast-forwarded to the release commit, tag v2.0.1 | RL3 | Lead | - | done (main = dev = 81c5daa, tag v2.0.1) |
 | RL5 | 2.0.1 CurseForge upload | uploader with the 2.0.0 plan conventions (jar frozen, changelog section 2.0.1, display name = file name, fabric-api required, modmenu optional), remote dry run, upload | RL4 | Lead | - | done: UPLOADED 2026-10-18, file 9238522 (jar b86b290e) |
 | B4 | Trident below the preview panel | root cause, failing test, fix, build green, CHANGELOG Unreleased, in-game preview shots on the g2check copy | - | Opus (side session) | S | done 1fbcf99 (cause: PreviewBounds.Recorder gave one consumer for glint + main, VertexMultiConsumer threw Duplicate delegates, every enchanted item fitted as unit cube; 499 green; tridentcheck 18/18 shots, trident whole over a full turn; not released) |
+| RL7 | 2.0.2 release | version 2.0.2 + docs (Sonnet), VERSIONING.md (Sonnet), release jar reproducible, tridentcheck on the release jar, checklist SHA, tag v2.0.2, CurseForge upload | B4 | Sonnet + Lead | S | in progress: 07fae66 jar 840c1d78 (499 green), tridentcheck 18/18 shots 80 steps 0 failed, owner instance unchanged; upload next |
 
 Parallel: T2 (Opus) with T3 + T4 (Sonnet) after T1. T5 (Opus) with T6/T7 (Sonnet), files disjoint.
 

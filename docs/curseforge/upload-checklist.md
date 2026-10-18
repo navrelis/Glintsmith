@@ -15,8 +15,8 @@ releases are kept at the end of this file: 2.0.1 first, then 2.0.0, then 1.0.0.
 
 | Done | Item | Where |
 |---|---|---|
-| [ ] | 2.0.2 release gate: the build is made from the release commit, the tests are green, and `py -B art/verify.py` and `py -B docs/curseforge/preview.py --check` pass. Commit, test count and SHA-256 are entered in the file table below. | |
-| [ ] | The in-game check of the 2.0.2 fix is done: an enchanted trident in the main hand is drawn whole and centred in the live preview of the settings screen over a full turn, and the enchanted bow and sword are still inside the panel. Run on the isolated instance copy. | `CHANGELOG.md` section 2.0.2 |
+| [x] | 2.0.2 release gate: the build is made from the release commit, the tests are green, and `py -B art/verify.py` and `py -B docs/curseforge/preview.py --check` pass. Commit, test count and SHA-256 are entered in the file table below. Done: built from commit 07fae66; 499 tests green; `art/verify.py` and `preview.py --check` pass. | |
+| [x] | The in-game check of the 2.0.2 fix is done: an enchanted trident in the main hand is drawn whole and centred in the live preview of the settings screen over a full turn, and the enchanted bow and sword are still inside the panel. Run on the isolated instance copy. Done: tridentcheck run of 2026-10-18 on the isolated instance copy with exactly the release jar (840c1d78). 18 of 18 shots, 80 steps, 0 failed, owner instance unchanged. The enchanted trident (8 shots over a full turn) is whole and centred in the panel, the plain trident (4), enchanted bow (4) and netherite sword (2) stay inside the panel. One harmless Sodium WARN that the preview's measuring buffer does not support optimized vertex writing. | `CHANGELOG.md` section 2.0.2 |
 | [x] | `gradle.properties` says `mod_version=2.0.2` and the `CHANGELOG.md` 2.0.2 heading carries the release date. Done: `gradle.properties` 2.0.2 and the CHANGELOG 2.0.2 heading is dated 2026-10-18. | |
 
 ## The file
@@ -24,7 +24,7 @@ releases are kept at the end of this file: 2.0.1 first, then 2.0.0, then 1.0.0.
 | Field | Value |
 |---|---|
 | File to upload | `build/libs/glintsmith-2.0.2.jar` (not the `-sources` jar and not a `-dev` jar if one is in the folder) |
-| SHA-256 of the checked build | TBD (filled in by the lead after the release build) |
+| SHA-256 of the checked build | `840c1d78208719fa74f5a618526fe54e71eb94222ef9b8862ded963b6b97f544` (`build/libs/glintsmith-2.0.2.jar`, commit 07fae66, 499 tests green; checked in game on 2026-10-18 with exactly this jar) |
 | Display name | `glintsmith-2.0.2.jar` (the earlier uploads used the file name) |
 | Version | 2.0.2 |
 | Release type | Release |
