@@ -26,9 +26,9 @@ turntables and stills of the dev-only studio (`docs/STUDIO.md`) and in-game scre
 | `card_targets.png` | The places an outline is drawn: hand, dropped items, frames, plus the optional worn armor and GUI targets (off by default) |
 | `armor.gif` | An armor stand in outlined, glinting netherite armor turning through its looks, captioned, at most 8 MB. Next to `card_targets.png` |
 | `card_glint_presets.png` | The vanilla glint, neutral and the twelve generated presets (seven clean, five rich) on the same item, 14 tiles in a 5 x 3 grid, 1000 x 822 (studio stills) |
-| `card_gap_fix.png` | A vanilla and a modded item, each with the fix off and on (studio stills) |
+| `card_gap_fix.png` | An enchanted vanilla sword and a modded chestplate, each with the fix off and on, as 3x detail crops where the cracks show (studio stills) |
 | `card_rules.png` | The Rules tab and the rule editor |
-| `card_config.png` | The Outline and Glint tabs of the settings screen |
+| `card_config.png` | The Outline and Glint tabs of the settings screen with the live preview panel, 1000 x 846 |
 | `card_shaders.png` | Sodium, and Iris with a shader pack in the world, the hand and the GUI |
 | `logo_animated.gif` | The animated logo: the same turntable at 256 px, no caption, at most 2 MB |
 

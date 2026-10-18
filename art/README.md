@@ -189,7 +189,7 @@ pixels. Element types:
 | `type` | Keys |
 | --- | --- |
 | `capture` | `capture` (file in `art/captures`), `crop` [x, y, w, h] in source pixels (x or y may be `"c"` to centre), optional `down` (box downscale by a whole factor, applied first), `scale` (whole-number upscale), or instead `resample: "area"` with `size` [w, h] (the crop is resized to exactly that size with the area filter; use it for shots that are scaled down by a non-whole factor), `at` [x, y] (top left of the picture), `frame` (default true: a 3 px brass rim over the picture edge), `label`, `label_style` (accent, good, bad, dim, gold), `label_at` (tl, tr, bl, br) |
-| `studio` | `scene`, `frame` (a still name, a frame index or a file stem), `at` [x, y] and `size` [w, h] (the rectangle the render is fitted into: centred, only ever scaled down, area filter, no frame or box), `shadow` (default true: the soft contact shadow on the card under it), optional `crop` [x, y, w, h] in matte pixels (a zoom, applied first), `trim` (`"y"`, `"x"` or `"xy"`: cut the empty rows / columns round the subject, keeping `trim_margin` matte pixels, default 8; `"y"` keeps the width, so two rows of the same width get the same scale), `style` (composite style overrides), `label` + `label_style` + `label_at` (tl, tr, bl, br, tc, bc: a name box inside the rectangle) or `label_below` (a name box centred just under the rectangle) |
+| `studio` | `scene`, `frame` (a still name, a frame index or a file stem), `at` [x, y] and `size` [w, h] (the rectangle the render is fitted into: centred, only ever scaled down, area filter, no frame or box), `shadow` (default true: the soft contact shadow on the card under it), optional `crop` [x, y, w, h] in matte pixels (a zoom, applied first), `up` (whole number: the crop is enlarged by nearest neighbour, for a detail of a render; the rectangle must be big enough for the enlarged crop, it is only ever scaled down), `border` (true: a 2 px brass frame round the picture, for a detail crop), `trim` (`"y"`, `"x"` or `"xy"`: cut the empty rows / columns round the subject, keeping `trim_margin` matte pixels, default 8; `"y"` keeps the width, so two rows of the same width get the same scale), `style` (composite style overrides), `label` + `label_style` + `label_at` (tl, tr, bl, br, tc, bc: a name box inside the rectangle) or `label_below` (a name box centred just under the rectangle) |
 | `label` | `at`, `text`, `style` |
 | `text` | `at`, `width`, `text`, `size` (whole scale, default 2), `color` (text, dim, accent, gold, good, bad or `#rrggbb`), `align` (left: `at.x` is the left edge; centre: the middle; right: the right edge), `leading` |
 | `bullets` | `at`, `width`, `items`, `size`, `gap` |
@@ -202,7 +202,7 @@ text stays crisp. The card text uses only ASCII, set in the game's own font read
 
 The cards that use studio renders: `banner.png` (`stills_hero` / `banner_hero`, left of the title), `card_universal.png` (`universal_vanilla`,
 `universal_modded`: two 920 x 164 rows, `trim: "y"`, no shadow), `card_glint_presets.png` and `card_outline_styles.png` (the 14 + 10 tile shots at
-150 px, a name box under each tile), `card_gap_fix.png` (the four gap shots at 215 px). When the real renders exist, check each tile for a
+150 px, a name box under each tile; the outline tiles are cropped to 235 x 213 matte pixels and set at 176 x 160, see "Outline tiles" in `docs/STUDIO.md`), `card_gap_fix.png` (the four gap shots as 3x nearest-neighbour detail crops, `crop` + `up` + `border`, 450 x 198 px each). When the real renders exist, check each tile for a
 subject that is cut off or too small and move its `size`, `crop` or `trim` here.
 
 ## Verify
@@ -258,12 +258,12 @@ the GIFs on disk; run it once after the real build.
 | `docs/curseforge/img/card_universal.png` | 1000 x 590 | two rows of studio renders: vanilla and modded items, all outlined |
 | `docs/curseforge/img/lineup.gif` | 900 x 336 | six items in a row, each with its own look, swinging, captioned, at most 8 MB |
 | `docs/curseforge/img/card_glint_presets.png` | 1000 x 822 | the neutral glint and all twelve generated presets (seven clean, five rich) as studio stills, with the vanilla glint as the before, in a grid of 5 x 3 (the last slot holds a note) |
-| `docs/curseforge/img/card_outline_styles.png` | 1000 x 632 | ten outline styles as studio stills: vanilla, static, rainbow, pulse, gradient, per enchantment, thickness, soft glow |
+| `docs/curseforge/img/card_outline_styles.png` | 1000 x 648 | ten outline styles as studio stills: vanilla, static, rainbow, pulse, gradient, per enchantment, thickness, soft glow |
 | `docs/curseforge/img/card_targets.png` | 1000 x 590 | hand and armor (hero shots), third person, dropped items, item frames, inventory |
 | `docs/curseforge/img/armor.gif` | 400 x 536 | the armor stand turning through its looks, captioned, at most 8 MB |
-| `docs/curseforge/img/card_gap_fix.png` | 1000 x 520 | before / after of the gap fix, vanilla and modded item, studio stills |
+| `docs/curseforge/img/card_gap_fix.png` | 1000 x 744 | before / after of the gap fix on an enchanted netherite sword and a modded chestplate: 3x detail crops of the studio stills, the cracks show in the vanilla tiles |
 | `docs/curseforge/img/card_rules.png` | 1000 x 590 | the rule list and the rule editor |
-| `docs/curseforge/img/card_config.png` | 1000 x 590 | the settings screen, Outline and Glint tabs |
+| `docs/curseforge/img/card_config.png` | 1000 x 846 | the 2.0.0 settings screen with the live preview panel, Outline and Glint tabs |
 | `docs/curseforge/img/card_shaders.png` | 1000 x 590 | Sodium, and an Iris shader pack in the world, the hand and the inventory |
 | `docs/curseforge/img/showcase.gif` | 512 x 548 | the `hero_sword` turntable through its looks, captioned, at most 8 MB |
 

@@ -60,6 +60,7 @@ Status: open / in progress / in review / done. Size S = short (1 unit), L = long
 | S5 | Studio + cards for new presets | Looks baseline proportional=false, 5 new tiles, hero/lineup/armor looks with rich presets, card_glint_presets 14 tiles, synthetic build + verify pass, build green (no game launch) | G4, O9 | Sonnet | S | done (7b969cb) |
 | G2 | Glint missing in hand (owner bug) | root cause (GUI texture/tint persistence, tinted vanilla slot, hand path with Iris, 3D-model foil types), fix with tests, build green, lead in-game check in the instance | - | Opus | S | done: owner confirmed custom glint in game (session 14; "sometimes looks ugly", follow up) |
 | T25 | CurseForge upload | owner-provided project id, remote dry run, plan reviewed, upload with the user's uploader (release, 1.21.1 / Fabric / Java 21 / Client, relations fabric-api required + modmenu optional) | T11 | Lead | - | 1.0.0 UPLOADED 2026-10-18 (file 9234824, jar c1297c15, tag v1.0.0 at 45414a8); 2.0.0 open |
+| A2 | Art fixes after real build | card_outline_styles bands visible on the card (measured 3 / 1-3-6 card px), card_gap_fix cracks visible off vs on (or reverted), card_config from 2.0.0 screenshots with live preview, lineup stray dot explained; build --strict, verify, preview --check | studio renders | Sonnet | L | done s15 (lead viewed all three cards; lineup dot = stray outline-mask fragment of the bow, renderer, not fixed -> known issue) |
 | T9b-6 | Docs: Iris world glint verified | 4 DESIGN markers -> verified; README/description/CHANGELOG state world glint with Iris (shaders off); preview --check | G1 check | Sonnet | S | done (session 11) |
 
 Parallel: T2 (Opus) with T3 + T4 (Sonnet) after T1. T5 (Opus) with T6/T7 (Sonnet), files disjoint.
@@ -91,3 +92,4 @@ Session 14: + O9 Opus L 2, G4 Opus L 2 -> Sonnet ~72.5, Opus ~31.5 (about 30 % O
 Session 14: + P2b-1 Sonnet S 1, V1 Sonnet S 1 -> Sonnet ~74.5, Opus ~31.5 (about 30 % Opus).
 Session 14: + O9 correction (in its L), S5 Sonnet S 1, P2b-2 Sonnet S 1 -> Sonnet ~76.5, Opus ~31.5 (about 29 % Opus).
 Session 15: P2b-3 Sonnet S 1 -> Sonnet ~77.5, Opus ~31.5 (about 29 % Opus).
+Session 15: + A2 Sonnet L 2 -> Sonnet ~79.5, Opus ~31.5 (about 28 % Opus).

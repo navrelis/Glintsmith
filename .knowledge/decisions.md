@@ -49,3 +49,4 @@
 - s14: Outline thickness definition becomes proportional to the item's on-screen size (O9, owner screenshot), measured on the first-person held item; O8's equal-pixel mode stays as the "off" setting.
 - s14: G4 and O9 go to Opus: visual taste work and a core render-pipeline change; worktrees ../Glintsmith-g4 and ../Glintsmith-o9 so builds don't collide.
 - s14: 1.0.0 uploaded from the owner-tested jar after the owner's in-game yes.
+- s15: lineup.gif ships with the bow's stray outline dot: hiding it would mask a renderer quirk; investigating (Opus, no clear cause) would delay the pre-authorised release; recorded as a known issue + follow-up.

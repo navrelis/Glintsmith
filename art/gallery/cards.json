@@ -417,7 +417,7 @@
    "out": "card_outline_styles.png",
    "size": [
     1000,
-    632
+    648
    ],
    "seed": 23,
    "title": "Outlines that fit your look",
@@ -432,10 +432,16 @@
      ],
      "size": [
       176,
-      150
+      160
      ],
      "label_style": "bad",
-     "label_below": "Vanilla"
+     "label_below": "Vanilla",
+     "crop": [
+      "c",
+      "c",
+      235,
+      213
+     ]
     },
     {
      "type": "studio",
@@ -447,10 +453,16 @@
      ],
      "size": [
       176,
-      150
+      160
      ],
      "label_style": "accent",
-     "label_below": "Static"
+     "label_below": "Static",
+     "crop": [
+      "c",
+      "c",
+      235,
+      213
+     ]
     },
     {
      "type": "studio",
@@ -462,10 +474,16 @@
      ],
      "size": [
       176,
-      150
+      160
      ],
      "label_style": "accent",
-     "label_below": "Rainbow"
+     "label_below": "Rainbow",
+     "crop": [
+      "c",
+      "c",
+      235,
+      213
+     ]
     },
     {
      "type": "studio",
@@ -477,10 +495,16 @@
      ],
      "size": [
       176,
-      150
+      160
      ],
      "label_style": "accent",
-     "label_below": "Pulse"
+     "label_below": "Pulse",
+     "crop": [
+      "c",
+      "c",
+      235,
+      213
+     ]
     },
     {
      "type": "studio",
@@ -492,10 +516,16 @@
      ],
      "size": [
       176,
-      150
+      160
      ],
      "label_style": "accent",
-     "label_below": "Gradient"
+     "label_below": "Gradient",
+     "crop": [
+      "c",
+      "c",
+      235,
+      213
+     ]
     },
     {
      "type": "studio",
@@ -503,14 +533,20 @@
      "frame": "outline_enchant",
      "at": [
       40,
-      298
+      304
      ],
      "size": [
       176,
-      150
+      160
      ],
      "label_style": "gold",
-     "label_below": "Enchantment"
+     "label_below": "Enchantment",
+     "crop": [
+      "c",
+      "c",
+      235,
+      213
+     ]
     },
     {
      "type": "studio",
@@ -518,14 +554,20 @@
      "frame": "outline_thick_1",
      "at": [
       226,
-      298
+      304
      ],
      "size": [
       176,
-      150
+      160
      ],
      "label_style": "gold",
-     "label_below": "1 px"
+     "label_below": "1 px",
+     "crop": [
+      "c",
+      "c",
+      235,
+      213
+     ]
     },
     {
      "type": "studio",
@@ -533,14 +575,20 @@
      "frame": "outline_thick_3",
      "at": [
       412,
-      298
+      304
      ],
      "size": [
       176,
-      150
+      160
      ],
      "label_style": "gold",
-     "label_below": "3 px"
+     "label_below": "3 px",
+     "crop": [
+      "c",
+      "c",
+      235,
+      213
+     ]
     },
     {
      "type": "studio",
@@ -548,14 +596,20 @@
      "frame": "outline_thick_6",
      "at": [
       598,
-      298
+      304
      ],
      "size": [
       176,
-      150
+      160
      ],
      "label_style": "gold",
-     "label_below": "6 px"
+     "label_below": "6 px",
+     "crop": [
+      "c",
+      "c",
+      235,
+      213
+     ]
     },
     {
      "type": "studio",
@@ -563,20 +617,26 @@
      "frame": "outline_soft_80",
      "at": [
       784,
-      298
+      304
      ],
      "size": [
       176,
-      150
+      160
      ],
      "label_style": "gold",
-     "label_below": "Soft glow"
+     "label_below": "Soft glow",
+     "crop": [
+      "c",
+      "c",
+      235,
+      213
+     ]
     },
     {
      "type": "text",
      "at": [
       40,
-      496
+      512
      ],
      "width": 920,
      "text": "Five colour modes, any thickness from half a pixel up, an optional soft glow and a low durability alert. The outline follows the real silhouette, flat or 3D."
@@ -585,7 +645,7 @@
      "type": "chips",
      "at": [
       40,
-      558
+      574
      ],
      "items": [
       "5 COLOUR MODES",
@@ -752,7 +812,7 @@
    "out": "card_gap_fix.png",
    "size": [
     1000,
-    520
+    744
    ],
    "seed": 31,
    "title": "Seams closed, edges clean",
@@ -763,12 +823,21 @@
      "frame": "gap_sword_off",
      "at": [
       40,
-      108
+      110
      ],
      "size": [
-      215,
-      215
+      450,
+      198
      ],
+     "crop": [
+      126,
+      584,
+      150,
+      66
+     ],
+     "up": 3,
+     "shadow": false,
+     "border": true,
      "label_style": "bad",
      "label_below": "Vanilla"
     },
@@ -777,13 +846,22 @@
      "scene": "stills_gap",
      "frame": "gap_sword_on",
      "at": [
-      265,
-      108
+      510,
+      110
      ],
      "size": [
-      215,
-      215
+      450,
+      198
      ],
+     "crop": [
+      126,
+      584,
+      150,
+      66
+     ],
+     "up": 3,
+     "shadow": false,
+     "border": true,
      "label_style": "good",
      "label_below": "With Glintsmith"
     },
@@ -792,13 +870,22 @@
      "scene": "stills_gap",
      "frame": "gap_modded_off",
      "at": [
-      520,
-      108
+      40,
+      352
      ],
      "size": [
-      215,
-      215
+      450,
+      198
      ],
+     "crop": [
+      500,
+      20,
+      150,
+      66
+     ],
+     "up": 3,
+     "shadow": false,
+     "border": true,
      "label_style": "bad",
      "label_below": "Vanilla"
     },
@@ -807,13 +894,22 @@
      "scene": "stills_gap",
      "frame": "gap_modded_on",
      "at": [
-      745,
-      108
+      510,
+      352
      ],
      "size": [
-      215,
-      215
+      450,
+      198
      ],
+     "crop": [
+      500,
+      20,
+      150,
+      66
+     ],
+     "up": 3,
+     "shadow": false,
+     "border": true,
      "label_style": "good",
      "label_below": "With Glintsmith"
     },
@@ -821,16 +917,16 @@
      "type": "text",
      "at": [
       40,
-      380
+      598
      ],
      "width": 920,
-     "text": "Flat item models can show hairline gaps between their faces, worst under the glint (MC-73186). The gap fix closes them on vanilla and modded items alike."
+     "text": "Flat item models can show hairline gaps between their faces, worst under the glint (MC-73186). Above: enchanted items at 3x, a netherite sword and a modded chestplate. The gap fix closes the cracks on vanilla and modded items alike."
     },
     {
      "type": "chips",
      "at": [
       40,
-      448
+      672
      ],
      "items": [
       "AUTOMATIC",
@@ -932,7 +1028,7 @@
    "out": "card_config.png",
    "size": [
     1000,
-    590
+    846
    ],
    "seed": 41,
    "title": "Everything in one screen",
@@ -941,74 +1037,108 @@
      "type": "capture",
      "capture": "config_outline.png",
      "crop": [
-      508,
+      585,
       0,
-      904,
-      630
+      1100,
+      676
      ],
      "at": [
       40,
       108
      ],
-     "down": 2
+     "down": 2,
+     "label": "Outline tab",
+     "label_style": "accent",
+     "label_at": "br"
     },
     {
      "type": "capture",
      "capture": "config_glint.png",
      "crop": [
-      508,
+      585,
       0,
-      904,
-      630
+      1100,
+      676
      ],
      "at": [
-      508,
-      108
+      40,
+      464
      ],
-     "down": 2
-    },
-    {
-     "type": "chips",
-     "at": [
-      500,
-      474
-     ],
-     "align": "centre",
-     "items": [
-      "OUTLINE",
-      "GLINT",
-      "MODEL FIX",
-      "RULES",
-      "ENCHANTMENTS"
-     ]
+     "down": 2,
+     "label": "Glint tab",
+     "label_style": "accent",
+     "label_at": "br"
     },
     {
      "type": "text",
      "at": [
-      500,
-      520
+      620,
+      108
      ],
-     "width": 920,
-     "text": "Open it with a key or from Mod Menu. Every setting has a tooltip, changes show live, and glintsmith.json reloads while the game runs.",
-     "align": "centre"
+     "width": 340,
+     "text": "Open it with a key or from Mod Menu. Every setting has a tooltip, changes show live, and a live preview shows your held item with the settings you are changing. glintsmith.json reloads while the game runs."
     },
     {
-     "type": "label",
+     "type": "rule",
      "at": [
-      40,
-      431
-     ],
-     "text": "Outline tab",
-     "style": "accent"
+      620,
+      304
+     ]
     },
     {
-     "type": "label",
+     "type": "chips",
      "at": [
-      508,
-      431
+      620,
+      332
      ],
-     "text": "Glint tab",
-     "style": "accent"
+     "align": "left",
+     "items": [
+      "OUTLINE"
+     ]
+    },
+    {
+     "type": "chips",
+     "at": [
+      620,
+      378
+     ],
+     "align": "left",
+     "items": [
+      "GLINT"
+     ]
+    },
+    {
+     "type": "chips",
+     "at": [
+      620,
+      424
+     ],
+     "align": "left",
+     "items": [
+      "MODEL FIX"
+     ]
+    },
+    {
+     "type": "chips",
+     "at": [
+      620,
+      470
+     ],
+     "align": "left",
+     "items": [
+      "RULES"
+     ]
+    },
+    {
+     "type": "chips",
+     "at": [
+      620,
+      516
+     ],
+     "align": "left",
+     "items": [
+      "ENCHANTMENTS"
+     ]
     }
    ]
   },

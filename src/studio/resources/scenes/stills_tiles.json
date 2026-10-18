@@ -123,7 +123,7 @@
 		{
 			"glint": { "enabled": false },
 			"gap_fix": "auto",
-			"outline": { "color": "#B05CFF", "thickness": 3 },
+			"outline": { "color": "#B05CFF", "thickness": 4 },
 			"id": "outline_static",
 			"caption": "outline_static"
 		},
@@ -132,7 +132,7 @@
 			"gap_fix": "auto",
 			"outline": {
 				"color": { "mode": "rainbow", "speed": 1.0 },
-				"thickness": 3
+				"thickness": 4
 			},
 			"id": "outline_rainbow",
 			"caption": "outline_rainbow"
@@ -142,7 +142,7 @@
 			"gap_fix": "auto",
 			"outline": {
 				"color": { "mode": "pulse", "colors": ["#FF4A00", "#FFD23F"], "speed": 1.5 },
-				"thickness": 3
+				"thickness": 4
 			},
 			"id": "outline_pulse",
 			"caption": "outline_pulse"
@@ -152,7 +152,7 @@
 			"gap_fix": "auto",
 			"outline": {
 				"color": { "mode": "gradient", "colors": ["#3CFFB4", "#4B7BFF", "#C05CFF"], "speed": 1.0 },
-				"thickness": 3
+				"thickness": 4
 			},
 			"id": "outline_gradient",
 			"caption": "outline_gradient"
@@ -162,7 +162,7 @@
 			"gap_fix": "auto",
 			"outline": {
 				"color": { "mode": "enchantment" },
-				"thickness": 3
+				"thickness": 4
 			},
 			"config": {
 				"enchantmentColors": {
@@ -178,28 +178,28 @@
 		{
 			"glint": { "enabled": false },
 			"gap_fix": "auto",
-			"outline": { "color": "#B05CFF", "thickness": 1 },
+			"outline": { "color": "#B05CFF", "thickness": 1.34 },
 			"id": "outline_thick_1",
 			"caption": "outline_thick_1"
 		},
 		{
 			"glint": { "enabled": false },
 			"gap_fix": "auto",
-			"outline": { "color": "#B05CFF", "thickness": 3 },
+			"outline": { "color": "#B05CFF", "thickness": 4 },
 			"id": "outline_thick_3",
 			"caption": "outline_thick_3"
 		},
 		{
 			"glint": { "enabled": false },
 			"gap_fix": "auto",
-			"outline": { "color": "#B05CFF", "thickness": 6 },
+			"outline": { "color": "#B05CFF", "thickness": 8 },
 			"id": "outline_thick_6",
 			"caption": "outline_thick_6"
 		},
 		{
 			"glint": { "enabled": false },
 			"gap_fix": "auto",
-			"outline": { "color": "#B05CFF", "thickness": 6, "softness": 0.8 },
+			"outline": { "color": "#B05CFF", "thickness": 4, "softness": 0.8 },
 			"id": "outline_soft_80",
 			"caption": "outline_soft_80"
 		}
@@ -219,15 +219,15 @@
 		{ "name": "glint_starlight", "look": "glint_starlight", "yaw": 25, "time": 8.77 },
 		{ "name": "glint_opal", "look": "glint_opal", "yaw": 25, "time": 9.14 },
 		{ "name": "glint_storm", "look": "glint_storm", "yaw": 25, "time": 9.51 },
-		{ "name": "outline_vanilla", "look": "outline_vanilla", "yaw": 25, "time": 4.33 },
-		{ "name": "outline_static", "look": "outline_static", "yaw": 25, "time": 4.7 },
-		{ "name": "outline_rainbow", "look": "outline_rainbow", "yaw": 25, "time": 5.07 },
-		{ "name": "outline_pulse", "look": "outline_pulse", "yaw": 25, "time": 5.4399999999999995 },
-		{ "name": "outline_gradient", "look": "outline_gradient", "yaw": 25, "time": 5.81 },
-		{ "name": "outline_enchant", "look": "outline_enchant", "yaw": 25, "time": 6.18 },
-		{ "name": "outline_thick_1", "look": "outline_thick_1", "yaw": 25, "time": 6.55 },
-		{ "name": "outline_thick_3", "look": "outline_thick_3", "yaw": 25, "time": 6.92 },
-		{ "name": "outline_thick_6", "look": "outline_thick_6", "yaw": 25, "time": 7.29 },
-		{ "name": "outline_soft_80", "look": "outline_soft_80", "yaw": 25, "time": 7.66 }
+		{ "name": "outline_vanilla", "look": "outline_vanilla", "yaw": 25, "time": 4.33, "camera": { "view_height": 3.6 } },
+		{ "name": "outline_static", "look": "outline_static", "yaw": 25, "time": 4.7, "camera": { "view_height": 3.6 } },
+		{ "name": "outline_rainbow", "look": "outline_rainbow", "yaw": 25, "time": 5.07, "camera": { "view_height": 3.6 } },
+		{ "name": "outline_pulse", "look": "outline_pulse", "yaw": 25, "time": 5.4399999999999995, "camera": { "view_height": 3.6 } },
+		{ "name": "outline_gradient", "look": "outline_gradient", "yaw": 25, "time": 5.81, "camera": { "view_height": 3.6 } },
+		{ "name": "outline_enchant", "look": "outline_enchant", "yaw": 25, "time": 6.18, "camera": { "view_height": 3.6 } },
+		{ "name": "outline_thick_1", "look": "outline_thick_1", "yaw": 25, "time": 6.55, "camera": { "view_height": 3.6 } },
+		{ "name": "outline_thick_3", "look": "outline_thick_3", "yaw": 25, "time": 6.92, "camera": { "view_height": 3.6 } },
+		{ "name": "outline_thick_6", "look": "outline_thick_6", "yaw": 25, "time": 7.29, "camera": { "view_height": 3.6 } },
+		{ "name": "outline_soft_80", "look": "outline_soft_80", "yaw": 25, "time": 7.66, "camera": { "view_height": 3.6 } }
 	]
 }

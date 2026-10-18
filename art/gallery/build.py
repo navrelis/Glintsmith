@@ -190,7 +190,8 @@ def studio_matte(ctx, scene_id, ref):
 
 
 def shape_matte(pic, el):
-    """The matte after the element's `crop` ([x, y, w, h] in matte pixels, x / y may be "c") and `trim` ("x", "y" or "xy":
+    """The matte after the element's `crop` ([x, y, w, h] in matte pixels, x / y may be "c"), `up` (whole number: the crop
+    enlarged by nearest neighbour, for a detail of a render such as a one pixel crack) and `trim` ("x", "y" or "xy":
     cut the empty rows / columns round the subject, keeping `trim_margin` matte pixels, default 8).  Trimming only the
     height ("y") keeps the scale of two rows of the same width equal."""
     sys.path.insert(0, os.path.join(common.ART, "studio"))
@@ -201,6 +202,8 @@ def shape_matte(pic, el):
     if el.get("crop"):
         x, y, w, h = common.resolve_crop(el["crop"], pic.w, pic.h)
         pic = pic.crop(x, y, w, h)
+    if el.get("up", 1) > 1:
+        pic = pic.scaled(el["up"])
     trim = el.get("trim")
     if trim:
         box = composite.alpha_bbox(bytes(pic.buf[3::4]), pic.w, pic.h, 8)
@@ -220,7 +223,7 @@ def el_studio(c, el, ctx):
     """A studio render (transparent matte of a K / W frame pair, no frame or box) set straight on the card background,
     fitted inside `size` at `at` (only ever scaled down, area filter) and centred; "shadow": true lays the soft contact
     shadow under it.  Optional: `crop` / `trim` / `trim_margin` (see shape_matte), `style` (composite style overrides),
-    and `label`, `label_style`, `label_at` (tl, tr, bl, br, tc, bc: a name box inside the `size` rectangle) or `label_below`
+    `border` (true: a thin brass frame round the picture, for a detail crop) and `label`, `label_style`, `label_at` (tl, tr, bl, br, tc, bc: a name box inside the `size` rectangle) or `label_below`
     (a name box centred just under the rectangle, which then holds only the picture)."""
     x, y = el["at"]
     w, h = el["size"]
@@ -234,7 +237,10 @@ def el_studio(c, el, ctx):
             import composite
         finally:
             sys.path.pop(0)
-        composite.place_on_canvas(c, shape_matte(pic, el), (x, y, w, h), el.get("shadow", True), composite.style(el.get("style")))
+        bx, by, bw, bh = composite.place_on_canvas(c, shape_matte(pic, el), (x, y, w, h), el.get("shadow", True),
+                                                   composite.style(el.get("style")))
+        if el.get("border"):
+            c.frame(bx - 2, by - 2, bw + 4, bh + 4, lib.BORDER, 2)
     if el.get("label_below"):                              # a name box centred just under the rectangle
         label(c, {"at": None, "text": el["label_below"], "style": el.get("label_style", "accent")}, ctx,
               box=(x, y + h, w, 0), where="tc", inset=4)

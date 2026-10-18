@@ -19,7 +19,7 @@
 	"subjects": [
 		{
 			"type": "item",
-			"item": { "item": "minecraft:netherite_sword" },
+			"item": { "item": "minecraft:netherite_sword", "glint": true },
 			"rotation": [0, 0, 45]
 		}
 	],
@@ -28,41 +28,41 @@
 			"id": "gap_off",
 			"caption": "Gap fix off",
 			"gap_fix": "off",
-			"outline": { "enabled": false },
-			"glint": { "enabled": false }
+			"outline": { "enabled": false }
 		},
 		{
 			"id": "gap_on",
 			"caption": "Gap fix auto",
 			"gap_fix": "auto",
-			"outline": { "enabled": false },
-			"glint": { "enabled": false }
+			"outline": { "enabled": false }
 		}
 	],
 	"shots": [
-		{ "name": "gap_sword_off", "look": "gap_off", "yaw": 30 },
+		{ "name": "gap_sword_off", "look": "gap_off", "yaw": 30, "pitch": 45, "time": 1.0 },
 		{
 			"name": "gap_modded_off",
 			"look": "gap_off",
-			"yaw": 15,
-			"pitch": 30,
+			"yaw": 30,
+			"pitch": 45,
+			"time": 1.0,
 			"subjects": [
 				{
 					"type": "item",
-					"item": { "item": "immersive_armors:warrior_chestplate" }
+					"item": { "item": "immersive_armors:warrior_chestplate", "glint": true }
 				}
 			]
 		},
-		{ "name": "gap_sword_on", "look": "gap_on", "yaw": 30 },
+		{ "name": "gap_sword_on", "look": "gap_on", "yaw": 30, "pitch": 45, "time": 1.0 },
 		{
 			"name": "gap_modded_on",
 			"look": "gap_on",
-			"yaw": 15,
-			"pitch": 30,
+			"yaw": 30,
+			"pitch": 45,
+			"time": 1.0,
 			"subjects": [
 				{
 					"type": "item",
-					"item": { "item": "immersive_armors:warrior_chestplate" }
+					"item": { "item": "immersive_armors:warrior_chestplate", "glint": true }
 				}
 			]
 		}
