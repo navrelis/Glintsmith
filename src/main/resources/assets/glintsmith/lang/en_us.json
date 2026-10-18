@@ -261,7 +261,7 @@
 	"glintsmith.rule.glint.speed": "Speed: %sx",
 	"glintsmith.rule.glint.speed.tooltip": "How fast the glint moves. 1.00 is vanilla.",
 	"glintsmith.rule.glint.scale": "Scale: %sx",
-	"glintsmith.rule.glint.scale.tooltip": "Size of the glint pattern. 1.00 is vanilla. In packs with a very large texture atlas, lower it to see the pattern.",
+	"glintsmith.rule.glint.scale.tooltip": "Size of the glint pattern, relative to the vanilla pattern size. 1.00 is vanilla. With Atlas-independent scale on (the default), big texture atlases need no change here.",
 	"glintsmith.rule.glint.strength": "Strength: %s %%",
 	"glintsmith.rule.glint.strength.tooltip": "How visible the glint is.",
 	"glintsmith.rule.glint.rotation": "Rotation: %s°",

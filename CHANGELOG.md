@@ -19,9 +19,35 @@
   items in hand, on the ground, in item frames and in the GUI; armor and entity models use their own textures and are
   not changed. High-resolution resource packs are not affected. Glints you did not customise stay exactly vanilla. If
   you lowered Scale for a large atlas in 1.0.0, set it back to 1.00.
+- Outline thickness per place: Outline tab > "Thickness per place" gives first person, third person, armor, dropped
+  items, item frames, GUI and other places an optional own thickness. Places without one use the global thickness, and
+  rules that set a thickness still win. Config: `outline.targetThickness`.
+- Proportional outlines (Outline tab, on by default): the thickness is measured on the item held in first person at a
+  window height of 1080 pixels; every other item (inventory icons, third-person and dropped items, item frames, armor,
+  the settings preview) gets an outline proportional to its size on screen, so far items get thinner bands and
+  inventory icons a thin line instead of a thick glow. "Minimum width" (`outline.minThickness`, default 1 px at 1080p,
+  scales with the window height, never wider than the look's own width) keeps small and far items outlined. Off gives
+  the same pixel width everywhere.
+- Five new detailed glint presets: inferno (rising flame tongues), nebula (swirling clouds with stars), starlight
+  (four-pointed sparkles), opal (iridescent flashes), storm (branching lightning).
+
+### Changed
+
+- New built-in defaults for fresh and reset configs: slow rainbow outline (white, speed 0.5), thickness 8.5 px, opacity
+  25 %, frost item glint with a light purple rainbow tint (speed 0.5, strength 90 %), fire glint on entities and in the
+  GUI, armor glint off. Existing config files keep their values (keys missing from a file get the new defaults).
+- The seven glint presets (rainbow, aurora, fire, frost, sparkle, gold, void) are redrawn: soft diagonal streaks like
+  the vanilla glint over an even glow in each preset's colours, so the whole item shimmers instead of patches of glint on
+  black.
+- "Scale with window size" only applies while Proportional is off; proportional widths follow the window size by
+  themselves.
+- With more than 255 outline styles on screen, a new width of a colour already on screen reuses its nearest style
+  instead of losing the outline.
 
 ### Fixed
 
+- GUI outlines (inventory, hotbar, settings preview) were scaled by the GUI scale instead of the window height, so they
+  came out wider or thinner than the same outline in first person and in the world.
 - With ImmediatelyFast installed, items in inventories, menus and the hotbar kept the vanilla glint whatever the GUI
   layer said: ImmediatelyFast draws the GUI and the batched HUD into its own buffer sources, which bypassed
   Glintsmith's glint swap. Both are hooked now; the HUD batch is still drawn only by ImmediatelyFast, so the hotbar is

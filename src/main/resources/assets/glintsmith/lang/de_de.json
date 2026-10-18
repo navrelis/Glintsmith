@@ -261,7 +261,7 @@
 	"glintsmith.rule.glint.speed": "Tempo: %sx",
 	"glintsmith.rule.glint.speed.tooltip": "Wie schnell sich der Glanz bewegt. 1.00 ist Vanilla.",
 	"glintsmith.rule.glint.scale": "Größe: %sx",
-	"glintsmith.rule.glint.scale.tooltip": "Größe des Glanzmusters. 1.00 ist Vanilla. Bei Modpacks mit sehr großem Texturatlas den Wert senken, damit das Muster sichtbar wird.",
+	"glintsmith.rule.glint.scale.tooltip": "Größe des Glanzmusters, bezogen auf die Mustergröße von Vanilla. 1.00 ist Vanilla. Mit eingeschalteter atlasunabhängiger Größe (Standard) brauchen große Texturatlanten hier keine Änderung.",
 	"glintsmith.rule.glint.strength": "Stärke: %s %%",
 	"glintsmith.rule.glint.strength.tooltip": "Wie sichtbar der Glanz ist.",
 	"glintsmith.rule.glint.rotation": "Drehung: %s°",

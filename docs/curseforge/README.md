@@ -2,7 +2,7 @@
 
 | File | What |
 |---|---|
-| `description.md` | The project description (Markdown), with one paste marker line for each image and HTML comments (`<!-- PENDING: ... -->`) for claims that are not checked in game yet (at the moment: live preview, custom GUI glints with ImmediatelyFast, atlas-independent scale) |
+| `description.md` | The project description (Markdown), with one paste marker line for each image and HTML comments (`<!-- PENDING: ... -->`) for claims that are not checked in game yet (at the moment: live preview, custom GUI glints with ImmediatelyFast, atlas-independent scale, proportional outlines, redrawn and new presets) |
 | `summary.txt` | The short summary for the project form (one line, at most 250 characters) |
 | `upload-checklist.md` | The fields of the CurseForge forms and what to enter |
 | `preview.html` | The description with the images inline, for a browser; works offline when opened from this folder |
@@ -25,7 +25,7 @@ turntables and stills of the dev-only studio (`docs/STUDIO.md`) and in-game scre
 | `card_outline_styles.png` | The five colour modes, three thicknesses and a soft glow (studio stills) |
 | `card_targets.png` | The places an outline is drawn: hand, dropped items, frames, plus the optional worn armor and GUI targets (off by default) |
 | `armor.gif` | An armor stand in outlined, glinting netherite armor turning through its looks, captioned, at most 8 MB. Next to `card_targets.png` |
-| `card_glint_presets.png` | The vanilla glint, neutral and the seven generated presets on the same item (studio stills) |
+| `card_glint_presets.png` | The vanilla glint, neutral and the twelve generated presets on the same item (studio stills) |
 | `card_gap_fix.png` | A vanilla and a modded item, each with the fix off and on (studio stills) |
 | `card_rules.png` | The Rules tab and the rule editor |
 | `card_config.png` | The Outline and Glint tabs of the settings screen |

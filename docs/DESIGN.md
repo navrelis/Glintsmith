@@ -48,8 +48,9 @@ Why this approach:
   `item/generated` quads, JSON/3D resource-pack models, FRAPI models on Sodium, BEWLR and Fabric
   `BuiltinItemRendererRegistry` output (shield, trident, banners, chests, mod renderers) and armor
   geometry. There are no per-item special cases and no hull caps.
-* **Pixel-constant thickness and soft glow.** Each outlined item on screen gets its own colour,
-  thickness and softness, with no re-rendering of the item and no "late replay".
+* **Screen-space thickness and soft glow.** Each outlined item on screen gets its own colour,
+  thickness and softness, with no re-rendering of the item and no "late replay". The thickness is in screen
+  pixels, in proportion to the item's size on screen by default (3.4.1).
 * **Cost scales with what is on screen.** Nothing at all happens on frames where no outlined item
   is drawn. Otherwise the cost is one mask draw plus two clipped full-screen passes per phase (and a
   scissored depth clear and depth blit in the world and the vanilla hand). Seeding only from visible
@@ -243,7 +244,8 @@ finally { OutlineSystem.endItem(src2); }
    place (`outline.targetThickness`, one optional value per `OutlineTarget`; null means the place uses the global
    one), the `thickness` of a matching rule (`RuleMatcher`). Colour, softness and opacity have no per-place value.
 9. `argb = RuleEngine.outlineColor(stack, look, timeSeconds)` has alpha × opacity > 0.
-10. `idx = phase.styles.indexFor(argb, thickness, softness, opacity)` is not 0.
+10. The width of this item is `settings.itemThickness(thickness, pixelsPerUnit, height)` (3.4.1), and
+    `idx = phase.styles.indexFor(argb, width, softness)` is not 0.
 
 If all pass, it returns a pooled `TeeBufferSource` bound to (delegate=`src`, phase, idx).
 
@@ -523,19 +525,55 @@ WORLD and HAND (vanilla) outlines; GUI keeps working.
     it (3.3). In GUI it is not used.
 * **Style table** (`StyleTable`, one per phase). Open addressing over `int[]` keys
   (argb, packed thickness/softness/opacity bytes). It is reset after each composite. At most 255
-  entries per composite; further distinct styles reuse index 255 (rare, logged at debug level).
-  * Thickness is clamped to `[0.5, settings.maxThickness]` and to at most 31.875 px.
+  entries per composite. A new width or softness of a colour that is already in a full table reuses the nearest
+  entry of that colour (`StyleTable.nearestOfColor`: the smallest summed difference of the encoded thickness and
+  softness); a colour that is not in the table yet is rejected (index 0, the item gets no outline).
+  * The look's thickness is a setting of 0.5 to 16 px (`OutlineSettings.MAX_THICKNESS = 16`). The width of one item
+    is clamped to `[0.5, 31.875]` px and to `(MAX_RADIUS - 1) / (1 + softness)` (`StyleTable.clampThickness`).
   * Thickness definition: a look's thickness is the width of the outline band outward from the silhouette, in
-    framebuffer pixels. With `scaleWithResolution` it is multiplied by `framebufferHeight / 1080` (pixels at 1080p),
-    without it by 1. `OutlineRuntimeSettings.thicknessScale(height)` is the only factor and is the same for WORLD,
-    HAND, GUI and PREVIEW; the GUI scale plays no part. The composite draws full alpha up to `t` and a 0.5 px ramp
-    (about `t + 0.25` px on a straight edge).
+    framebuffer pixels. What it means for one item depends on `proportional` (3.4.1): by default it is the width on
+    the item held in first person at a window height of 1080 px, and every other item gets a width in proportion to
+    its size on screen. With `proportional` off it is the same width for every item: multiplied by
+    `OutlineRuntimeSettings.thicknessScale(height)`, which is `framebufferHeight / 1080` with `scaleWithResolution`
+    and 1 without it, the same for WORLD, HAND, GUI and PREVIEW; the GUI scale plays no part. The composite draws full
+    alpha up to `t` and a 0.5 px ramp (about `t + 0.25` px on a straight edge).
   * Encoding is a 256x2 RGBA8 `DynamicTexture` (`NativeImage(256, 2, false)`):
     * row 0 = (R, G, B, A = round(colourAlpha × opacity)),
     * row 1 = (round(thickness × 8), round(softness × 255), 0, 255).
   * Upload only the used columns: `dyn.bind(); img.upload(0, 0, 0, 0, 0, n+1, 2, false, false, false, false)`.
   * `maxRadius = max over used styles of ceil(t·(1+s) + 1)`, clamped to `MAX_RADIUS = 32`. This is the
     search radius `R` uniform. It is **dynamic**: typical looks give R = 3 to 8.
+
+#### 3.4.1 Proportional thickness (2.0.0)
+
+`OutlineRuntimeSettings.itemThickness(T, pixelsPerUnit, H)` decides the width of each captured item before it goes into
+the style table (`OutlineSystem.capture`). `T` is the thickness of the resolved look (rule, place or global) and `H` the
+height of the main render target in pixels.
+
+* With `proportional` (default, `outline.proportional`): `max(T × pixelsPerUnit / 807.6, min(minThickness, T) × H / 1080)`.
+  `minThickness` is `outline.minThickness` (default 1, range 0.5 to 8), in pixels at 1080 like `T`, so it grows with the
+  window, and it is never larger than `T` itself.
+* `pixelsPerUnit` (`OutlineScale.pixelsPerUnit`) is the size of the item on screen per model unit at its centre,
+  `s × |row1(P).xyz| × (H / 2) / w`. `M = MV × pose × display transform` is the matrix of the item at capture time
+  (`MV` the model-view matrix and `P` the projection matrix in effect; for armor the pose of the layer and no display
+  transform); `s` is the longest model axis of `M`; `w` is the clip `w` of the item's origin. The origin is the centre
+  of the item model. The display transform is the one `ItemRenderer.render` applies, including its swap of the trident
+  and the spyglass to their flat models in the GUI, on the ground and in frames. The vertical axis of the projection
+  keeps the value independent of the aspect ratio. A GUI icon is `16 × guiScale` px per unit.
+* The reference 807.6 (`OutlineScale.REFERENCE_PIXELS_PER_UNIT`) is the first-person right-hand item at rest: hand
+  projection 70°, depth 0.649375, display scale 0.68, `H` = 1080. So `T` is the number of pixels on the held item, and
+  every other item keeps the same band relative to its size.
+* No usable measure (no pose, an item centre at or behind the eye, a degenerate scale): the item counts as the
+  first-person reference item and gets `T × H / 1080`.
+* With `proportional` off: `T × thicknessScale(H)` (the 3.4 definition). `scaleWithResolution` only applies there,
+  because proportional widths follow the window size by themselves.
+* The result is quantised to 1/8 px and capped by `MAX_RADIUS` (32) in the style table, as before. Items of one look at
+  different widths are separate style-table entries; when the table is full, a new width of a known colour maps to the
+  nearest entry of that colour (3.4).
+* The preview margin (12.4) is computed for the item fitted without margin, which is an upper bound of its size.
+
+`PhaseState` carries the settings (`settings`) and the target height (`framebufferHeight`) that the phase was opened
+with, so a phase uses one rule set from open to composite. The preview phase uses the settings of the snapshot it draws.
 
 ### 3.5 Shaders
 
@@ -1383,57 +1421,66 @@ Lifecycle:
 
 ### 5.6 Procedural presets (no third-party art)
 
-Source: `GlintPresets` (the formulas), `GlintNoise` (the helpers), `GlintTextures` (registration). Everything here describes
-the code as it stands after the T6 brightness correction, and `GlintPresetsTest` enforces the numbers in the budget below.
+Source: `GlintPresets` (the looks), `GlintNoise` (the helpers), `GlintTextures` (registration). Everything here describes
+the code as it stands after the preset redesign (2.0.0), and `GlintPresetsTest` enforces the numbers in the budget below.
 
 All generated presets are 128x128, tileable, deterministic (same bytes on every run and platform: hashes are integer
 arithmetic, transcendental functions use `StrictMath`), and built as `int[128 * 128]` of ABGR pixels, then uploaded with
 `new NativeImage(128, 128, false)` + `setPixelRGBA` + `new DynamicTexture(img)`. Alpha is always 255. Black means "no
-glint", because the blend is additive. Every channel is capped at `PEAK_BYTE = 229` (0.9 of 255).
-`TextureManager.register` closes the previous texture under the same id.
+glint", because the blend is additive. Every channel is capped at `PEAK_BYTE = 229` (0.9 of 255). All 12 are generated
+in about 80 ms at start-up. `TextureManager.register` closes the previous texture under the same id.
 
-**Brightness budget.** The glint blend is additive (`src * src + dst`), so a texture that is lit everywhere adds light to
-the whole item and washes it out in one colour. An earlier version of the presets was brighter. The
-corrected presets are shaped with `smoothstep` thresholds (no global darkening), so most texels are black and the peaks
-stay bright. The vanilla item glint has a mean luminance of about 0.23; the presets are held near it. With
-`lum = 0.2126 r + 0.7152 g + 0.0722 b` (channels 0..1), each generated preset must satisfy:
+**Brightness budget.** The glint blend squares the texture colour and adds it (`src * src + dst`), so what an item
+receives is the mean of the squared channels, the glint energy. A texture that is lit everywhere washes the item out
+in one colour, and one that is black in most places leaves patches of glint on black. The presets are shaped like the
+vanilla glint: a soft glow over the whole tile with streaks on top, so the whole item shimmers. Each generated preset
+must satisfy (`lum = 0.2126 r + 0.7152 g + 0.0722 b`, channels 0..1):
 
 | Property | Bound |
 |---|---|
-| Mean luminance | 0.15 to 0.32 (`sparkle`: 0.03 to 0.32, it is deliberately sparse) |
-| Dark texels (`lum < 0.08`) | at least 30 % of the tile |
+| Strength (mean squared RGB) | 0.10 to 0.26 |
+| Spread | 95th minus 5th percentile of the luminance at least 0.25 |
 | Peak channel | at least 200 and at most 229 |
-| Spread | brightest minus darkest peak at least 60; at least 1 % of the texels lit; every 32x32 block of the tile has lit texels |
 | Periodicity | `f(x + 128, y) == f(x, y)` in both axes, so it tiles |
+| Seams | the mean difference across the tile edge is at most twice the mean difference between neighbours inside the tile, plus one byte (both axes) |
 
 **Helpers** (`GlintNoise`, pure Java, `TILE = 128`; `u = x / 128`, `v = y / 128` below):
 
 * `hash(x, y, seed)` returns a float in [0, 1): `h = x * 374761393 + y * 668265263 + seed * 1442695041; h = (h ^ (h >>> 13)) * 1274126177; h ^= h >>> 16; return (h & 0xFFFFFF) / 16777216`.
 * `value(x, y, px, py, seed)` is value noise with `px` by `py` lattice cells across the tile (smooth interpolation, lattice indices wrap with `floorMod`, so it is periodic).
 * `fbm(x, y, px, py, octaves, seed)` sums `octaves` value noises, octave `o` with periods `px << o`, `py << o`, amplitude `0.5^o`, seed `seed + 101 * o`, normalised to [0, 1).
+* `ridged(x, y, px, py, octaves, seed)` is the same sum of octaves with each octave `(1 - |2 value - 1|)^2`: sharp bright ridges where the noise crosses its middle (veins, lightning).
+* `streaks(x, y, kx, ky, count, width, offset, seed)` is a sum of soft parallel streaks perpendicular to the integer normal `(kx, ky)`, `count` per wrap of the tile along it, each with its own brightness, width and position from the hash; integer `kx`, `ky` keep it periodic, and a periodic noise as `offset` makes the streaks wavy.
 * `worley(x, y, g, seed, out)` is toroidal Worley noise on a `g` by `g` grid (one feature point per cell, 3x3 wrapped neighbourhood). It returns F1 and F2 in cell units, and the wrapped cell of the nearest point when `out` has four entries.
 * `smoothstep(e0, e1, x)`, `lerp(t, a, b)`, `hsv(h, s, v)` (hue wraps), `frac`.
-* `ramp(t; stops)` is a piecewise-linear colour gradient over `(position, r, g, b)` stops.
 
-**Presets** (`rgb` before the cap at 229):
+**Presets.** Items and armor show the texture squashed to half its height (the glint texture matrix), so stars, sparkles and
+flames are drawn twice as tall in the texture as they should look.
 
-| Name | Algorithm |
+| Name | Look |
 |---|---|
 | `neutral_item` / `neutral_entity` (not generated; `preset:neutral`) | Read vanilla `enchanted_glint_item.png` / `_entity.png` from the current `ResourceManager`. Per pixel `L = (0.2126 r + 0.7152 g + 0.0722 b) * alpha`, divided by the image's maximum `L` and multiplied by 0.9; output grey `(L, L, L)`. Same size as the source. Rebuilt on every resource reload. This is the base for tinting. |
-| `rainbow` | `streak = fbm(x, y, 2, 2, 3, 11)`; `hue = frac(u + v + 0.25 * fbm(x, y, 2, 2, 2, 12))`; `I = 0.95 * smoothstep(0.37, 0.70, streak)`; `rgb = hsv(hue, 0.85, 1) * I`. `u + v` is periodic, so the hue bands run diagonally and tile. |
-| `aurora` | `phase = 2u + 0.6 * fbm(x, y, 2, 2, 2, 21)`; `curtain = 0.5 + 0.5 * sin(2π * phase)`; `detail = fbm(x, y, 4, 4, 4, 22)`; `I = 0.95 * curtain² * (0.35 + 0.65 * smoothstep(0.2, 0.7, detail))`; `hue = lerp(fbm(x, y, 2, 2, 2, 23), 0.33, 0.78)` (green through cyan to violet); `rgb = hsv(hue, 0.7, 1) * I`. |
-| `fire` | `heat = smoothstep(0.38, 0.74, fbm(x, y, 4, 2, 4, 31))`; `rgb = ramp(heat; 0: (0, 0, 0), 0.35: (0.55, 0.05, 0), 0.65: (0.9, 0.42, 0), 1: (0.9, 0.85, 0.55))`. Anisotropic (4 by 2 base cells). |
-| `frost` | `F1, F2 = worley(x, y, 8, 41)`; `edge = 1 - smoothstep(0, 0.22, F2 - F1)` (crystal borders); `spark = hash(x mod 128, y mod 128, 42) > 0.996 ? 1 : 0`; `I = max(0.9 * edge, spark) * (0.55 + 0.45 * fbm(x, y, 4, 4, 3, 43))`; `rgb = ramp(I; 0: black, 0.5: (0.22, 0.5, 0.85), 1: (0.8, 0.9, 0.9))`. |
-| `sparkle` | `F1 = worley(x, y, 12, 51)` with the owning cell `(cx, cy)`; `b = hash(cx, cy, 52)`; if `b > 0.35`: `I = b * (1 - smoothstep(0, 0.5, F1))²`, else `I = 0`; `rgb = (0.9, 0.86, 0.78) * I`. |
-| `gold` | Warm diagonal streaks plus rare bright glints. `streak = fbm(x + y, x - y, 10, 2, 3, 61)` (value noise on the sheared coordinates, both periodic in the tile); `grain = fbm(x, y, 16, 16, 2, 62)`; `heat = smoothstep(0.3, 0.85, streak) * (0.7 + 0.3 * grain)`; `rgb = ramp(heat; 0: black, 0.35: (0.45, 0.28, 0.02), 0.75: (0.9, 0.7, 0.2), 1: (0.9, 0.86, 0.6))`. Glints: `F1 = worley(x, y, 12, 63)` with cell `c`; `cell = hash(cx, cy, 64)`; if `cell > 0.8`: `g = cell * (1 - smoothstep(0, 0.15, F1))³` and `rgb = max(rgb, (0.9, 0.86, 0.6) * g)` per channel. |
-| `void` | Deep purple nebula, domain warped by periodic noise (so it still tiles), with sparse single-pixel stars. `wx = fbm(x, y, 2, 2, 3, 72)`, `wy = fbm(x, y, 2, 2, 3, 75)`; `t = fbm(x + 28 (wx - 0.5), y + 28 (wy - 0.5), 3, 3, 5, 73)`; `nebula = smoothstep(0.40, 0.85, t)`; `rgb = ramp(nebula; 0: black, 0.3: (0.12, 0, 0.25), 0.7: (0.45, 0.1, 0.7), 1: (0.75, 0.55, 0.9))`. Star at a texel: `hash(x mod 128, y mod 128, 74) > 0.9985`, brightness `0.6 + 0.4 * hash(x mod 128, y mod 128, 76)`; a texel with no star of its own takes 0.35 of the brightest of its four neighbours' stars (a faint cross). With star brightness `s`: `rgb = max(rgb, (0.9, 0.85, 0.9) * s)` per channel. |
+| shared base of the seven vanilla-like presets (`sheen`) | A soft glow with a slow wave over the whole tile, plus two crossing sets of wavy diagonal streaks (`streaks`, normals `(2, 1)` and `(-1, 1)`, made wavy by periodic noise), squashed to 0..1 with `1 - exp(-1.8 v)`. A preset only chooses the colours the brightness is mapped to. |
+| `rainbow` | The base with a hue that shifts diagonally, so the colours cycle as the texture scrolls; the cores of the streaks turn whiter. |
+| `aurora` | The base in green, teal and violet: the hue swings between green and violet in wavy diagonal bands. |
+| `fire` | The base mapped through an ember ramp: dark red glow, orange streaks, yellow-white cores. |
+| `frost` | The base in near-white, pale ice with crisp white streaks, so that a tint (the item layer's default rainbow tint) colours it cleanly. |
+| `sparkle` | A silver base plus fine glitter specks. |
+| `gold` | The base in amber and gold, bright streaks like light on metal. |
+| `void` | The base in deep violet with magenta streaks and a few faint stars. |
+| `inferno` | Rich: flame tongues, one per cell of a 12 by 4 grid, each with its own position, length and width, hot at the base and narrowing to a tip; periodic noise sways them, a faint ember glow fills the gaps. The texture scrolls upwards, so the tongues rise. |
+| `nebula` | Rich: domain-warped clouds in magenta, blue and cyan over a deep indigo glow, with stars. |
+| `starlight` | Rich: four-pointed sparkles of many sizes over a cool shimmer. |
+| `opal` | Rich: a milky blue-grey glow with flowing flashes of iridescent colour along the ridges of a warped noise. |
+| `storm` | Rich: branching cyan-white lightning veins (ridged noise) with a violet halo. |
 
-Full preset list: `rainbow`, `aurora`, `fire`, `frost`, `sparkle`, `gold`, `void` (generated) and `neutral` (derived from the
-vanilla texture). Together with `vanilla` and `file:` / resource-pack entries this is exactly what the config and the UI
-accept: `vanilla` (alias `default`), `preset:neutral` (this resolves to the item or entity variant automatically),
-`preset:rainbow`, `preset:aurora`, `preset:fire`, `preset:frost`, `preset:sparkle`, `preset:gold`, `preset:void`,
-`file:<name>.png` and `namespace:path`. `preset:neutral_item` and `preset:neutral_entity` are internal names, not valid
-specs. Generation cost at start-up is **[UNVERIFIED, not measured]**.
+Full preset list: `rainbow`, `aurora`, `fire`, `frost`, `sparkle`, `gold`, `void`, `inferno`, `nebula`, `starlight`, `opal`,
+`storm` (generated) and `neutral` (derived from the vanilla texture). Together with `vanilla` and `file:` / resource-pack
+entries this is exactly what the config and the UI accept: `vanilla` (alias `default`), `preset:neutral` (this resolves
+to the item or entity variant automatically), `preset:rainbow`, `preset:aurora`, `preset:fire`, `preset:frost`,
+`preset:sparkle`, `preset:gold`, `preset:void`, `preset:inferno`, `preset:nebula`, `preset:starlight`, `preset:opal`,
+`preset:storm`, `file:<name>.png` and `namespace:path`. `preset:neutral_item` and `preset:neutral_entity` are internal
+names, not valid specs.
 
 ### 5.7 Edge cases T6 must handle
 
@@ -1513,8 +1560,8 @@ Failure behaviour summary:
     1060-class GPU.
   * Worst case 4K, R = 32, full screen: about 0.5 G fetches, 2 to 4 ms.
 
-  So the default `maxThickness` is 8 px. Softness extends the radius to `t·(1+s)`, and the hard cap
-  is 32.
+  So the default thickness is 8.5 px and the largest setting is 16 px (`OutlineSettings.MAX_THICKNESS`). Softness
+  extends the radius to `t·(1+s)`, and the hard cap is 32.
 * **GUI:** about 4 draws per outlined slot (scissored clear, mask, H, V), each over roughly 60x60 px.
   An inventory with 36 enchanted items costs about 150 small draws.
 * **Glint:** zero extra draws when all looks are vanilla (shortcut). Otherwise one draw per used slot
@@ -1570,15 +1617,26 @@ final class PhaseState {                                    // one per phase
     boolean hasGeometry; boolean open;
     RenderType ensureMaskType(RenderType maskType);         // registers fixed buffer (cap 128)
 }
-record OutlineSettings(boolean enabled, boolean firstPerson, boolean thirdPerson, boolean onlyLocalPlayer,
-                       boolean armor, boolean dropped, boolean itemFrame, boolean gui, boolean other,
-                       boolean handWithShaderPack, float maxThickness, float fadeStart, float fadeEnd) {
-    static OutlineSettings from(GlintsmithConfig cfg);      // the ONLY place that reads outline config fields
+record OutlineRuntimeSettings(boolean enabled, boolean firstPerson, boolean thirdPerson, boolean armor,
+                       boolean dropped, boolean itemFrame, boolean gui, boolean other, boolean onlyLocalPlayer,
+                       boolean disableWithShaders, boolean handWithShaderPack, boolean scaleWithResolution,
+                       boolean proportional, float minThickness, float fadeStart, float fadeEnd) {
+    static OutlineRuntimeSettings from(GlintsmithConfig cfg);   // the ONLY place that reads outline config fields
     boolean anyWorld();
-    boolean accepts(OutlinePhase phase, StyleTarget target);
+    boolean accepts(OutlinePhase phase, OutlineTarget target);
+    float thicknessScale(int framebufferHeight);                // proportional off: T × this (3.4)
+    float itemThickness(float thickness, float pixelsPerUnit, int framebufferHeight);   // 3.4.1
+    int outlineReachPixels(float thickness, float softness, int framebufferHeight, float pixelsPerUnit);
+}
+final class OutlineScale {                                      // 3.4.1, pure functions on JOML matrices
+    static final float REFERENCE_PIXELS_PER_UNIT;               // about 807.6
+    static float pixelsPerUnit(Matrix4fc projection, Matrix4fc modelToView, int framebufferHeight);   // NaN: no measure
+    static float thickness(float thickness, float pixelsPerUnit, float minThickness, int framebufferHeight);
+    static Matrix4f itemPose(Matrix4f out, Matrix4fc pose, @Nullable ItemTransform transform, boolean leftHand);
+    static float guiPixelsPerUnit(double guiScale);
 }
 final class StyleTable {
-    int indexFor(int argb, float thickness, float softness, float opacity);   // 1..255, 0 = reject
+    int indexFor(int argb, float thickness, float softness);   // 1..255, 0 = reject; opacity is in the alpha of argb
     int maxRadius();                                                          // ≤ 32
     void upload();                                                            // to its own DynamicTexture(256x2)
     int textureId();
@@ -1636,10 +1694,12 @@ these:
 * per target `firstPerson`, `thirdPerson`, `onlyLocalPlayer`, `armor`, `dropped`, `itemFrame`, `gui`,
   `other` (default off)
 * `handWithShaderPack` (default true)
-* `maxThickness` (default 8, cap 32)
+* `thickness` 0.5 to 16 (`OutlineSettings.MAX_THICKNESS = 16`; there is no `maxThickness` field), default 8.5
+* `proportional` (2.0.0, default true), `minThickness` (2.0.0, default 1, range 0.5 to 8) and `scaleWithResolution`
+  (default false, only used while `proportional` is off); see 3.4.1
 * `targetThickness` (2.0.0): an optional own thickness per place (`firstPerson`, `thirdPerson`, `armor`, `dropped`,
   `itemFrame`, `gui`, `other`; null = use the global `thickness`). It is read by the rule resolution
-  (`RuleMatcher`, section 3.2 step 8) and is not part of `OutlineSettings`.
+  (`RuleMatcher`, section 3.2 step 8) and is not part of `OutlineRuntimeSettings`.
 * `fadeStart` / `fadeEnd` (blocks, default 0/0 = off)
 
 ### 8.2 T6: glint system (`navrelis.glintsmith.render.glint`)
@@ -1692,7 +1752,8 @@ record GlintSettings(CategorySettings item, CategorySettings armor, CategorySett
 }
 final class GlintTextures { static void init(); static void reload(ResourceManager rm); static void onConfigChanged();
                             static ResourceLocation resolve(@Nullable String spec, boolean entityFamily, boolean tinted); }
-final class GlintPresets { static NativeImage rainbow(); aurora(); fire(); frost(); sparkle(); static NativeImage neutral(NativeImage vanilla); }
+final class GlintPresets { static int[] generate(String name);   // the 12 generated presets (section 5.6)
+                           static int[] neutral(int[] abgr); }
 final class GlintNoise { /* section 5.6 helpers */ }
 final class GlintFailsafe { static boolean tripped(); static void trip(String where, Throwable t); }
 ```
@@ -1807,9 +1868,10 @@ the user folder `<configDir>/glintsmith/glints/` is created if missing.
    *Recommendation:* fine as is.
 7. **Thickness on high-DPI and 4K screens** is in physical pixels, so it looks thinner at 4K.
    *Recommendation:* T3 adds an optional `scaleWithResolution` flag (thickness × framebufferHeight /
-   1080). Decided (2.0.0): the same factor for every phase, WORLD, HAND, GUI and PREVIEW; the GUI scale plays no
-   part, because world and hand outlines cannot follow it and a GUI-only factor would make the same look wider or
-   thinner in the GUI (3.4).
+   1080). Decided (2.0.0): the outline width is proportional to the item's size on screen by default (3.4.1), measured
+   on the first-person held item at a window height of 1080, for every phase (WORLD, HAND, GUI, PREVIEW). With
+   `proportional` off the old rule applies: one factor for every phase, and the GUI scale plays no part, because world
+   and hand outlines cannot follow it and a GUI-only factor would make the same look wider or thinner in the GUI (3.4).
 8. **"Only local player"** semantics for armor.
    *Recommendation:* one flag applies to both THIRD_PERSON held items and ARMOR. The lead confirms or
    asks for two flags.
@@ -1891,7 +1953,8 @@ Outlines:
 
 Glint:
 
-17. Each category set to `preset:rainbow`, `aurora`, `fire`, `frost`, `sparkle`, a `file:` PNG from
+17. Each category set to `preset:rainbow`, `aurora`, `fire`, `frost`, `sparkle`, `gold`, `void`, `inferno`, `nebula`,
+    `starlight`, `opal`, `storm`, a `file:` PNG from
     the config folder, and a resource-pack texture: correct texture on items in hand, GUI, dropped,
     armor, trident (thrown and held) and shield.
 18. A tint on the default texture switches to the neutral variant and the colour matches the chosen
@@ -1957,6 +2020,17 @@ Glint:
        hidden on the sub screens. F1 and a resize do not break it.
     f. Repeat with Iris and a shader pack (notes `Shader pack: ...`, outline and glint still appear), with
        ImmediatelyFast (no erased hotbar behind the screen, glint in the preview) and with Punchy.
+32. Proportional outlines (2.0.0, section 3.4.1) and the new presets. Pending, nothing of it has been seen in game yet:
+    a. With Proportional on (default), thickness 8.5: the held sword has the band of the old first-person look; a
+       dropped item gets a thinner band the farther away it is; inventory and hotbar icons get a thin line, never
+       thinner than Minimum width; armor on a nearby player or armor stand is in proportion to its size.
+    b. Proportional off: every item has the same band in screen pixels, the GUI included, at any GUI scale; "Scale
+       with window size" is active only then and Minimum width only while Proportional is on.
+    c. A window of 1440 or 2160 px height: the held item's band grows with the window, the minimum width too.
+    d. 300 distinct enchantment colours or widths in view (a chest full of enchanted books at several distances): no
+       item loses its outline while its colour is on screen; no errors in the log.
+    e. All twelve presets on the item layer, with and without tint: the whole item shimmers, no patches of glint on
+       black, no seams; inferno rises, storm looks like lightning, stars and sparkles are not stretched.
 
 ---
 
@@ -1998,7 +2072,8 @@ are listed in 12.7 and in section 10, item 31.
 
 ### 12.1 Mechanism
 
-`PreviewRenderer.draw(GuiGraphics, x0, y0, x1, y1, stack, snapshot, yaw, pitch, marginGui, outline)` per frame:
+`PreviewRenderer.draw(GuiGraphics, x0, y0, x1, y1, stack, snapshot, yaw, pitch, margin, outline)` per frame (`margin` is a
+`Margin` function from the item's scale to the room for the outline, 12.4):
 
 1. The model is `ItemRenderer.getModel(stack, level, player, 0)`; the context is `FIRST_PERSON_RIGHT_HAND`, so the
    rules, the glint category and the outline target classify the item exactly like the item in the hand (FIRST_PERSON,
@@ -2049,9 +2124,10 @@ only, and the phase needs no mixin:
 * `OutlineContexts.forPhase(PREVIEW, any context)` is FIRST_PERSON; `phaseAccepts(PREVIEW, t)` holds only for
   FIRST_PERSON. `capture` skips the live `accepts` gate for this phase (the live settings are not asked); the style
   comes from the scoped rule engine.
-* The thickness scale is the one factor of the snapshot (`OutlineRuntimeSettings.thicknessScale(height)`, section 3.4,
-  so "scale with window height" works as in the hand), from `OutlineRuntimeSettings.from(snapshot)`, which is cached per
-  snapshot instance.
+* The thickness rules are those of the snapshot (`PhaseState.settings` = `OutlineRuntimeSettings.from(snapshot)`, cached
+  per snapshot instance): `itemThickness`, section 3.4.1. With `proportional` the preview item is measured like any
+  other item from its pose in the preview box, so it gets the width its size on screen calls for; with `proportional`
+  off, `thicknessScale(height)` of section 3.4 applies ("scale with window height" works as in the hand).
 * The composite is the GUI one: a flat mask without scene depth (`MaskDepth.NONE`, no depth test, no distance fade),
   clipped to the current scissor box, which is the preview box. There is no depth copy, no occluder and no
   shader-pack special case. `finishItem` flushes the item's buffer source at the end of the render for PREVIEW as for
@@ -2111,7 +2187,9 @@ field of the session class: it survives closing and reopening the screen for the
   `previewNote`.
 * The margin around the item, in GUI pixels, leaves room for the outline:
   `ceil(reach / guiScale) + 2`, with `reach = OutlineRuntimeSettings.outlineReachPixels` (the style-table radius), or
-  2 without an outline.
+  2 without an outline. With `proportional` the reach grows with the size of the item, which in turn depends on the
+  margin; the margin is therefore computed for the item fitted without margin (an upper bound of its size), and the
+  smaller item that then fits has room to spare.
 
 ### 12.5 Panel and layout
 
