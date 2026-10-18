@@ -10,7 +10,7 @@ Glintsmith works on what the game really draws, so there are no item whitelists 
 
 ## What it does
 
-**Outlines for every item.** The outline is computed from the item's real rendered shape, so flat items, 3D models, shields, tridents and the items of other mods all get a clean outline. Worn armor and worn elytra can be outlined too; that is an option and it is off by default. The outline is depth aware: where a wall or a block is in front of the item, the outline is hidden. It was checked in game on vanilla items and on items of advancednetherite, eternal_starlight, cataclysm and immersive_armors.
+**Outlines for every item.** The outline is computed from the item's real rendered shape, so flat items, 3D models, shields, tridents and the items of other mods all get a clean outline. Worn armor and worn elytra are outlined too; that is on by default and can be switched off. The outline is depth aware: where a wall or a block is in front of the item, the outline is hidden. It was checked in game on vanilla items and on items of advancednetherite, eternal_starlight, cataclysm and immersive_armors.
 
 >>> PASTE IMAGE: card_universal.png | Every item from every mod <<<
 
@@ -20,7 +20,7 @@ Glintsmith works on what the game really draws, so there are no item whitelists 
 
 >>> PASTE IMAGE: card_outline_styles.png | Outlines that fit your look <<<
 
-**Outlines wherever an item is drawn.** First-person hand, third-person held items of players and mobs, dropped items and item frames are on by default. Worn armor (this includes worn elytra) and items in the inventory and other menus are available too and are off by default. Each place has its own switch.
+**Outlines wherever an item is drawn.** First-person hand, third-person held items of players and mobs, dropped items, item frames, worn armor (this includes worn elytra) and items in the inventory and other menus are on by default. Each place has its own switch.
 
 >>> PASTE IMAGE: card_targets.png | Everywhere an item is drawn <<<
 
@@ -42,7 +42,7 @@ Glintsmith works on what the game really draws, so there are no item whitelists 
 
 **See it while you set it up.** Next to the options, a live preview shows the item in your main hand as it looks in first person, with the settings you are changing, before you save. It follows every change at once, including unsaved edits in the rule editor and the colour picker. Drag to turn the item, right click to reset the view, and a strip under the panel switches between your held item and a sample enchanted netherite sword. Short notes say why something is not shown, for example outlines off, a shader pack or an empty hand. It was checked in game with the held enchanted item.
 
-**A look from the first start.** A fresh config comes with a look already set: a slow rainbow outline (thickness 8.5 px, opacity 25 %), a frost glint with a light purple rainbow tint on items, a fire glint on entities and in the GUI, and no glint on armor. Existing config files keep their values. The Reset tab button puts a tab back to these values; to get the vanilla glint back, turn off "Custom glint" on the Glint tab or set the texture of a layer to vanilla.
+**A look from the first start.** A fresh config comes with a look already set: a static light purple outline (thickness 7.5 px, opacity 25 %) on held, dropped and framed items, worn armor and items in the GUI, and the neutral glint with a light purple rainbow tint on all four layers (items, armor, entities and the GUI). Existing config files keep their values. The Reset tab button puts a tab back to these values; to get the vanilla glint back, turn off "Custom glint" on the Glint tab or set the texture of a layer to vanilla.
 
 >>> PASTE IMAGE: card_config.png | Everything in one screen <<<
 
@@ -70,8 +70,8 @@ Checked on 2026-10-17 against the public pages and repositories of each project.
 |---|---|---|---|---|---|
 | What it does | Outlines, glint, gap fix | Outline on enchanted held items and the Totem of Undying | Gap fix | Rainbow glint on enchanted items | Outline on enchanted tools, 3D bows and maces |
 | Which items | Every item of every mod; rules choose | Vanilla weapons, tools, shields and the totem by default; more items can be added by id, modded ones included | Block and item models | All enchanted items | Described as tools; the page does not mention modded items |
-| Where outlines are drawn | Hand, held items of players and mobs, dropped items, item frames; optionally worn armor, elytra and GUI | Held items, first and third person | not applicable | not applicable | Item models, through CIT |
-| Armor | Optional, off by default | Not listed; asked for in an open issue | not applicable | not applicable | not listed |
+| Where outlines are drawn | Hand, held items of players and mobs, dropped items, item frames; worn armor, elytra and GUI (each place has its own switch) | Held items, first and third person | not applicable | not applicable | Item models, through CIT |
+| Armor | Optional, on by default | Not listed; asked for in an open issue | not applicable | not applicable | not listed |
 | Allow and deny | Rules with allow and except lists by id, tag, enchantment, mod | Whitelist; a blacklist is asked for in an open issue | not applicable | not applicable | not applicable |
 | Colours | Static, rainbow, pulse, gradient, per enchantment; per rule | Colour picker, RGB mode; separate settings for tools and totem | not applicable | Rainbow | One fixed colour; the page points to another pack for other colours |
 | Through walls | Hidden by depth test | Not stated on its pages | not applicable | not applicable | not applicable |

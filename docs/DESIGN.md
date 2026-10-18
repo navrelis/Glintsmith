@@ -1475,7 +1475,7 @@ flames are drawn twice as tall in the texture as they should look.
 | `rainbow` | The base with a hue that shifts diagonally, so the colours cycle as the texture scrolls; the cores of the streaks turn whiter. |
 | `aurora` | The base in green, teal and violet: the hue swings between green and violet in wavy diagonal bands. |
 | `fire` | The base mapped through an ember ramp: dark red glow, orange streaks, yellow-white cores. |
-| `frost` | The base in near-white, pale ice with crisp white streaks, so that a tint (the item layer's default rainbow tint) colours it cleanly. |
+| `frost` | The base in near-white, pale ice with crisp white streaks, so that a tint (the default rainbow tint of every glint layer) colours it cleanly. |
 | `sparkle` | A silver base plus fine glitter specks. |
 | `gold` | The base in amber and gold, bright streaks like light on metal. |
 | `void` | The base in deep violet with magenta streaks and a few faint stars. |
@@ -1571,7 +1571,7 @@ Failure behaviour summary:
     1060-class GPU.
   * Worst case 4K, R = 32, full screen: about 0.5 G fetches, 2 to 4 ms.
 
-  So the default thickness is 8.5 px and the largest setting is 16 px (`OutlineSettings.MAX_THICKNESS`). Softness
+  So the default thickness is 7.5 px and the largest setting is 16 px (`OutlineSettings.MAX_THICKNESS`). Softness
   extends the radius to `t·(1+s)`, and the hard cap is 32.
 * **GUI:** about 4 draws per outlined slot (scissored clear, mask, H, V), each over roughly 60x60 px.
   An inventory with 36 enchanted items costs about 150 small draws.
@@ -1705,7 +1705,7 @@ these:
 * per target `firstPerson`, `thirdPerson`, `onlyLocalPlayer`, `armor`, `dropped`, `itemFrame`, `gui`,
   `other` (default off)
 * `handWithShaderPack` (default true)
-* `thickness` 0.5 to 16 (`OutlineSettings.MAX_THICKNESS = 16`; there is no `maxThickness` field), default 8.5
+* `thickness` 0.5 to 16 (`OutlineSettings.MAX_THICKNESS = 16`; there is no `maxThickness` field), default 7.5
 * `proportional` (2.0.0, default true), `minThickness` (2.0.0, default 1, range 0.5 to 8) and `scaleWithResolution`
   (default false, only used while `proportional` is off); see 3.4.1
 * `targetThickness` (2.0.0): an optional own thickness per place (`firstPerson`, `thirdPerson`, `armor`, `dropped`,
@@ -1933,10 +1933,11 @@ Outlines:
 5. F5 third person: your own held item is outlined; the outline is hidden where your arm is in front.
    A zombie holding an enchanted sword: outlined (with "only local player" off), not outlined (with it
    on).
-6. Armor stand and player with full enchanted netherite armor plus trims: not outlined by default (the
-   "armor" target is off by default). With the "armor" target switched on, armor silhouettes are
-   outlined; the body behind shows the outline; switching it off again removes it. Elytra
-   (enchanted) is outlined with the "armor" target on, and not outlined with it off.
+6. Armor stand and player with full enchanted netherite armor plus trims: outlined by default (the
+   "armor" target is on by default; before 2.1.0 it was off). Armor silhouettes are outlined and the body
+   behind shows the outline; with the "armor" target switched off the armor has no outline, and switching it
+   on again brings it back. Elytra (enchanted) is outlined with the "armor" target on, and not outlined with
+   it off.
 7. A dropped enchanted book and a dropped enchanted block item: outlined. Behind a wall: **not**
    visible. Half behind a wall corner: outline only around the visible part, none on the wall. Under
    water: visible through the water surface (Fast and Fancy) **F** (tested in game, passed).

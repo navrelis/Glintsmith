@@ -54,13 +54,13 @@ class GlintRuntimeSettingsTest {
 	void theBuiltInDefaultsAreACustomLook() {
 		GlintRuntimeSettings s = GlintRuntimeSettings.from(new GlintsmithConfig().sanitize());
 		assertTrue(s.anyCustom());
-		assertEquals("preset:frost", s.item().texture());
-		assertNotNull(s.item().tint());
-		assertEquals(0.5f, s.item().speed());
-		assertEquals(0.9f, s.item().strength());
-		assertFalse(s.armor().enabled());
-		assertEquals("preset:fire", s.entity().texture());
-		assertEquals("preset:fire", s.gui().texture());
+		for (GlintCategory c : GlintCategory.values()) {
+			assertTrue(s.get(c).enabled(), c.name());
+			assertEquals("preset:neutral", s.get(c).texture(), c.name());
+			assertNotNull(s.get(c).tint(), c.name());
+			assertEquals(1.0f, s.get(c).speed(), c.name());
+			assertEquals(0.9f, s.get(c).strength(), c.name());
+		}
 		assertTrue(s.atlasScale());
 	}
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- New built-in defaults for fresh and reset configs: outlines are also on for worn armor and items in the GUI, in a
+  static light purple (#E6B2FF) at thickness 7.5 px (opacity stays 25 %), and all four glint layers, armor included,
+  use the neutral texture with a light purple rainbow tint (#D088FC) at strength 90 %; the item glint now moves at
+  speed 1.0 (was 0.5). Existing config files keep their values (a setting or a whole glint layer missing from a file
+  gets the new default). The Reset tab button in the config screen puts a tab back to the new look.
+
 ## 2.0.2 (Fabric 1.21.1) — 2026-10-18
 
 ### Fixed

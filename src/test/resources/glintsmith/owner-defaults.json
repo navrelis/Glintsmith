@@ -1,0 +1,162 @@
+{
+  "version": 1,
+  "outline": {
+    "enabled": true,
+    "condition": "ENCHANTED",
+    "targets": {
+      "firstPerson": true,
+      "thirdPerson": true,
+      "armor": true,
+      "dropped": true,
+      "itemFrame": true,
+      "gui": true,
+      "other": false
+    },
+    "onlyLocalPlayer": false,
+    "color": {
+      "mode": "STATIC",
+      "colors": [
+        "#E6B2FF"
+      ],
+      "speed": 0.5,
+      "saturation": 1.0,
+      "brightness": 1.0
+    },
+    "thickness": 7.5,
+    "targetThickness": {},
+    "softness": 0.0,
+    "opacity": 0.25,
+    "disableWithShaders": false,
+    "handWithShaderPack": true,
+    "proportional": true,
+    "minThickness": 1.0,
+    "scaleWithResolution": true,
+    "fadeStart": 0.0,
+    "fadeEnd": 0.0
+  },
+  "glint": {
+    "enabled": true,
+    "atlasIndependentScale": true,
+    "item": {
+      "enabled": true,
+      "texture": "preset:neutral",
+      "tint": {
+        "mode": "RAINBOW",
+        "colors": [
+          "#D088FC"
+        ],
+        "speed": 1.0,
+        "saturation": 1.0,
+        "brightness": 1.0
+      },
+      "speed": 1.0,
+      "scale": 1.0,
+      "strength": 0.9,
+      "rotation": 10.0
+    },
+    "armor": {
+      "enabled": true,
+      "texture": "preset:neutral",
+      "tint": {
+        "mode": "RAINBOW",
+        "colors": [
+          "#D088FC"
+        ],
+        "speed": 1.0,
+        "saturation": 1.0,
+        "brightness": 1.0
+      },
+      "speed": 1.0,
+      "scale": 1.0,
+      "strength": 0.9,
+      "rotation": 10.0
+    },
+    "entity": {
+      "enabled": true,
+      "texture": "preset:neutral",
+      "tint": {
+        "mode": "RAINBOW",
+        "colors": [
+          "#D088FC"
+        ],
+        "speed": 1.0,
+        "saturation": 1.0,
+        "brightness": 1.0
+      },
+      "speed": 1.0,
+      "scale": 1.0,
+      "strength": 0.9,
+      "rotation": 10.0
+    },
+    "gui": {
+      "enabled": true,
+      "texture": "preset:neutral",
+      "tint": {
+        "mode": "RAINBOW",
+        "colors": [
+          "#D088FC"
+        ],
+        "speed": 1.0,
+        "saturation": 1.0,
+        "brightness": 1.0
+      },
+      "speed": 1.0,
+      "scale": 1.0,
+      "strength": 0.9,
+      "rotation": 10.0
+    }
+  },
+  "gapFix": {
+    "enabled": true,
+    "mode": "AUTO",
+    "uvShrinkMultiplier": 0.0,
+    "sideExpansion": 0.005,
+    "sideIndent": 1.0E-4,
+    "preciseSpans": false
+  },
+  "durabilityAlert": {
+    "enabled": true,
+    "threshold": 0.1,
+    "color": "#FF2A2A"
+  },
+  "enchantmentColors": {},
+  "rules": [
+    {
+      "name": "Totem of Undying",
+      "enabled": true,
+      "items": [
+        "minecraft:totem_of_undying"
+      ],
+      "excludeItems": [],
+      "enchantments": [],
+      "enchantedCondition": "ANY",
+      "targets": [],
+      "outline": {
+        "enabled": true,
+        "color": {
+          "mode": "STATIC",
+          "colors": [
+            "#FFF3A5"
+          ],
+          "speed": 1.0,
+          "saturation": 1.0,
+          "brightness": 1.0
+        }
+      }
+    },
+    {
+      "name": "Example: no outline on books",
+      "enabled": true,
+      "items": [
+        "minecraft:enchanted_book"
+      ],
+      "excludeItems": [],
+      "enchantments": [],
+      "enchantedCondition": "ANY",
+      "targets": [],
+      "outline": {
+        "enabled": false
+      }
+    }
+  ]
+}

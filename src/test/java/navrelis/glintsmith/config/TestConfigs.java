@@ -11,8 +11,9 @@ public final class TestConfigs {
 	}
 
 	/**
-	 * The config of the old built-in defaults: a static purple outline (2 px, fully opaque, sharp), the vanilla glint on all
-	 * four layers, and every other setting at its built-in default. Not sanitised, like {@code new GlintsmithConfig()}.
+	 * The config of the old built-in defaults: a static purple outline (2 px, fully opaque, sharp) on the held,
+	 * dropped and framed item but not on armor or in the GUI, the vanilla glint on all four layers, and every other setting
+	 * at its built-in default. Not sanitised, like {@code new GlintsmithConfig()}.
 	 */
 	public static GlintsmithConfig vanilla() {
 		GlintsmithConfig c = new GlintsmithConfig();
@@ -20,6 +21,8 @@ public final class TestConfigs {
 		c.outline.thickness = 2.0f;
 		c.outline.softness = 0.0f;
 		c.outline.opacity = 1.0f;
+		c.outline.targets.armor = false;
+		c.outline.targets.gui = false;
 		c.glint.item = new GlintsmithConfig.GlintCategorySettings();
 		c.glint.armor = new GlintsmithConfig.GlintCategorySettings();
 		c.glint.entity = new GlintsmithConfig.GlintCategorySettings();

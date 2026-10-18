@@ -143,7 +143,7 @@ public final class GlintsmithConfig {
 		public boolean onlyLocalPlayer = false;
 		public ColorStyle color = defaultColor();
 		/** Screen pixels, 0.5..16. */
-		public float thickness = 8.5f;
+		public float thickness = 7.5f;
 		/** Own thickness per place; null entries use {@link #thickness}. Rules that set a thickness still override both. */
 		public TargetThickness targetThickness = new TargetThickness();
 		/** 0..1. */
@@ -171,10 +171,9 @@ public final class GlintsmithConfig {
 		public Outline() {
 		}
 
-		/** The default outline colour: a slow rainbow. */
+		/** The default outline colour: a static light purple, #E6B2FF. */
 		private static ColorStyle defaultColor() {
-			ColorStyle style = ColorStyle.of("#FFFFFF");
-			style.mode = ColorMode.RAINBOW;
+			ColorStyle style = ColorStyle.of("#E6B2FF");
 			style.speed = 0.5f;
 			return style;
 		}
@@ -190,7 +189,7 @@ public final class GlintsmithConfig {
 				color = defaultColor();
 			}
 			color.sanitize();
-			thickness = Num.clamp(thickness, OutlineSettings.MIN_THICKNESS, OutlineSettings.MAX_THICKNESS, 8.5f);
+			thickness = Num.clamp(thickness, OutlineSettings.MIN_THICKNESS, OutlineSettings.MAX_THICKNESS, 7.5f);
 			if (targetThickness == null) {
 				targetThickness = new TargetThickness();
 			}
@@ -215,10 +214,10 @@ public final class GlintsmithConfig {
 	public static final class Targets {
 		public boolean firstPerson = true;
 		public boolean thirdPerson = true;
-		public boolean armor = false;
+		public boolean armor = true;
 		public boolean dropped = true;
 		public boolean itemFrame = true;
-		public boolean gui = false;
+		public boolean gui = true;
 		/** Other display contexts such as head or none, for example items worn on the head. */
 		public boolean other = false;
 
@@ -315,7 +314,8 @@ public final class GlintsmithConfig {
 	}
 
 	/**
-	 * Glint settings: a master switch and the defaults of the four glint layers.
+	 * Glint settings: a master switch and the settings of the four glint layers, all of which start as
+	 * {@link GlintCategorySettings#defaults()}.
 	 */
 	public static final class Glint {
 		/** Master switch; off leaves every glint untouched (vanilla). */
@@ -326,10 +326,10 @@ public final class GlintsmithConfig {
 		 * default: they get it on.
 		 */
 		public boolean atlasIndependentScale = true;
-		public GlintCategorySettings item = GlintCategorySettings.itemDefaults();
-		public GlintCategorySettings armor = GlintCategorySettings.armorDefaults();
-		public GlintCategorySettings entity = GlintCategorySettings.layerDefaults();
-		public GlintCategorySettings gui = GlintCategorySettings.layerDefaults();
+		public GlintCategorySettings item = GlintCategorySettings.defaults();
+		public GlintCategorySettings armor = GlintCategorySettings.defaults();
+		public GlintCategorySettings entity = GlintCategorySettings.defaults();
+		public GlintCategorySettings gui = GlintCategorySettings.defaults();
 
 		public Glint() {
 		}
@@ -348,16 +348,16 @@ public final class GlintsmithConfig {
 
 		void sanitize(List<String> warnings) {
 			if (item == null) {
-				item = GlintCategorySettings.itemDefaults();
+				item = GlintCategorySettings.defaults();
 			}
 			if (armor == null) {
-				armor = GlintCategorySettings.armorDefaults();
+				armor = GlintCategorySettings.defaults();
 			}
 			if (entity == null) {
-				entity = GlintCategorySettings.layerDefaults();
+				entity = GlintCategorySettings.defaults();
 			}
 			if (gui == null) {
-				gui = GlintCategorySettings.layerDefaults();
+				gui = GlintCategorySettings.defaults();
 			}
 			item.sanitize(warnings, "glint.item");
 			armor.sanitize(warnings, "glint.armor");
@@ -367,7 +367,8 @@ public final class GlintsmithConfig {
 	}
 
 	/**
-	 * Defaults of one glint layer. The vanilla look is the default value of every field.
+	 * Settings of one glint layer. The vanilla look is the default value of every field; {@link #defaults()} is
+	 * the look of a fresh config.
 	 */
 	public static final class GlintCategorySettings {
 		/** {@code false} hides the glint of this layer. */
@@ -388,29 +389,17 @@ public final class GlintsmithConfig {
 		public GlintCategorySettings() {
 		}
 
-		/** The default of the item layer: a slowly moving frost texture with a light purple rainbow tint. */
-		static GlintCategorySettings itemDefaults() {
+		/**
+		 * The default of every glint layer: the neutral texture with a slow light purple rainbow tint at strength 0.9.
+		 * The plain field initialisers above stay vanilla; this is the look a fresh config starts with.
+		 */
+		static GlintCategorySettings defaults() {
 			GlintCategorySettings s = new GlintCategorySettings();
-			s.texture = "preset:frost";
+			s.texture = "preset:neutral";
 			ColorStyle tint = ColorStyle.of(ColorStyle.DEFAULT_COLOR);
 			tint.mode = ColorMode.RAINBOW;
 			s.tint = tint;
-			s.speed = 0.5f;
 			s.strength = 0.9f;
-			return s;
-		}
-
-		/** The default of the armor layer: switched off. */
-		static GlintCategorySettings armorDefaults() {
-			GlintCategorySettings s = layerDefaults();
-			s.enabled = false;
-			return s;
-		}
-
-		/** The default of the entity and GUI layers: the fire texture, everything else vanilla. */
-		static GlintCategorySettings layerDefaults() {
-			GlintCategorySettings s = new GlintCategorySettings();
-			s.texture = "preset:fire";
 			return s;
 		}
 

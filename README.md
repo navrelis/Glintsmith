@@ -21,8 +21,8 @@ with the settings you are changing. The same settings live in one JSON file that
 - The outline is depth aware: it is hidden where a wall or another block is in front of the item. Checked in game: no
   outline through a pillar, and dropped items and item frames behind blocks have none. In first person the arm hides the
   outline without a shader pack. Held items of other players were not tested.
-- Where outlines are drawn: first-person hand, third-person held items (players and mobs), dropped items and item frames
-  are on by default. Worn armor (this includes worn elytra), items in the GUI (inventory, hotbar, menus) and other places
+- Where outlines are drawn: first-person hand, third-person held items (players and mobs), dropped items, item frames,
+  worn armor (this includes worn elytra) and items in the GUI (inventory, hotbar, menus) are on by default. Other places
   such as items worn on the head are available and off by default. Each place has its own switch.
 - Which items get one: enchanted items (this includes items that only show the vanilla glint), all items, or only the
   items your rules select.
@@ -68,8 +68,8 @@ with the settings you are changing. The same settings live in one JSON file that
   mod reads the size of the block atlas after every resource reload and corrects the scale of customised item glints, so
   Scale 1.00 looks like vanilla density in any pack. It applies to items in hand, on the ground, in item frames and in
   the GUI. Armor, elytra and entity models use their own textures and are not changed, and high-resolution resource
-  packs are not affected. Glints you did not customise stay exactly vanilla (a fresh config does customise some, see
-  "Built-in defaults" below). If you lowered Scale for a large atlas in
+  packs are not affected. Glints you did not customise stay exactly vanilla (a fresh config customises all four layers,
+  see "Built-in defaults" below). If you lowered Scale for a large atlas in
   1.0.0 (to about 0.13), set it back to 1.00, because the correction and the manual value would multiply. Switch the
   option off to get the 1.0.0 behaviour. Checked in game in a pack with an 8192 x 4096 px block atlas: with the option
   on, Scale 1.00 shows the preset pattern at vanilla density on held items; with it off, the flat wash of 1.0.0.
@@ -126,13 +126,13 @@ A fresh config contains two example rules: a pale yellow outline for the Totem o
   the preview switches itself off. Checked in game with the held enchanted item on the Outline and Glint tabs: the
   panel sits right of the options, the item, its outline and its glint are animated and follow the unsaved settings.
   Dragging, right click reset, the source strip, narrow windows and the shader note have not been tried by hand.
-- Built-in defaults: a fresh config (no `glintsmith.json` yet) and "Reset tab" use these. Outline: a slow rainbow colour
-  (white, speed 0.5), thickness 8.5 px, opacity 25 %. Glint: the frost preset with a light purple rainbow tint (speed
-  0.5, strength 90 %) on items, the fire preset on entities and in the GUI, and the armor glint off. Existing config
-  files keep their values. The "Reset tab" button (with a confirmation; saved only when you press Done)
-  puts the tab back to these values, not to the vanilla look. To get the vanilla glint back, turn off "Custom glint" on
-  the Glint tab, or set the texture of a layer to `vanilla`; to remove all outlines, turn off "Outlines" on the Outline
-  tab.
+- Built-in defaults: a fresh config (no `glintsmith.json` yet) and "Reset tab" use these. Outline: on in every place
+  except "other" (so on worn armor and in the GUI too), a static light purple colour (#E6B2FF), thickness 7.5 px,
+  opacity 25 %. Glint: all four layers (items, armor, entities, GUI) use the neutral preset with a light purple rainbow
+  tint (#D088FC, speed 1.0, strength 90 %). Existing config files keep their values. The "Reset tab" button (with a
+  confirmation; saved only when you press Done) puts the tab back to these values, not to the vanilla look. To get the
+  vanilla glint back, turn off "Custom glint" on the Glint tab, or set the texture of a layer to `vanilla`; to remove
+  all outlines, turn off "Outlines" on the Outline tab.
 - Opens from the Mod Menu entry (Mod Menu is optional), with `/glintsmith`, or with a key (see below).
 - `config/glintsmith.json` is read again about once a second when it changes on disk, and with `/glintsmith reload`. A file
   that cannot be parsed is ignored: the previous settings stay and the problem is logged and shown.

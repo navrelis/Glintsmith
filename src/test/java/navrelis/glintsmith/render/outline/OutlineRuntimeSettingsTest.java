@@ -70,7 +70,8 @@ class OutlineRuntimeSettingsTest {
 		OutlineRuntimeSettings s = OutlineRuntimeSettings.from(config());
 		assertTrue(s.enabled());
 		assertTrue(s.firstPerson());
-		assertFalse(s.gui());
+		assertTrue(s.armor());
+		assertTrue(s.gui());
 		assertFalse(s.other(), "Targets.other defaults to off");
 		assertFalse(s.fadeActive());
 		assertTrue(s.anyWorld());

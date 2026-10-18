@@ -28,12 +28,13 @@ class PreviewSnapshotTest {
 	void aChangedValueGivesANewInstance() {
 		PreviewSnapshot snapshot = new PreviewSnapshot();
 		GlintsmithConfig live = config();
+		live.outline.thickness = 4.0f;
 		GlintsmithConfig before = snapshot.update(live);
 		live.outline.thickness = 7.0f;
 		GlintsmithConfig after = snapshot.update(live);
 		assertNotSame(before, after);
 		assertEquals(7.0f, after.outline.thickness);
-		assertEquals(8.5f, before.outline.thickness);
+		assertEquals(4.0f, before.outline.thickness);
 		assertSame(after, snapshot.update(live));
 	}
 

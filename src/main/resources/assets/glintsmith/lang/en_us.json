@@ -70,7 +70,7 @@
 	"glintsmith.outline.target.item_frame": "Item frames",
 	"glintsmith.outline.target.item_frame.tooltip": "Items displayed in item frames.",
 	"glintsmith.outline.target.gui": "GUI",
-	"glintsmith.outline.target.gui.tooltip": "Items in inventories, the hotbar and other menus. Off by default because it can be busy.",
+	"glintsmith.outline.target.gui.tooltip": "Items in inventories, the hotbar and other menus.",
 	"glintsmith.outline.target.other": "Other (head, ...)",
 	"glintsmith.outline.target.other.tooltip": "Items worn on the head or drawn in other places that are not listed here.",
 	"glintsmith.outline.look": "Look",

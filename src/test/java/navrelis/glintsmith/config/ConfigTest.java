@@ -46,10 +46,10 @@ class ConfigTest {
 		assertEquals(OutlineCondition.ENCHANTED, c.outline.condition);
 		assertTrue(c.outline.targets.firstPerson);
 		assertTrue(c.outline.targets.thirdPerson);
-		assertFalse(c.outline.targets.armor);
+		assertTrue(c.outline.targets.armor);
 		assertTrue(c.outline.targets.dropped);
 		assertTrue(c.outline.targets.itemFrame);
-		assertFalse(c.outline.targets.gui);
+		assertTrue(c.outline.targets.gui);
 		assertFalse(c.outline.targets.other);
 		assertFalse(c.outline.onlyLocalPlayer);
 		assertFalse(c.outline.disableWithShaders);
@@ -60,12 +60,12 @@ class ConfigTest {
 		assertEquals(0.0f, c.outline.fadeStart);
 		assertEquals(0.0f, c.outline.fadeEnd);
 		assertTrue(c.warnings().isEmpty());
-		assertEquals(ColorMode.RAINBOW, c.outline.color.mode);
-		assertEquals(List.of("#FFFFFF"), c.outline.color.colors);
+		assertEquals(ColorMode.STATIC, c.outline.color.mode);
+		assertEquals(List.of("#E6B2FF"), c.outline.color.colors);
 		assertEquals(0.5f, c.outline.color.speed);
 		assertEquals(1.0f, c.outline.color.saturation);
 		assertEquals(1.0f, c.outline.color.brightness);
-		assertEquals(8.5f, c.outline.thickness);
+		assertEquals(7.5f, c.outline.thickness);
 		assertEquals(0.0f, c.outline.softness);
 		assertEquals(0.25f, c.outline.opacity);
 		for (OutlineTarget target : OutlineTarget.values()) {
@@ -73,16 +73,12 @@ class ConfigTest {
 		}
 		assertTrue(c.glint.enabled);
 		assertTrue(c.glint.atlasIndependentScale);
-		assertLayer(c.glint.item, true, "preset:frost", 0.5f, 1.0f, 0.9f, 10.0f);
-		assertEquals(ColorMode.RAINBOW, c.glint.item.tint.mode);
-		assertEquals(List.of("#D088FC"), c.glint.item.tint.colors);
-		assertEquals(1.0f, c.glint.item.tint.speed);
-		assertLayer(c.glint.armor, false, "preset:fire", 1.0f, 1.0f, 1.0f, 10.0f);
-		assertNull(c.glint.armor.tint);
-		assertLayer(c.glint.entity, true, "preset:fire", 1.0f, 1.0f, 1.0f, 10.0f);
-		assertNull(c.glint.entity.tint);
-		assertLayer(c.glint.gui, true, "preset:fire", 1.0f, 1.0f, 1.0f, 10.0f);
-		assertNull(c.glint.gui.tint);
+		for (GlintsmithConfig.GlintCategorySettings layer : List.of(c.glint.item, c.glint.armor, c.glint.entity, c.glint.gui)) {
+			assertLayer(layer, true, "preset:neutral", 1.0f, 1.0f, 0.9f, 10.0f);
+			assertEquals(ColorMode.RAINBOW, layer.tint.mode);
+			assertEquals(List.of("#D088FC"), layer.tint.colors);
+			assertEquals(1.0f, layer.tint.speed);
+		}
 		assertTrue(c.gapFix.enabled);
 		assertEquals(GapFixMode.AUTO, c.gapFix.mode);
 		assertEquals(0.0001f, c.gapFix.sideIndent);
@@ -119,6 +115,7 @@ class ConfigTest {
 	@Test
 	void targetsMapping() {
 		GlintsmithConfig.Targets t = new GlintsmithConfig.Targets();
+		t.gui = false;
 		assertTrue(t.allows(OutlineTarget.FIRST_PERSON));
 		assertFalse(t.allows(OutlineTarget.GUI));
 		assertFalse(t.allows(OutlineTarget.OTHER));
@@ -386,7 +383,7 @@ class ConfigTest {
 
 		c.outline.thickness = Float.NaN;
 		c.sanitize();
-		assertEquals(8.5f, c.outline.thickness, "NaN becomes the default");
+		assertEquals(7.5f, c.outline.thickness, "NaN becomes the default");
 	}
 
 	@Test
@@ -527,7 +524,7 @@ class ConfigTest {
 		ConfigManager m = ConfigManager.forPath(file());
 		GlintsmithConfig c = m.load();
 		assertNotNull(m.lastError());
-		assertEquals(8.5f, c.outline.thickness);
+		assertEquals(7.5f, c.outline.thickness);
 		assertEquals(2, c.rules.size());
 	}
 
@@ -632,7 +629,7 @@ class ConfigTest {
 		}
 		assertEquals(1, notifications.get());
 		assertNotNull(m.lastError());
-		assertEquals(8.5f, m.get().outline.thickness);
+		assertEquals(7.5f, m.get().outline.thickness);
 	}
 
 	// ---- thickness per place ----
@@ -761,8 +758,11 @@ class ConfigTest {
 		assertNull(c.glint.item.tint);
 		assertEquals(2.0f, c.glint.item.speed);
 		assertNull(c.glint.entity.texture);
-		assertEquals("preset:fire", c.glint.gui.texture, "a layer the file does not mention keeps the built-in default");
-		assertFalse(c.glint.armor.enabled);
+		String defaults = GlintsmithConfig.GSON.toJson(GlintsmithConfig.GlintCategorySettings.defaults());
+		assertEquals("preset:neutral", c.glint.gui.texture, "a layer the file does not mention keeps the built-in default");
+		assertEquals(defaults, GlintsmithConfig.GSON.toJson(c.glint.gui));
+		assertEquals(defaults, GlintsmithConfig.GSON.toJson(c.glint.armor));
+		assertTrue(c.glint.armor.enabled);
 	}
 
 	// ---- atlas-independent glint scale (2.0.0) ----

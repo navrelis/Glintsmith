@@ -70,7 +70,7 @@
 	"glintsmith.outline.target.item_frame": "Rahmen",
 	"glintsmith.outline.target.item_frame.tooltip": "Gegenstände in Rahmen.",
 	"glintsmith.outline.target.gui": "Oberfläche",
-	"glintsmith.outline.target.gui.tooltip": "Gegenstände in Inventaren, der Schnellleiste und anderen Menüs. Standardmäßig aus, weil es unruhig wirken kann.",
+	"glintsmith.outline.target.gui.tooltip": "Gegenstände in Inventaren, der Schnellleiste und anderen Menüs.",
 	"glintsmith.outline.target.other": "Sonstige (Kopf, ...)",
 	"glintsmith.outline.target.other.tooltip": "Gegenstände, die auf dem Kopf getragen oder an anderen, hier nicht genannten Stellen dargestellt werden.",
 	"glintsmith.outline.look": "Aussehen",
