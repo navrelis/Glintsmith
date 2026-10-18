@@ -1,28 +1,35 @@
 #!/usr/bin/env python3
 """Verify the Glintsmith art.  Standard library only.
 
-    py -B art/verify.py
+    py -B art/verify.py            about 6 minutes (the real studio GIFs on disk are not rebuilt)
+    py -B art/verify.py --full     also rebuilds the GIFs from the real studio scenes in art/captures
+                                   and checks the GIFs in docs/curseforge/img/ (run it after the real build)
 
 1. PNG reader: every filter type and colour layout the game or the vanilla textures use decodes back exactly.
 2. Manifest: known element types (no drawn ones), positive crops, every picture inside its card, area-filter options,
    every capture is in SHOTLIST.md.
 2b. Contrast: every text colour the build sets on a background it uses (the art/README.md table, the label styles, the
    named text colours, the colours the manifest asks for) has a WCAG contrast ratio of at least 4.5:1.
-3. Determinism: the logo files, the cards and the GIF are built twice (once from the captures in the repository,
-   once from synthetic test captures) and must be byte-identical both times.
+3. Determinism: the logo files, the cards and the GIFs are built twice (from the captures in the repository, GIFs only with
+   --full, and from synthetic test captures: in-world PNGs plus the synthetic studio scenes of the contract, art/studio/
+   synth_studio.py) and must be byte-identical both times; the synthetic build draws no placeholder.
 4. Committed files: every image in docs/curseforge/img/ and the logo files equal a fresh build (an image whose
-   captures are not present on this machine is skipped, not failed).
-5. Sizes and GIF properties: card and banner sizes from the manifest, GIFs below their size limits, endless loop.
-6. Area-filter downscale (exact averages) and the logo / icon / animated logo from a synthetic capture, including what
-   logo.py does when the capture is missing (a message, nothing written, exit 0, or 1 with --strict).
+   captures are not present on this machine is skipped, not failed; GIFs only with --full).
+5. Sizes and GIF properties: card and banner sizes from the manifest (a card whose studio renders are not here yet may
+   still be the old one), the GIFs built from the synthetic scenes have the manifest size, a caption bar where asked, an
+   endless loop and are below their budget; with --full the GIFs on disk are checked the same way.
+6. Area-filter downscale (exact averages) and the logo / icon from a synthetic studio still, including what logo.py does
+   when the render is missing (a message, nothing written, exit 0, or 1 with --strict).
 6b. Studio (art/studio/): matte round trip of a black / white pair (alpha and colour within 1, exact empty / opaque pixels,
    premultiplied supersampling), a synthetic turntable end to end (check, GIF with the expected frames, size, delays, delta
    boxes, loop, budget and the step-down, identical bytes for any number of workers), stills, the "studio" card element
-   and its missing-scene behaviour, the CLI exit codes.
+   (crop, trim, labels) and its missing-scene behaviour, the synthetic contract (seven scenes, names and sizes), the CLI
+   exit codes (also synth_studio's --size).
 7. Standard library only for every script under art/, and no __pycache__ anywhere below art/.
 
 Exit code 0 when everything passes, 1 otherwise.
 """
+import argparse
 import ast
 import hashlib
 import os
@@ -41,7 +48,7 @@ sys.path.insert(0, os.path.join(HERE, "studio"))
 
 import build     # noqa: E402
 import common    # noqa: E402
-import gif       # noqa: E402
+import gifs      # noqa: E402
 import imgio     # noqa: E402
 import lib       # noqa: E402
 import logo      # noqa: E402
@@ -55,6 +62,7 @@ import synth_studio  # noqa: E402
 
 ROOT = lib.ROOT
 MB = 1024 * 1024
+FULL = False        # --full: also the GIFs from the real studio scenes in art/captures and the GIFs in docs/curseforge/img
 # sha256 of the hand-drawn emblem files of commit a816b40 (icon.png, logo_animated.gif); only used to print a warning
 HAND_DRAWN = {"3a251baa9cfe9f17ab281e4d08b6595645ead9d2ecfb928bc4990b268c2627f3",
               "43e7d0f655c10a1f643d0a4baf1f07f73395a2577d31908916f35d0692fe1f4c"}
@@ -186,19 +194,40 @@ def test_manifest(manifest):
                 sw, sh = el["size"]
                 if x < 0 or y < 0 or x + sw > w or y + sh > h or not el.get("scene") or el.get("frame") in (None, ""):
                     bad.append("%s: studio element %s/%s is not inside the card or lacks scene / frame" % (card["out"], el.get("scene"), el.get("frame")))
+                elif el["scene"] not in synth_studio.SHOTS or el["frame"] not in synth_studio.SHOTS[el["scene"]]:
+                    bad.append("%s: studio shot %s/%s is not in the studio contract (art/studio/synth_studio.py SHOTS)" % (card["out"], el["scene"], el["frame"]))
+                elif el["frame"] not in shotlist:
+                    bad.append("%s: studio shot %s is not described in SHOTLIST.md" % (card["out"], el["frame"]))
+                if el.get("label") and el.get("label_below"):
+                    bad.append("%s: studio element %s has both label and label_below" % (card["out"], el.get("frame")))
     check(not bad, "%d cards: element types, picture boxes inside the cards, every capture in SHOTLIST.md%s" % (
         len(manifest["cards"]), "" if not bad else " -> " + "; ".join(bad)))
     check(len(names) == len(manifest["cards"]), "output names are unique")
     banner = [c for c in manifest["cards"] if c["out"] == "banner.png"]
-    used = {e.get("capture") for c in banner for e in c["elements"]}
-    check({"hero_lineup.png"} <= used and used & {"logo_sword.png", "hero_sword_rainbow.png"},
-          "the banner is made of the hero shots (a sword render and hero_lineup)")
+    used = {(e.get("scene"), e.get("frame")) for c in banner for e in c["elements"] if e["type"] == "studio"}
+    check(("stills_hero", "banner_hero") in used, "the banner is made of the studio still stills_hero / banner_hero")
+    studio_cards = {"card_universal.png": ["universal_vanilla", "universal_modded"],
+                    "card_glint_presets.png": [n for n in synth_studio.SHOTS["stills_tiles"] if n.startswith("glint_")],
+                    "card_outline_styles.png": [n for n in synth_studio.SHOTS["stills_tiles"] if n.startswith("outline_")],
+                    "card_gap_fix.png": synth_studio.SHOTS["stills_gap"]}
+    for name, shots in sorted(studio_cards.items()):
+        got = [e["frame"] for c in manifest["cards"] if c["out"] == name for e in c["elements"] if e["type"] == "studio"]
+        check(got == shots, "%s shows the studio shots %s (%d)" % (name, shots[0] + " ... " + shots[-1] if len(shots) > 2 else ", ".join(shots), len(got)))
     lg = manifest.get("logo", {})
-    need = [lg.get("capture")] + lg.get("gif", {}).get("captures", [])
-    check(lg and all(n and n in shotlist for n in need), "logo section: %s are described in SHOTLIST.md" % ", ".join(map(str, need)))
-    check(len(lg.get("gif", {}).get("captures", [])) >= 2, "logo_animated.gif cross-fades at least two hero shots")
+    check(lg and lg.get("scene") in synth_studio.SHOTS and lg.get("frame") in synth_studio.SHOTS.get(lg.get("scene"), []) and lg["frame"] in shotlist,
+          "logo section: the studio still %s / %s is in the contract and described in SHOTLIST.md" % (lg.get("scene"), lg.get("frame")))
+    check("gif" not in lg and "capture" not in lg, "logo section holds no capture and no GIF (logo_animated.gif is a studio GIF of the gifs list)")
+    description = open(os.path.join(ROOT, "docs", "curseforge", "description.md"), encoding="utf-8").read()
+    gifs_out = [g["out"] for g in manifest.get("gifs", [])]
+    check(gifs_out == ["showcase.gif", "logo_animated.gif", "lineup.gif", "armor.gif"], "the GIFs are %s" % ", ".join(gifs_out))
     for g in manifest.get("gifs", []):
-        check(g["frames_dir"] in shotlist and "0001" in shotlist, "GIF frames %s/NNNN.png described in SHOTLIST.md" % g["frames_dir"])
+        kind, w0, h0 = synth_studio.CONTRACT.get(g.get("scene"), (None, 0, 0))
+        check(kind == "turntable" and g["scene"] in shotlist and g.get("size") and g["size"][0] <= 1000 and g["size"][0] / float(g["size"][1]) == w0 / float(h0)
+              and 0 < g.get("budget_mb", 8) <= 8,
+              "GIF %s: turntable scene %s, picture %s (the scene's shape, at most 1000 px wide), budget %s MB" % (
+                  g["out"], g.get("scene"), g.get("size"), g.get("budget_mb", 8)))
+    for name in sorted({c["out"] for c in manifest["cards"]} | set(gifs_out)):
+        check((">>> PASTE IMAGE: %s | " % name) in description, "docs/curseforge/description.md has the paste marker for %s" % name)
 
 
 # ---------------------------------------------------------------------------------------- 2b. contrast
@@ -290,8 +319,8 @@ def test_contrast(manifest):
             beds = [lib.PANEL, speck] + [f for (px, py), (pw, ph), f in panels if px <= x < px + pw and py <= y < py + ph]
             pairs += [("%s: %s text on %s" % (card["out"], e.get("color", "text"), "#%02x%02x%02x" % bg[:3]), col, bg) for bg in beds]
     for g in manifest.get("gifs", []):
-        if g.get("caption_bar"):
-            pairs.append(("%s caption bar" % g["out"], lib.colour(g["caption_bar"].get("color", "text")), lib.PAGE))
+        if g.get("caption", True):
+            pairs.append(("%s caption bar" % g["out"], lib.colour(composite.style(g.get("style"))["bar"]["colour"]), lib.PAGE))
     bad, low = contrast_report(pairs)
     check(pairs and not bad, "%d text colour / background pairs the manifest uses: lowest %.1f:1%s" % (
         len(pairs), low, "" if not bad else " -> below %.1f: %s" % (MIN_CONTRAST, "; ".join(bad))))
@@ -299,7 +328,7 @@ def test_contrast(manifest):
 
 # ---------------------------------------------------------------------------------------- 3 + 4. builds
 
-def build_everything(manifest, captures_dir, gif_frames=None):
+def build_everything(manifest, captures_dir, with_gifs=True, workers=2):
     """Logo files + cards + GIFs as {relative output: bytes}, plus the per-image list of missing captures."""
     report = common.Report()
     caps = common.Captures(captures_dir)
@@ -308,39 +337,60 @@ def build_everything(manifest, captures_dir, gif_frames=None):
         report.missing.append(("logo", rel))
     for name, data in build.build_all(manifest, caps, report).items():
         out["docs/curseforge/img/" + name] = data
-    for name, data in gif.build_all(manifest, caps, report).items():
-        out["docs/curseforge/img/" + name] = data
+    if with_gifs:
+        for name, data in gifs.build_all(manifest, caps, report, workers=workers).items():
+            out["docs/curseforge/img/" + name] = data
     return out, report
 
 
-def quiet(fn, *a):
+def quiet(fn, *a, **kw):
     """Run fn with the 'capture missing' warnings silenced (they are expected here)."""
     old = sys.stderr
     sys.stderr = open(os.devnull, "w")
     try:
-        return fn(*a)
+        return fn(*a, **kw)
     finally:
         sys.stderr.close()
         sys.stderr = old
 
 
+SYNTH_GIF_FRAMES = 6       # frames per synthetic turntable of the verify builds (hero_sword: one per look)
+SYNTH = {}                 # filled by test_builds: the GIFs built from the synthetic scenes, for test_sizes
+
+
 def test_builds(manifest):
     print("3. determinism")
     repo_caps = common.DEFAULT_CAPTURES
-    a, rep = quiet(build_everything, manifest, repo_caps)
-    b, _ = quiet(build_everything, manifest, repo_caps)
+    a, rep = quiet(build_everything, manifest, repo_caps, FULL)
+    b, _ = quiet(build_everything, manifest, repo_caps, FULL)
     check(a.keys() == b.keys() and all(a[k] == b[k] for k in a),
-          "repository captures: %d files built twice, byte-identical" % len(a))
+          "repository captures: %d files built twice, byte-identical%s" % (len(a), "" if FULL else " (GIFs only with --full)"))
     tmp = tempfile.mkdtemp(prefix="glintsmith-synth-")
     try:
-        synth.make(tmp, manifest, frames=40)
+        synth.make(tmp, manifest, frames=SYNTH_GIF_FRAMES, supersample=1)
         s1, srep = build_everything(manifest, tmp)
         s2, _ = build_everything(manifest, tmp)
         check(s1.keys() == s2.keys() and all(s1[k] == s2[k] for k in s1),
-              "synthetic captures: %d files built twice, byte-identical" % len(s1))
+              "synthetic captures and studio scenes: %d files (logo, icon, cards, %d GIFs) built twice, byte-identical" % (
+                  len(s1), len(manifest.get("gifs", []))))
         check(not srep, "synthetic captures cover every slot (no placeholder drawn)")
         check(all(s1[k] != a[k] for k in s1 if k.startswith("docs/curseforge/img/card_")) if rep else True,
               "cards from captures differ from the placeholder state (the slots really draw the captures)")
+        SYNTH.update({k: v for k, v in s1.items() if k.endswith(".gif")})
+        # the synthetic build also covers the studio scenes' contract
+        scenes = studio_scene.scene_ids(tmp)
+        check(scenes == sorted(synth_studio.CONTRACT), "synthetic studio scenes: %s" % ", ".join(scenes))
+        bad = []
+        for sid, (kind, w, h) in sorted(synth_studio.CONTRACT.items()):
+            sc = studio_scene.load(tmp, sid)
+            names = [f["name"] for f in sc.frames if f.get("name")]
+            if (sc.width, sc.height) != (w, h) or studio_scene.validate(sc):
+                bad.append("%s is %dx%d or breaks the frame contract" % (sid, sc.width, sc.height))
+            if kind == "still" and names != synth_studio.SHOTS[sid]:
+                bad.append("%s names %s" % (sid, names))
+            if kind == "turntable" and names:
+                bad.append("%s has named frames" % sid)
+        check(not bad, "every synthetic scene has the contract's size, valid frame pairs and the shot names%s" % ("" if not bad else " -> " + "; ".join(bad)))
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
@@ -349,14 +399,10 @@ def test_builds(manifest):
         if rel in a:
             continue
         if os.path.exists(disk(rel)):
-            print("  skip  %s: logo_sword.png is not on this machine, so it cannot be rebuilt" % rel)
+            print("  skip  %s: the studio render stills_hero / logo is not on this machine, so it cannot be rebuilt" % rel)
     if os.path.exists(disk(logo.P_ICON)) and logo.P_ICON not in a and sha(read(disk(logo.P_ICON))) in HAND_DRAWN:
-        print("  WARN  %s is still the hand-drawn icon from a816b40: run py -B art/logo.py once art/captures/logo_sword.png exists"
+        print("  WARN  %s is still the hand-drawn icon from a816b40: run py -B art/logo.py once art/captures/studio/stills_hero exists"
               % logo.P_ICON)
-    gifp = disk(logo.P_LOGO_GIF)
-    if os.path.exists(gifp) and logo.P_LOGO_GIF not in a and sha(read(gifp)) in HAND_DRAWN:
-        print("  WARN  %s on this machine is the old hand-drawn logo (untracked build output): delete it or rebuild it from the hero shots"
-              % logo.P_LOGO_GIF)
     missing_for = {}
     for image, rel in rep.missing:
         missing_for.setdefault(image, set()).add(rel)
@@ -373,10 +419,41 @@ def test_builds(manifest):
             print("  skip  %s differs, but %d of its captures are not on this machine" % (rel, len(missing_for[name])))
         else:
             check(False, "%s is stale: rebuild with py -B art/logo.py and py -B art/gallery/build.py" % rel)
+    if not FULL:
+        print("  skip  the GIFs: rebuilding them from the real studio scenes takes minutes (py -B art/verify.py --full)")
     return a, rep
 
 
 # ---------------------------------------------------------------------------------------- 5. sizes
+
+def gif_expectation(g):
+    """(width, height, bytes limit, caption?) of the GIF of a manifest entry at its full picture size."""
+    w, h = g["size"]
+    cap = g.get("caption", True)
+    return w, h + (composite.DEFAULT_STYLE["bar"]["height"] if cap else 0), g.get("budget_mb", 8) * MB, cap
+
+
+def check_gif(name, data, g, exact):
+    """Properties of a built GIF: dimensions (exactly the manifest's, or at most that and at least 0.6 of it when the budget
+    ladder may have shrunk it), the budget, an endless loop, one frame delay per frame of at least 2 cs."""
+    w, h, limit, cap = gif_expectation(g)
+    bh = composite.DEFAULT_STYLE["bar"]["height"] if cap else 0
+    info = imgio.parse_gif(data)
+    gw, gh = info["width"], info["height"]
+    ok = (gw, gh) == (w, h) if exact else (0.6 * w - 1 <= gw <= w and 0.6 * g["size"][1] - 1 <= gh - bh <= g["size"][1])
+    check(ok, "%s is %dx%d (manifest picture %dx%d%s)" % (name, gw, gh, g["size"][0], g["size"][1], " + caption bar" if cap else ""))
+    check(len(data) <= limit, "%s is %.2f MB (budget %.0f MB)" % (name, len(data) / MB, limit / MB))
+    check(info["loop"] == 0, "%s loops forever (NETSCAPE loop count %s)" % (name, info["loop"]))
+    delays = [f["delay"] for f in info["frames"]]
+    check(len(delays) >= 2 and min(delays) >= 2, "%s: %d frames, delays %s ... cs" % (name, len(delays), sorted(set(delays))[:3]))
+    if cap:
+        # the caption bar: its top line is the dark brass of lib.BORDER_DARK, across the whole width, under the picture
+        f0 = info["frames"][0]
+        pal = info["palette"]
+        row = [tuple(pal[v][:3]) for v in f0["indices"][(gh - bh) * gw:(gh - bh) * gw + gw]] if (f0["w"], f0["h"]) == (gw, gh) else None
+        check(row is None or all(c == tuple(lib.BORDER_DARK[:3]) for c in row), "%s has the caption bar under the picture" % name)
+    return info
+
 
 def test_sizes(manifest):
     print("5. sizes and GIF properties")
@@ -384,6 +461,11 @@ def test_sizes(manifest):
         p = disk("docs/curseforge/img/" + card["out"])
         if os.path.exists(p):
             size = imgio.read_png_size(p)
+            studio = any(e["type"] == "studio" for e in card["elements"])
+            if size != tuple(card["size"]) and studio and not common.studio_complete(common.DEFAULT_CAPTURES, card):
+                print("  skip  %s is %dx%d, the manifest says %dx%d: its studio renders are not on this machine, the committed card is the old one"
+                      % (card["out"], size[0], size[1], card["size"][0], card["size"][1]))
+                continue
             check(size == tuple(card["size"]), "%s is %dx%d (manifest %dx%d)" % (card["out"], size[0], size[1], card["size"][0], card["size"][1]))
             check(size[0] <= 1000, "%s is at most 1000 px wide (CurseForge description column)" % card["out"])
     for rel, want in ((logo.P_LOGO, (512, 512)), (logo.P_ICON, (128, 128)), (logo.P_LOGO_SMALL, (32, 32))):
@@ -391,39 +473,50 @@ def test_sizes(manifest):
             size = imgio.read_png_size(disk(rel))
             check(size == want, "%s is %dx%d" % (rel, want[0], want[1]) + ("" if size == want else " (found %dx%d)" % size))
 
-    limits = {}
+    # the GIFs built from the synthetic scenes (small budgets are met at scale 1: the picture size is the manifest's)
     for g in manifest.get("gifs", []):
-        w, h = common.out_size(g["crop"], g.get("down", 1), g.get("scale", 1))
-        h += g["caption_bar"]["height"] if g.get("caption_bar") else 0
-        limits["docs/curseforge/img/" + g["out"]] = (w, h, g.get("max_mb", 8) * MB, None)
-    for rel, (w, h, limit, delay) in limits.items():
-        p = disk(rel)
-        if not os.path.exists(p):
-            check(False, "%s exists" % rel)
+        data = SYNTH.get(("docs/curseforge/img/" + g["out"]))
+        if data is None:
+            check(False, "synthetic %s was built" % g["out"])
             continue
-        data = read(p)
-        info = imgio.parse_gif(data)
-        check((info["width"], info["height"]) == (w, h), "%s is %dx%d" % (rel, info["width"], info["height"]))
-        check(len(data) < limit, "%s is %.2f MB (limit %.0f MB)" % (rel, len(data) / MB, limit / MB))
-        check(info["loop"] == 0, "%s loops forever (NETSCAPE loop count %s)" % (rel, info["loop"]))
-        delays = {f["delay"] for f in info["frames"]}
-        if delay:
-            check(delays == {delay} and len(info["frames"]) == 40, "%s: %d frames at %d cs = 20 fps" % (rel, len(info["frames"]), delay))
-        else:
-            check(len(delays) == 1 and min(delays) >= 2 and len(info["frames"]) >= 1, "%s: %d frame(s), delay %s cs" % (rel, len(info["frames"]), sorted(delays)))
-    # GIF size limit logic: a limit nothing fits under must end in an error, never a silent oversize file
+        check_gif("synthetic " + g["out"], data, g, True)
+    # the GIFs on disk (after the real build): with --full only, the committed ones can still be the old showcase.gif
+    for g in manifest.get("gifs", []):
+        p = disk("docs/curseforge/img/" + g["out"])
+        if not FULL:
+            continue
+        if not os.path.exists(p):
+            check(False, "%s exists (py -B art/gallery/build.py)" % g["out"])
+            continue
+        check_gif(g["out"], read(p), g, False)
+    if not FULL:
+        print("  skip  the GIFs in docs/curseforge/img/: checked with --full once the real studio build has run")
+
+    # GIF budget logic: a budget nothing fits under must end in an error, never a silent oversize file
     synth_dir = tempfile.mkdtemp(prefix="glintsmith-synth-")
     try:
-        if manifest.get("gifs"):
-            synth.make(synth_dir, manifest, frames=12)
-            spec = dict(manifest["gifs"][0], max_mb=0.001, max_step=2)
-            try:
-                quiet(gif.build_gif, spec, common.Captures(synth_dir), common.Report())
-                check(False, "an impossible size limit stops the GIF build")
-            except SystemExit:
-                check(True, "an impossible size limit stops the GIF build with an error")
-            spec = dict(manifest["gifs"][0], captions=["a", "b"], frames_per_caption=5)
-            check([gif.caption_for(spec, n) for n in (1, 5, 6, 10, 11)] == ["a", "a", "b", "b", "b"], "GIF captions follow frames_per_caption")
+        synth_studio.make_contract(synth_dir, 6, 1, 1, only=["lineup"])
+        spec = dict([g for g in manifest["gifs"] if g["out"] == "lineup.gif"][0], budget_mb=0.001)
+        try:
+            quiet(gifs.build_gif, spec, common.Captures(synth_dir), common.Report(), 1)
+            check(False, "an impossible GIF budget stops the build")
+        except SystemExit as e:
+            check("does not fit" in str(e), "an impossible GIF budget stops the GIF build with an error (and writes nothing)")
+        spec = dict(spec, min_scale=1.0)
+        try:
+            quiet(gifs.build_gif, spec, common.Captures(synth_dir), common.Report(), 1)
+            check(False, "min_scale 1 with an impossible budget stops the build")
+        except SystemExit as e:
+            check("scale 1.00" in str(e) and "0.60" not in str(e), "min_scale 1 never shrinks the picture: the error names scale 1.00 only")
+        empty = tempfile.mkdtemp(prefix="glintsmith-empty-")
+        try:
+            rep = common.Report()
+            data = quiet(gifs.build_gif, dict(spec, scene="nothere"), common.Captures(empty), rep, 1)
+            info = imgio.parse_gif(data)
+            check(bool(rep) and rep.missing[0][1] == "art/captures/studio/nothere/scene.json" and len(info["frames"]) == 1
+                  and (info["width"], info["height"]) == (900, 336), "a GIF whose scene is missing: warning and a one frame grey placeholder, never a fake")
+        finally:
+            shutil.rmtree(empty, ignore_errors=True)
     finally:
         shutil.rmtree(synth_dir, ignore_errors=True)
 
@@ -431,14 +524,14 @@ def test_sizes(manifest):
 # ---------------------------------------------------------------------------------------- 6. hygiene
 
 def synthetic_logo_build(manifest, tmp):
-    synth.make(tmp, manifest, frames=2)
+    synth_studio.make_contract(tmp, 4, 1, 1, only=["stills_hero"])
     out = {}
     missing = logo.build(out, manifest, common.Captures(tmp))
     return out, missing
 
 
 def test_area():
-    print("6. area filter, logo, icon and animated logo")
+    print("6. area filter, logo and icon")
     c = lib.Canvas(4, 4)
     vals = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160]
     for i, v in enumerate(vals):
@@ -479,45 +572,37 @@ def test_area():
     tmp = tempfile.mkdtemp(prefix="glintsmith-synth-")
     try:
         out, missing = synthetic_logo_build(manifest, tmp)
-        check(not missing, "synthetic captures cover the logo and the three hero shots")
+        check(not missing, "a synthetic studio still stills_hero / logo covers the logo and the icon")
         sizes = {rel: (lib.Canvas.from_png(out[rel]).w, lib.Canvas.from_png(out[rel]).h) for rel in (logo.P_LOGO, logo.P_ICON, logo.P_LOGO_SMALL)}
         check(sizes == {logo.P_LOGO: (512, 512), logo.P_ICON: (128, 128), logo.P_LOGO_SMALL: (32, 32)}, "logo 512, icon 128, small logo 32 px (square)")
-        src = lib.Canvas.open(os.path.join(tmp, manifest["logo"]["capture"]))
-        x, y, n = logo.square(src, manifest["logo"].get("crop"))
-        square = src.crop(x, y, n, n)
+        cfg = manifest["logo"]
+        sc = studio_scene.load(tmp, cfg["scene"])
+        m = pipeline.matte_frame(sc, studio_scene.find_frame(sc, cfg["frame"]))
+        pic = composite.render(m, composite.style(cfg.get("style")), None, cfg.get("shadows", True))
+        x, y, n = logo.square(pic, cfg.get("crop"))
+        square = pic.crop(x, y, n, n)
+        check(pic.opaque() and (pic.w, pic.h) == (1024, 1024), "the logo render is matted and set on the cream studio backdrop: opaque, 1024 x 1024")
         check(bytes(lib.Canvas.from_png(out[logo.P_ICON]).buf) == bytes(square.area(128, 128).buf),
-              "icon.png is the area-filtered square crop of the capture, byte for byte")
+              "icon.png is the area-filtered square crop of the logo picture, byte for byte")
         check(bytes(lib.Canvas.from_png(out[logo.P_LOGO]).buf) == bytes(square.area(512, 512).buf),
-              "logo_512.png is the area-filtered square crop of the capture, byte for byte")
-        info = imgio.parse_gif(out[logo.P_LOGO_GIF])
-        g = manifest["logo"]["gif"]
-        want_frames = len(g["captures"]) * (g["hold"] + g["fade"])
-        check((info["width"], info["height"]) == (g["size"], g["size"]) and len(info["frames"]) == want_frames,
-              "logo_animated.gif is %dx%d with %d frames (%d looks, hold %d, fade %d)" % (
-                  info["width"], info["height"], len(info["frames"]), len(g["captures"]), g["hold"], g["fade"]))
-        check(info["loop"] == 0 and {f["delay"] for f in info["frames"]} == {g["delay_cs"]} and len(out[logo.P_LOGO_GIF]) < MB,
-              "logo_animated.gif loops forever at a constant delay and is below 1 MB (%d bytes)" % len(out[logo.P_LOGO_GIF]))
+              "logo_512.png is the area-filtered square crop of the logo picture, byte for byte")
+        corner = tuple(lib.Canvas.from_png(out[logo.P_LOGO]).get(3, 3))
+        check(corner[3] == 255 and corner[0] > 225 and corner[0] >= corner[2] > 190, "the logo is on cream: the corner is %s" % ("#%02x%02x%02x" % corner[:3]))
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
-    looks = [bytes([v]) * 3 for v in (0, 100, 200)]
-    frames = logo.gif_frames(looks, 4, 4)
-    steps = [abs(frames[(i + 1) % len(frames)][0] - frames[i][0]) for i in range(len(frames))]
-    check(len(frames) == 24 and frames[:4] == [looks[0]] * 4 and max(steps) <= 40,
-          "cross-fade: 3 looks x (4 held + 4 fading) frames, the last look fades back into the first (largest step %d)" % max(steps))
-
-    # a missing capture: message, nothing written, exit 0 (1 with --strict), the committed icon untouched
+    # a missing render: message, nothing written, exit 0 (1 with --strict), the committed icon untouched
     empty, outdir = tempfile.mkdtemp(prefix="glintsmith-empty-"), tempfile.mkdtemp(prefix="glintsmith-out-")
     try:
         script = os.path.join(HERE, "logo.py")
         run = lambda *extra: subprocess.run([sys.executable, "-B", script, "--captures", empty, "--out", outdir] + list(extra),
                                             capture_output=True, text=True)
         r = run()
-        check(r.returncode == 0 and "logo_sword.png" in r.stdout and "missing" in r.stdout,
-              "logo.py without logo_sword.png prints which capture is missing and exits 0")
+        check(r.returncode == 0 and "stills_hero" in r.stdout and "missing" in r.stdout,
+              "logo.py without the studio still stills_hero prints which file is missing and exits 0")
         check(not [f for _, _, fs in os.walk(outdir) for f in fs], "...and writes nothing")
         r = run("--strict")
-        check(r.returncode == 1 and "logo_sword.png" in r.stdout, "logo.py --strict without the capture exits 1")
+        check(r.returncode == 1 and "stills_hero" in r.stdout, "logo.py --strict without the render exits 1")
         icon_before = sha(read(disk(logo.P_ICON))) if os.path.exists(disk(logo.P_ICON)) else None
         r = subprocess.run([sys.executable, "-B", script, "--captures", empty], capture_output=True, text=True)
         icon_after = sha(read(disk(logo.P_ICON))) if os.path.exists(disk(logo.P_ICON)) else None
@@ -691,6 +776,38 @@ def test_studio():
         check([tuple(card.get(x, 99)) for x in range(20, 90)] != [tuple(empty.get(x, 99)) for x in range(20, 90)],
               "card element: shadow true lays a contact shadow under the render")
 
+        # ---- the card element's crop, trim and label_below
+        ctx = build.Ctx("t.png", common.Captures(tmp), common.Report())
+        mt = build.studio_matte(ctx, "turn", "hero")[0]
+        cr = build.shape_matte(mt, {"crop": [10, 20, 50, 40]})
+        check((cr.w, cr.h) == (50, 40) and bytes(cr.buf) == bytes(mt.crop(10, 20, 50, 40).buf), "studio element crop: [x, y, w, h] of the matte")
+        box = composite.alpha_bbox(bytes(mt.buf[3::4]), mt.w, mt.h, 8)
+        ty = build.shape_matte(mt, {"trim": "y", "trim_margin": 2})
+        txy = build.shape_matte(mt, {"trim": "xy", "trim_margin": 0})
+        check(ty.w == mt.w and ty.h == min(mt.h, box[3] + 2) - max(0, box[1] - 2) and ty.h < mt.h and (txy.w, txy.h) == (box[2] - box[0], box[3] - box[1]),
+              "studio element trim: 'y' keeps the width and cuts the empty rows (margin 2), 'xy' is the subject's box (%dx%d)" % (txy.w, txy.h))
+        plain = {"type": "studio", "scene": "turn", "frame": "hero", "at": [10, 10], "size": [80, 60], "shadow": False}
+        spec2 = {"out": "t.png", "size": [100, 120], "elements": [plain]}
+        spec3 = {"out": "t.png", "size": [100, 120], "elements": [dict(plain, label_below="Name")]}
+        c2, c3 = (quiet(build.build_card, sp, common.Captures(tmp), common.Report()) for sp in (spec2, spec3))
+        under = [(x, y) for y in range(72, 100) for x in range(10, 90) if tuple(c2.get(x, y)) != tuple(c3.get(x, y))]
+        inside = [(x, y) for y in range(10, 70) for x in range(10, 90) if tuple(c2.get(x, y)) != tuple(c3.get(x, y))]
+        check(under and not inside and abs((min(x for x, _ in under) + max(x for x, _ in under)) / 2.0 - 50) <= 2 and min(y for _, y in under) >= 74,
+              "studio element label_below: a name box centred under the rectangle, nothing drawn inside it")
+
+        # ---- the synthetic scenes' command line (the old `--size 256` without an x crashed with a traceback)
+        synth_cli = lambda *a: subprocess.run([sys.executable, "-B", os.path.join(HERE, "studio", "synth_studio.py"), os.path.join(tmp, "cli")] + list(a),
+                                              capture_output=True, text=True)
+        r = synth_cli("--size", "40", "--frames", "2", "--supersample", "1")
+        sc2 = studio_scene.load(os.path.join(tmp, "cli"), "synth_turntable")
+        check(r.returncode == 0 and (sc2.width, sc2.height) == (40, 40) and "Traceback" not in r.stderr, "synth_studio.py --size 40: a square scene")
+        r = synth_cli("--scene", "wide", "--size", "48x32", "--frames", "1", "--supersample", "1")
+        sc2 = studio_scene.load(os.path.join(tmp, "cli"), "wide")
+        check(r.returncode == 0 and (sc2.width, sc2.height) == (48, 32), "synth_studio.py --size 48x32: a rectangle")
+        for bad_size in ("abc", "4", "10x", "0x20"):
+            r = synth_cli("--size", bad_size)
+            check(r.returncode == 2 and "Traceback" not in r.stderr and "usage" in r.stderr, "synth_studio.py --size %s: a clean usage error, no traceback" % bad_size)
+
         # ---- the CLI
         out = os.path.join(tmp, "out")
         r = run_cli("--captures", tmp, "check")
@@ -768,7 +885,11 @@ def test_hygiene():
     check(not stray, "art/captures holds no synthetic test capture%s" % ("" if not stray else " (found %s)" % stray[:3]))
 
 
-def main():
+def main(argv=None):
+    global FULL
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap.add_argument("--full", action="store_true", help="also rebuild the GIFs from the real studio scenes and check the GIFs on disk")
+    FULL = ap.parse_args(argv).full
     manifest = common.load_manifest()
     test_reader()
     test_manifest(manifest)

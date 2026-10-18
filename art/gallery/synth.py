@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Synthetic stand-ins for the captures, for testing the layout of the cards.  NOT game art, never committed.
 
-    py -B art/gallery/synth.py DIR [--frames N]
+    py -B art/gallery/synth.py DIR [--frames N] [--supersample S] [--workers N] [--no-studio]
 
-Writes, into DIR, a 1920 x 1080 PNG for every capture the manifest names (a light gradient like the white / cream in-game backdrop, with a coordinate
-grid, a few shapes, and the file name in the vanilla font) and N numbered frames of a moving bar for the GIF.
+Writes, into DIR, a 1920 x 1080 PNG for every in-world capture the manifest names (a light gradient like the white / cream
+in-game backdrop, with a coordinate grid, a few shapes, and the file name in the vanilla font) and, unless --no-studio is
+given, the seven synthetic studio scenes of the gallery contract (art/studio/synth_studio.py: the turntables hero_sword,
+lineup and armor_stand with N frames each, and the still scenes stills_hero, stills_wide, stills_tiles and stills_gap with
+their named shots).
 Point the builders at it with `--captures DIR` to check crops, scales, labels and spacing before real captures
 exist.  Every picture is stamped "SYNTHETIC TEST CAPTURE" so it cannot be mistaken for a real one.
 
@@ -18,8 +21,11 @@ sys.dont_write_bytecode = True
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
+sys.path.insert(0, os.path.join(os.path.dirname(HERE), "studio"))
+
 import common   # noqa: E402
 import lib      # noqa: E402
+import synth_studio   # noqa: E402
 from lib import Canvas   # noqa: E402
 
 W, H = 1920, 1080
@@ -56,11 +62,13 @@ def base(seed, label):
     return c
 
 
-def make(folder, manifest=None, frames=40, log=None):
+def make(folder, manifest=None, frames=12, log=None, studio=True, supersample=2, workers=1):
+    """Write the synthetic in-world captures and, with `studio`, the synthetic studio scenes (`frames` frames per turntable)
+    into `folder`.  Returns the sorted list of capture names written."""
     manifest = manifest or common.load_manifest()
     seen = {}
     for _image, rel in common.required_captures(manifest):
-        if rel.endswith("NNNN.png") or rel.startswith("studio/"):      # frame folders and studio scenes: see art/studio/synth_studio.py
+        if rel.startswith("studio/"):          # studio scenes: see art/studio/synth_studio.py
             continue
         seen.setdefault(rel, len(seen) + 1)
     for rel, seed in sorted(seen.items()):
@@ -68,23 +76,25 @@ def make(folder, manifest=None, frames=40, log=None):
                      base(seed, rel).to_png(MARK))
         if log:
             log("synthetic " + rel)
-    for gif in manifest.get("gifs", []):
-        for n in range(1, frames + 1):
-            c = base(99, "%s %04d" % (gif["frames_dir"], n))
-            x = 200 + (n * 37) % 1500
-            c.rect(x, 300, 40, 480, (60, 60, 90, 200))
-            sub = os.path.join(folder, gif["frames_dir"])
-            common.write(sub, "%04d.png" % n, c.to_png(MARK))
+    if studio:
+        for sid, path in synth_studio.make_contract(folder, frames, supersample, workers).items():
+            if log:
+                log("synthetic studio scene %s" % sid)
     return sorted(seen)
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("dir")
-    ap.add_argument("--frames", type=int, default=40)
+    ap.add_argument("--frames", type=int, default=12, help="frames of each synthetic turntable (default 12)")
+    ap.add_argument("--supersample", type=int, default=2)
+    ap.add_argument("--workers", type=int, default=1)
+    ap.add_argument("--no-studio", action="store_true", help="only the in-world captures")
     args = ap.parse_args()
-    names = make(args.dir, frames=args.frames, log=print)
-    print("wrote %d synthetic captures and %d frames to %s" % (len(names), args.frames, args.dir))
+    if os.path.abspath(args.dir).startswith(os.path.join(common.ART, "captures")):
+        sys.exit("error: refusing to write synthetic captures into art/captures")
+    names = make(args.dir, frames=args.frames, log=print, studio=not args.no_studio, supersample=args.supersample, workers=args.workers)
+    print("wrote %d synthetic captures%s to %s" % (len(names), "" if args.no_studio else " and the studio scenes", args.dir))
 
 
 if __name__ == "__main__":

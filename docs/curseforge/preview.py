@@ -2,15 +2,19 @@
 
     py -B docs/curseforge/preview.py             write preview.html and description_paste.md
     py -B docs/curseforge/preview.py --check     only check; exit 1 on a problem (also if preview.html is out of date)
+    py -B docs/curseforge/preview.py --strict    also a problem: an image the art pipeline has not built yet
 
 preview.html shows the description with the images inline (img/<file>), for a browser, offline.
 description_paste.md is description.md without its HTML comments (such as pending-check markers); it still has the
 ">>> PASTE IMAGE: <file> | <alt> <<<" marker lines. Both files are built from description.md only, and the check
 also verifies that every marked image exists in img/ and that summary.txt (if present) is one line of at most 250
-characters.
+characters.  An image that does not exist yet but is an output of the art pipeline (an "out" of art/gallery/cards.json, built
+by py -B art/gallery/build.py) is reported as a NOTE and is not a problem, unless --strict is given: the gallery is built
+after the in-game studio has rendered, which can be later than the description.
 Python 3 standard library only.
 """
 import html
+import json
 import re
 import sys
 
@@ -145,7 +149,16 @@ def build():
     return page, stripped
 
 
-def check(raw):
+def pipeline_outputs():
+    """The image names the art pipeline builds (the "out" of every card and GIF of art/gallery/cards.json); empty if unreadable."""
+    try:
+        manifest = json.loads((HERE.parent.parent / "art" / "gallery" / "cards.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return set()
+    return {e["out"] for key in ("cards", "gifs") for e in manifest.get(key, [])}
+
+
+def check(raw, strict=False):
     problems = []
     seen = []
     for no, line in enumerate(raw.splitlines(), 1):
@@ -155,9 +168,13 @@ def check(raw):
                 problems.append("line %d: marker is not in the exact form: %s" % (no, line))
                 continue
             seen.append(m["file"])
+    built = pipeline_outputs()
     for f in seen:
         if not (IMG / f).is_file():
-            problems.append("img/%s does not exist" % f)
+            if f in built and not strict:
+                print("NOTE: img/%s is not built yet (output of the art pipeline: py -B art/gallery/build.py)" % f)
+            else:
+                problems.append("img/%s does not exist" % f)
     dup = sorted({f for f in seen if seen.count(f) > 1})
     for f in dup:
         problems.append("img/%s is used by more than one marker" % f)
@@ -172,7 +189,7 @@ def check(raw):
 def main(argv):
     raw = SRC.read_text(encoding="utf-8")
     page, paste = build()
-    problems = check(raw)
+    problems = check(raw, "--strict" in argv)
     if "--check" in argv:
         if not OUT.is_file() or OUT.read_text(encoding="utf-8") != page:
             problems.append("preview.html is out of date; run this script without --check")

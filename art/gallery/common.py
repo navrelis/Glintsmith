@@ -125,19 +125,61 @@ def write(folder, name, data):
 
 
 def required_captures(manifest):
-    """Every capture path the manifest needs, in manifest order: [(image name, relative path)]."""
+    """Every capture the manifest needs, in manifest order: [(image name, relative path)].  A studio frame is
+    "studio/<scene>/<frame>" (a still name or an index), a whole turntable "studio/<scene>/"."""
     out = []
     for card in manifest["cards"]:
         for el in card.get("elements", []):
             if el.get("type") == "capture":
                 out.append((card["out"], el["capture"]))
             elif el.get("type") == "studio":
-                out.append((card["out"], "studio/%s/scene.json" % el["scene"]))
+                out.append((card["out"], "studio/%s/%s" % (el["scene"], el["frame"])))
     for gif in manifest.get("gifs", []):
-        out.append((gif["out"], gif["frames_dir"] + "/NNNN.png"))
+        out.append((gif["out"], "studio/%s/" % gif["scene"]))
     logo = manifest.get("logo")
     if logo:
-        out.append(("logo.png, icon.png", logo["capture"]))
-        for rel in logo.get("gif", {}).get("captures", []):
-            out.append((logo["gif"]["out"], rel))
+        out.append(("logo.png, icon.png", "studio/%s/%s" % (logo["scene"], logo["frame"])))
     return out
+
+
+_STUDIO = {}      # (captures dir, scene id) -> (Scene, problems) for studio_state
+
+
+def studio_state(captures_dir, rel):
+    """'ok', 'MISSING' or 'BROKEN' for a "studio/<scene>/[<frame>]" entry of required_captures (the scene.json is there and
+    valid, the frame or every frame of the scene has its K / W pair, the sizes follow the contract)."""
+    sys.path.insert(0, os.path.join(ART, "studio"))
+    try:
+        import scene
+    finally:
+        sys.path.pop(0)
+    parts = rel.split("/")
+    key = (os.path.abspath(captures_dir), parts[1])
+    if key not in _STUDIO:
+        try:
+            sc = scene.load(captures_dir, parts[1])
+            _STUDIO[key] = (sc, scene.validate(sc))
+        except scene.SceneError as e:
+            _STUDIO[key] = (None, e.kind)
+    sc, problems = _STUDIO[key]
+    if sc is None:
+        return "MISSING" if problems == "missing" else "BROKEN"
+    if parts[2:] and parts[2]:
+        try:
+            frame = scene.find_frame(sc, parts[2])
+        except scene.SceneError:
+            return "MISSING"
+        paths = [p for p in sc.pair(frame)]
+        if not all(os.path.isfile(p) for p in paths):
+            return "MISSING"
+        mine = [m for k, m in problems if k == "error" and frame["file"] in m]
+        return "BROKEN" if mine else "ok"
+    if any(k == "error" for k, _ in problems):
+        return "BROKEN"
+    return "MISSING" if problems else "ok"
+
+
+def studio_complete(captures_dir, card):
+    """True when every studio frame a card (a manifest entry) shows is on disk and follows the contract."""
+    return all(studio_state(captures_dir, "studio/%s/%s" % (e["scene"], e["frame"])) == "ok"
+               for e in card.get("elements", []) if e.get("type") == "studio")

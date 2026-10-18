@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-"""Glintsmith gallery: builds docs/curseforge/img/showcase.gif from numbered in-game frames.
+"""LEGACY, no longer used by the build (the GIFs now come from the studio turntables, art/gallery/gifs.py).
 
-    py -B art/gallery/gif.py                 build the GIFs of the manifest
-    py -B art/gallery/gif.py --strict        exit 1 if the frames are missing
-    py -B art/gallery/gif.py --captures DIR --out DIR
+Glintsmith gallery: builds docs/curseforge/img/showcase.gif from numbered in-game frames.  Kept for reference and for
+anyone who wants the old screenshot-burst workflow back: it needs a manifest whose "gifs" entries have the old keys
+(frames_dir, crop, down, ...), pass it with --manifest.  Run it as `py -B art/legacy/gif.py --manifest FILE`.
+
+    py -B art/legacy/gif.py --manifest FILE      build the GIFs of the (old style) manifest
+    py -B art/legacy/gif.py --manifest FILE --strict
+    py -B art/legacy/gif.py --manifest FILE --captures DIR --out DIR
 
 Input: art/captures/showcase/0001.png, 0002.png, ... (any names that sort in play order), all the same size and
 camera (see SHOTLIST.md, "Showcase GIF").  Each frame is cropped (and scaled by a whole factor if the manifest
@@ -23,7 +27,8 @@ import sys
 
 sys.dont_write_bytecode = True
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, HERE)
+sys.path.insert(0, os.path.join(os.path.dirname(HERE), "gallery"))
+sys.path.insert(0, os.path.dirname(HERE))
 
 import common   # noqa: E402
 import imgio    # noqa: E402

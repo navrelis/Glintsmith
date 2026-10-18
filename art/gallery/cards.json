@@ -1,5 +1,5 @@
 {
- "comment": "Manifest of every gallery image. Positions are card pixels; crops are source pixels of the 1920x1080 captures in art/captures/ (x or y 'c' centres the rectangle). See art/README.md and gallery/SHOTLIST.md.",
+ "comment": "Manifest of every gallery image. Positions are card pixels; crops are source pixels of the 1920x1080 captures in art/captures/ (x or y 'c' centres the rectangle); a 'studio' element sets a matted studio render (art/captures/studio/<scene>/, frame = still name or index) straight on the card, and a 'gifs' entry is a studio turntable. See art/README.md and gallery/SHOTLIST.md.",
  "cards": [
   {
    "out": "banner.png",
@@ -10,29 +10,23 @@
    "seed": 3,
    "elements": [
     {
-     "type": "capture",
-     "capture": "hero_sword_rainbow.png",
-     "crop": [
-      520,
-      98,
-      880,
-      880
+     "type": "studio",
+     "scene": "stills_hero",
+     "frame": "banner_hero",
+     "at": [
+      30,
+      24
      ],
      "size": [
-      180,
-      180
-     ],
-     "resample": "area",
-     "at": [
-      42,
-      34
+      350,
+      372
      ]
     },
     {
      "type": "heading",
      "at": [
-      248,
-      40
+      404,
+      46
      ],
      "text": "Glintsmith",
      "size": 10,
@@ -41,45 +35,36 @@
     {
      "type": "strip",
      "at": [
-      248,
-      148
+      404,
+      158
      ],
-     "width": 710,
+     "width": 556,
      "text": "Custom enchantment glints and item outlines for every item from every mod."
     },
     {
      "type": "chips",
      "at": [
-      500,
-      230
+      404,
+      262
      ],
-     "align": "centre",
+     "align": "left",
      "items": [
       "FABRIC 1.21.1",
-      "CLIENT SIDE ONLY",
+      "CLIENT SIDE ONLY"
+     ]
+    },
+    {
+     "type": "chips",
+     "at": [
+      404,
+      312
+     ],
+     "align": "left",
+     "items": [
       {
        "text": "SODIUM + IRIS READY",
        "style": "brass"
       }
-     ]
-    },
-    {
-     "type": "capture",
-     "capture": "hero_lineup.png",
-     "crop": [
-      27,
-      442,
-      1832,
-      200
-     ],
-     "size": [
-      916,
-      100
-     ],
-     "resample": "area",
-     "at": [
-      42,
-      288
      ]
     }
    ]
@@ -94,49 +79,46 @@
    "title": "Every item from every mod",
    "elements": [
     {
-     "type": "capture",
-     "capture": "universal_wall.png",
-     "crop": [
-      198,
-      270,
-      1495,
-      520
-     ],
+     "type": "studio",
+     "scene": "stills_wide",
+     "frame": "universal_vanilla",
      "at": [
       40,
-      108
+      104
      ],
      "size": [
       920,
-      320
+      164
      ],
-     "resample": "area"
+     "trim": "y",
+     "shadow": false,
+     "label": "Vanilla",
+     "label_style": "accent",
+     "label_at": "tl"
     },
     {
-     "type": "label",
+     "type": "studio",
+     "scene": "stills_wide",
+     "frame": "universal_modded",
      "at": [
-      50,
-      118
+      40,
+      272
      ],
-     "text": "Modded",
-     "style": "gold",
-     "size": 1
-    },
-    {
-     "type": "label",
-     "at": [
-      50,
-      300
+     "size": [
+      920,
+      164
      ],
-     "text": "Vanilla",
-     "style": "accent",
-     "size": 1
+     "trim": "y",
+     "shadow": false,
+     "label": "Modded",
+     "label_style": "gold",
+     "label_at": "tl"
     },
     {
      "type": "text",
      "at": [
       40,
-      442
+      448
      ],
      "width": 920,
      "text": "Outlines and glints are drawn on whatever the game renders: flat sprites, 3D models, shields, tridents and items from other mods; worn armor can be outlined too. Nothing to set up per item."
@@ -167,218 +149,155 @@
    "out": "card_glint_presets.png",
    "size": [
     1000,
-    590
+    632
    ],
    "seed": 17,
    "title": "Pick your glint",
    "elements": [
     {
-     "type": "capture",
-     "capture": "glint_vanilla.png",
-     "crop": [
-      450,
-      24,
-      1012,
-      920
-     ],
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "glint_vanilla",
      "at": [
       40,
       108
      ],
-     "label": "Vanilla",
-     "label_style": "accent",
-     "label_at": "tl",
      "size": [
       176,
-      160
+      150
      ],
-     "resample": "area"
+     "label_style": "accent",
+     "label_below": "Vanilla"
     },
     {
-     "type": "capture",
-     "capture": "glint_neutral.png",
-     "crop": [
-      452,
-      30,
-      1012,
-      920
-     ],
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "glint_neutral",
      "at": [
       226,
       108
      ],
-     "label": "Neutral + tint",
-     "label_style": "accent",
-     "label_at": "tl",
      "size": [
       176,
-      160
+      150
      ],
-     "resample": "area"
+     "label_style": "accent",
+     "label_below": "Neutral + tint"
     },
     {
-     "type": "capture",
-     "capture": "glint_rainbow.png",
-     "crop": [
-      454,
-      17,
-      1012,
-      920
-     ],
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "glint_rainbow",
      "at": [
       412,
       108
      ],
-     "label": "Rainbow",
-     "label_style": "accent",
-     "label_at": "tl",
      "size": [
       176,
-      160
+      150
      ],
-     "resample": "area"
+     "label_style": "accent",
+     "label_below": "Rainbow"
     },
     {
-     "type": "capture",
-     "capture": "glint_aurora.png",
-     "crop": [
-      461,
-      38,
-      1012,
-      920
-     ],
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "glint_aurora",
      "at": [
       598,
       108
      ],
-     "label": "Aurora",
-     "label_style": "accent",
-     "label_at": "tl",
      "size": [
       176,
-      160
+      150
      ],
-     "resample": "area"
+     "label_style": "accent",
+     "label_below": "Aurora"
     },
     {
-     "type": "capture",
-     "capture": "glint_fire.png",
-     "crop": [
-      464,
-      31,
-      1012,
-      920
-     ],
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "glint_fire",
      "at": [
       784,
       108
      ],
-     "label": "Fire",
-     "label_style": "accent",
-     "label_at": "tl",
      "size": [
       176,
-      160
+      150
      ],
-     "resample": "area"
+     "label_style": "accent",
+     "label_below": "Fire"
     },
     {
-     "type": "capture",
-     "capture": "glint_frost.png",
-     "crop": [
-      451,
-      23,
-      1012,
-      920
-     ],
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "glint_frost",
      "at": [
       40,
-      278
+      298
      ],
-     "label": "Frost",
-     "label_style": "accent",
-     "label_at": "tl",
      "size": [
       176,
-      160
+      150
      ],
-     "resample": "area"
+     "label_style": "accent",
+     "label_below": "Frost"
     },
     {
-     "type": "capture",
-     "capture": "glint_sparkle.png",
-     "crop": [
-      457,
-      28,
-      1012,
-      920
-     ],
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "glint_sparkle",
      "at": [
       226,
-      278
+      298
      ],
-     "label": "Sparkle",
-     "label_style": "accent",
-     "label_at": "tl",
      "size": [
       176,
-      160
+      150
      ],
-     "resample": "area"
+     "label_style": "accent",
+     "label_below": "Sparkle"
     },
     {
-     "type": "capture",
-     "capture": "glint_gold.png",
-     "crop": [
-      468,
-      24,
-      1012,
-      920
-     ],
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "glint_gold",
      "at": [
       412,
-      278
+      298
      ],
-     "label": "Gold",
-     "label_style": "accent",
-     "label_at": "tl",
      "size": [
       176,
-      160
+      150
      ],
-     "resample": "area"
+     "label_style": "accent",
+     "label_below": "Gold"
     },
     {
-     "type": "capture",
-     "capture": "glint_void.png",
-     "crop": [
-      449,
-      32,
-      1012,
-      920
-     ],
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "glint_void",
      "at": [
       598,
-      278
+      298
      ],
-     "label": "Void",
-     "label_style": "accent",
-     "label_at": "tl",
      "size": [
       176,
-      160
+      150
      ],
-     "resample": "area"
+     "label_style": "accent",
+     "label_below": "Void"
     },
     {
      "type": "panel",
      "at": [
       784,
-      278
+      298
      ],
      "size": [
       176,
-      160
+      150
      ],
      "fill": "dark"
     },
@@ -386,7 +305,7 @@
      "type": "text",
      "at": [
       796,
-      292
+      312
      ],
      "width": 152,
      "text": "Tint, speed, scale, strength and angle are all adjustable.",
@@ -397,7 +316,7 @@
      "type": "text",
      "at": [
       40,
-      454
+      496
      ],
      "width": 920,
      "text": "Item, armor, entity and GUI glints are separate layers, so a rainbow chestplate and a plain sword are one setting each. Drop your own PNGs in as well."
@@ -406,7 +325,7 @@
      "type": "chips",
      "at": [
       40,
-      516
+      558
      ],
      "items": [
       "9 PRESETS",
@@ -423,186 +342,166 @@
    "out": "card_outline_styles.png",
    "size": [
     1000,
-    590
+    632
    ],
    "seed": 23,
    "title": "Outlines that fit your look",
    "elements": [
     {
-     "type": "capture",
-     "capture": "outline_vanilla.png",
-     "crop": [
-      872,
-      460,
-      176,
-      160
-     ],
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "outline_vanilla",
      "at": [
       40,
       108
      ],
-     "label": "Vanilla",
+     "size": [
+      176,
+      150
+     ],
      "label_style": "bad",
-     "label_at": "tl"
+     "label_below": "Vanilla"
     },
     {
-     "type": "capture",
-     "capture": "outline_static.png",
-     "crop": [
-      883,
-      454,
-      176,
-      160
-     ],
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "outline_static",
      "at": [
       226,
       108
      ],
-     "label": "Static",
+     "size": [
+      176,
+      150
+     ],
      "label_style": "accent",
-     "label_at": "tl"
+     "label_below": "Static"
     },
     {
-     "type": "capture",
-     "capture": "outline_rainbow.png",
-     "crop": [
-      870,
-      472,
-      176,
-      160
-     ],
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "outline_rainbow",
      "at": [
       412,
       108
      ],
-     "label": "Rainbow",
+     "size": [
+      176,
+      150
+     ],
      "label_style": "accent",
-     "label_at": "tl"
+     "label_below": "Rainbow"
     },
     {
-     "type": "capture",
-     "capture": "outline_pulse.png",
-     "crop": [
-      865,
-      459,
-      176,
-      160
-     ],
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "outline_pulse",
      "at": [
       598,
       108
      ],
-     "label": "Pulse",
+     "size": [
+      176,
+      150
+     ],
      "label_style": "accent",
-     "label_at": "tl"
+     "label_below": "Pulse"
     },
     {
-     "type": "capture",
-     "capture": "outline_gradient.png",
-     "crop": [
-      863,
-      451,
-      176,
-      160
-     ],
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "outline_gradient",
      "at": [
       784,
       108
      ],
-     "label": "Gradient",
+     "size": [
+      176,
+      150
+     ],
      "label_style": "accent",
-     "label_at": "tl"
+     "label_below": "Gradient"
     },
     {
-     "type": "capture",
-     "capture": "outline_enchant.png",
-     "crop": [
-      881,
-      456,
-      176,
-      160
-     ],
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "outline_enchant",
      "at": [
       40,
-      278
+      298
      ],
-     "label": "Enchantment",
+     "size": [
+      176,
+      150
+     ],
      "label_style": "gold",
-     "label_at": "tl"
+     "label_below": "Enchantment"
     },
     {
-     "type": "capture",
-     "capture": "outline_thick_1.png",
-     "crop": [
-      866,
-      453,
-      176,
-      160
-     ],
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "outline_thick_1",
      "at": [
       226,
-      278
+      298
      ],
-     "label": "1 px",
+     "size": [
+      176,
+      150
+     ],
      "label_style": "gold",
-     "label_at": "tl"
+     "label_below": "1 px"
     },
     {
-     "type": "capture",
-     "capture": "outline_thick_3.png",
-     "crop": [
-      882,
-      446,
-      176,
-      160
-     ],
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "outline_thick_3",
      "at": [
       412,
-      278
+      298
      ],
-     "label": "3 px",
+     "size": [
+      176,
+      150
+     ],
      "label_style": "gold",
-     "label_at": "tl"
+     "label_below": "3 px"
     },
     {
-     "type": "capture",
-     "capture": "outline_thick_6.png",
-     "crop": [
-      882,
-      448,
-      176,
-      160
-     ],
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "outline_thick_6",
      "at": [
       598,
-      278
+      298
      ],
-     "label": "6 px",
+     "size": [
+      176,
+      150
+     ],
      "label_style": "gold",
-     "label_at": "tl"
+     "label_below": "6 px"
     },
     {
-     "type": "capture",
-     "capture": "outline_soft_80.png",
-     "crop": [
-      867,
-      473,
-      176,
-      160
-     ],
+     "type": "studio",
+     "scene": "stills_tiles",
+     "frame": "outline_soft_80",
      "at": [
       784,
-      278
+      298
      ],
-     "label": "Soft glow",
+     "size": [
+      176,
+      150
+     ],
      "label_style": "gold",
-     "label_at": "tl"
+     "label_below": "Soft glow"
     },
     {
      "type": "text",
      "at": [
       40,
-      454
+      496
      ],
      "width": 920,
      "text": "Five colour modes, any thickness from half a pixel up, an optional soft glow and a low durability alert. The outline follows the real silhouette, flat or 3D."
@@ -611,7 +510,7 @@
      "type": "chips",
      "at": [
       40,
-      516
+      558
      ],
      "items": [
       "5 COLOUR MODES",
@@ -778,88 +677,76 @@
    "out": "card_gap_fix.png",
    "size": [
     1000,
-    590
+    520
    ],
    "seed": 31,
    "title": "Seams closed, edges clean",
    "elements": [
     {
-     "type": "capture",
-     "capture": "gap_sword_off.png",
-     "crop": [
-      624,
-      0,
-      864,
-      1080
-     ],
+     "type": "studio",
+     "scene": "stills_gap",
+     "frame": "gap_sword_off",
      "at": [
       40,
       108
      ],
-     "label": "Vanilla",
+     "size": [
+      215,
+      215
+     ],
      "label_style": "bad",
-     "label_at": "tl",
-     "down": 4
+     "label_below": "Vanilla"
     },
     {
-     "type": "capture",
-     "capture": "gap_sword_on.png",
-     "crop": [
-      620,
-      0,
-      864,
-      1080
-     ],
+     "type": "studio",
+     "scene": "stills_gap",
+     "frame": "gap_sword_on",
      "at": [
-      266,
+      265,
       108
      ],
-     "label": "With Glintsmith",
+     "size": [
+      215,
+      215
+     ],
      "label_style": "good",
-     "label_at": "tl",
-     "down": 4
+     "label_below": "With Glintsmith"
     },
     {
-     "type": "capture",
-     "capture": "gap_modded_off.png",
-     "crop": [
-      616,
-      0,
-      864,
-      1080
-     ],
+     "type": "studio",
+     "scene": "stills_gap",
+     "frame": "gap_modded_off",
      "at": [
-      518,
+      520,
       108
      ],
-     "label": "Vanilla",
+     "size": [
+      215,
+      215
+     ],
      "label_style": "bad",
-     "label_at": "tl",
-     "down": 4
+     "label_below": "Vanilla"
     },
     {
-     "type": "capture",
-     "capture": "gap_modded_on.png",
-     "crop": [
-      611,
-      0,
-      864,
-      1080
-     ],
+     "type": "studio",
+     "scene": "stills_gap",
+     "frame": "gap_modded_on",
      "at": [
-      744,
+      745,
       108
      ],
-     "label": "With Glintsmith",
+     "size": [
+      215,
+      215
+     ],
      "label_style": "good",
-     "label_at": "tl",
-     "down": 4
+     "label_below": "With Glintsmith"
     },
     {
      "type": "text",
      "at": [
       40,
-      410
+      380
      ],
      "width": 920,
      "text": "Flat item models can show hairline gaps between their faces, worst under the glint (MC-73186). The gap fix closes them on vanilla and modded items alike."
@@ -868,7 +755,7 @@
      "type": "chips",
      "at": [
       40,
-      486
+      448
      ],
      "items": [
       "AUTOMATIC",
@@ -1161,66 +1048,63 @@
   }
  ],
  "logo": {
-  "comment": "The logo, the mod icon and logo_animated.gif come from captures, never from drawing. crop.centre is [x, y] in capture pixels (\"c\" = middle), crop.size a pixel count or \"full\" (the full height); the square is area-filtered to 512 / 128 / 32 px. The GIF cross-fades the gif.captures (each held `hold` frames, then `fade` frames to the next, last back to first) in the same square crop.",
-  "capture": "logo_sword.png",
+  "comment": "The logo and the mod icon come from a studio render, never from drawing: the still `frame` of `scene` (art/captures/studio/<scene>/, a K / W pair) is matted, set on the cream studio backdrop (`shadows`: with the soft contact and drop shadows; `style` overrides composite.DEFAULT_STYLE) and a square is cut from the picture. crop.centre is [x, y] in picture pixels (\"c\" = middle), crop.size a pixel count or \"full\" (the full height); the square is area-filtered to 512 / 128 / 32 px. logo_animated.gif is a GIF of the `gifs` list.",
+  "scene": "stills_hero",
+  "frame": "logo",
+  "shadows": false,
   "crop": {
    "centre": [
-    952,
-    547
+    "c",
+    "c"
    ],
-   "size": 1000
-  },
-  "gif": {
-   "out": "logo_animated.gif",
-   "captures": [
-    "hero_sword_rainbow.png",
-    "hero_sword_void.png",
-    "hero_sword_fire.png"
-   ],
-   "size": 128,
-   "hold": 14,
-   "fade": 6,
-   "delay_cs": 5,
-   "crop": {
-    "centre": [
-     960,
-     538
-    ],
-    "size": 1000
-   }
+   "size": "full"
   }
  },
  "gifs": [
   {
    "out": "showcase.gif",
-   "frames_dir": "showcase",
-   "crop": [
-    236,
-    125,
-    1440,
-    810
+   "scene": "hero_sword",
+   "size": [
+    512,
+    512
    ],
-   "down": 2,
-   "scale": 1,
-   "frames_per_caption": 16,
-   "step": 1,
-   "source_fps": 4,
-   "max_step": 4,
-   "max_mb": 8,
-   "caption_bar": {
-    "height": 36,
-    "scale": 2,
-    "color": "text"
-   },
-   "captions": [
-    "Vanilla",
-    "Outline only",
-    "Rainbow glint + rainbow outline",
-    "Fire glint + pulsing outline",
-    "Frost glint + soft cyan outline",
-    "Aurora glint + gradient outline",
-    "Void glint + enchantment colours"
-   ]
+   "caption": true,
+   "budget_mb": 8
+  },
+  {
+   "out": "logo_animated.gif",
+   "scene": "hero_sword",
+   "size": [
+    256,
+    256
+   ],
+   "caption": false,
+   "budget_mb": 2
+  },
+  {
+   "out": "lineup.gif",
+   "scene": "lineup",
+   "size": [
+    900,
+    300
+   ],
+   "caption": true,
+   "budget_mb": 8,
+   "style": {
+    "contact": {
+     "opacity": 0.0
+    }
+   }
+  },
+  {
+   "out": "armor.gif",
+   "scene": "armor_stand",
+   "size": [
+    400,
+    500
+   ],
+   "caption": true,
+   "budget_mb": 8
   }
  ]
 }

@@ -8,11 +8,11 @@
     py -B art/gallery/build.py --list               print every capture the manifest needs and whether it exists
 
 Reads art/gallery/cards.json and the screenshots in art/captures/ (what to capture: SHOTLIST.md).  An element of type
-"studio" ({"scene", "frame", "at", "size", "shadow"}) sets a matted render from art/captures/studio/<scene>/ (see
-art/studio/) straight on the card, no frame, with an optional contact shadow.  A capture that
-is not there is never faked: its picture slot shows a grey "capture missing" placeholder, a warning is printed
-and --strict turns it into a failure.  The showcase GIF is built by gif.py (this script calls it unless
---no-gif is given).
+"studio" ({"scene", "frame", "at", "size", "shadow", ...}) sets a matted render from art/captures/studio/<scene>/ (see
+art/studio/) straight on the card, no frame, with an optional contact shadow (see el_studio for crop, trim and labels).
+A capture or studio frame that is not there is never faked: its picture slot shows a grey "capture missing"
+placeholder, a warning is printed and --strict turns it into a failure.  The GIFs of the manifest are studio
+turntables built by gifs.py (this script calls it unless --no-gif is given).
 
 The vanilla font is read from the Minecraft 1.21.1 client jar at run time (GLINTSMITH_MC_JAR, else the Loom cache);
 neither the jar nor the font is stored in the repository.  The card look (framed cream-white card, heading with
@@ -71,16 +71,15 @@ def el_capture(c, el, ctx):
               ctx, box=(x, y, w, h), where=el.get("label_at", "tl"))
 
 
-def label(c, el, ctx, box=None, where="tl"):
+def label(c, el, ctx, box=None, where="tl", inset=10):
     tab, col = LABEL_STYLES[el.get("style", "accent")]
     size = el.get("size", 2)
     lb = lib.label_box(el["text"], size, col, tab)
     if box is not None and lb.w > box[2] - 20 and size > 1:      # too wide for its picture: the small size
         lb = lib.label_box(el["text"], 1, col, tab)
-    if box is not None:
+    if box is not None:                                   # where: tl, tr, bl, br, tc or bc (top / bottom centre)
         bx, by, bw, bh = box
-        inset = 10
-        x = bx + inset if where[1] == "l" else bx + bw - lb.w - inset
+        x = bx + inset if where[1] == "l" else bx + (bw - lb.w) // 2 if where[1] == "c" else bx + bw - lb.w - inset
         y = by + inset if where[0] == "t" else by + bh - lb.h - inset
     else:
         x, y = el["at"]
@@ -190,22 +189,58 @@ def studio_matte(ctx, scene_id, ref):
     return cache[key], None
 
 
-def el_studio(c, el, ctx):
-    """A studio render (transparent matte of a K / W frame pair, no frame or box) set straight on the card background,
-    fitted inside `size` at `at` and centred; "shadow": true lays the soft contact shadow under it."""
-    x, y = el["at"]
-    w, h = el["size"]
-    pic, missing = studio_matte(ctx, el["scene"], el["frame"])
-    if pic is None:
-        ctx.report.missing_capture(ctx.name, "art/captures/" + missing)
-        c.blit(lib.placeholder(w, h, "studio/" + el["scene"]), x, y)
-        return
+def shape_matte(pic, el):
+    """The matte after the element's `crop` ([x, y, w, h] in matte pixels, x / y may be "c") and `trim` ("x", "y" or "xy":
+    cut the empty rows / columns round the subject, keeping `trim_margin` matte pixels, default 8).  Trimming only the
+    height ("y") keeps the scale of two rows of the same width equal."""
     sys.path.insert(0, os.path.join(common.ART, "studio"))
     try:
         import composite
     finally:
         sys.path.pop(0)
-    composite.place_on_canvas(c, pic, (x, y, w, h), el.get("shadow", True), composite.style(el.get("style")))
+    if el.get("crop"):
+        x, y, w, h = common.resolve_crop(el["crop"], pic.w, pic.h)
+        pic = pic.crop(x, y, w, h)
+    trim = el.get("trim")
+    if trim:
+        box = composite.alpha_bbox(bytes(pic.buf[3::4]), pic.w, pic.h, 8)
+        if box:
+            m = el.get("trim_margin", 8)
+            x0, y0, x1, y1 = box
+            if "x" not in trim:
+                x0, x1 = 0, pic.w
+            if "y" not in trim:
+                y0, y1 = 0, pic.h
+            x0, y0, x1, y1 = max(0, x0 - m), max(0, y0 - m), min(pic.w, x1 + m), min(pic.h, y1 + m)
+            pic = pic.crop(x0, y0, x1 - x0, y1 - y0)
+    return pic
+
+
+def el_studio(c, el, ctx):
+    """A studio render (transparent matte of a K / W frame pair, no frame or box) set straight on the card background,
+    fitted inside `size` at `at` (only ever scaled down, area filter) and centred; "shadow": true lays the soft contact
+    shadow under it.  Optional: `crop` / `trim` / `trim_margin` (see shape_matte), `style` (composite style overrides),
+    and `label`, `label_style`, `label_at` (tl, tr, bl, br, tc, bc: a name box inside the `size` rectangle) or `label_below`
+    (a name box centred just under the rectangle, which then holds only the picture)."""
+    x, y = el["at"]
+    w, h = el["size"]
+    pic, missing = studio_matte(ctx, el["scene"], el["frame"])
+    if pic is None:
+        ctx.report.missing_capture(ctx.name, "art/captures/" + missing)
+        c.blit(lib.placeholder(w, h, "studio/%s/%s" % (el["scene"], el["frame"])), x, y)
+    else:
+        sys.path.insert(0, os.path.join(common.ART, "studio"))
+        try:
+            import composite
+        finally:
+            sys.path.pop(0)
+        composite.place_on_canvas(c, shape_matte(pic, el), (x, y, w, h), el.get("shadow", True), composite.style(el.get("style")))
+    if el.get("label_below"):                              # a name box centred just under the rectangle
+        label(c, {"at": None, "text": el["label_below"], "style": el.get("label_style", "accent")}, ctx,
+              box=(x, y + h, w, 0), where="tc", inset=4)
+    elif el.get("label"):
+        label(c, {"at": None, "text": el["label"], "style": el.get("label_style", "accent")}, ctx,
+              box=(x, y, w, h), where=el.get("label_at", "tl"))
 
 
 ELEMENTS = {
@@ -256,7 +291,8 @@ def main(argv=None):
     ap.add_argument("--only", help="build only the images whose file name contains this text")
     ap.add_argument("--strict", action="store_true", help="exit 1 if any capture is missing")
     ap.add_argument("--list", action="store_true", help="list the captures the manifest needs and exit")
-    ap.add_argument("--no-gif", action="store_true", help="skip the showcase GIF")
+    ap.add_argument("--no-gif", action="store_true", help="skip the GIFs (they take minutes)")
+    ap.add_argument("--workers", type=int, default=None, help="worker processes of the GIF builds (default up to 8)")
     ap.add_argument("--check", action="store_true", help="print a sha256 per written file")
     args = ap.parse_args(argv)
 
@@ -268,8 +304,8 @@ def main(argv=None):
             if rel in seen:
                 continue
             seen.add(rel)
-            state = "ok     " if (rel.endswith("NNNN.png") and os.path.isdir(captures.path(rel.rsplit("/", 1)[0]))) or captures.exists(rel) else "MISSING"
-            print("%s %s   (%s)" % (state, rel, image))
+            state = common.studio_state(args.captures, rel) if rel.startswith("studio/") else "ok" if captures.exists(rel) else "MISSING"
+            print("%-7s %s   (%s)" % (state, rel, image))
         return 0
 
     report = common.Report()
@@ -277,8 +313,8 @@ def main(argv=None):
     for name, data in build_all(manifest, captures, report, args.only, lambda m: print(m, flush=True)).items():
         written[name] = (common.write(args.out, name, data), data)
     if not args.no_gif:
-        import gif
-        for name, data in gif.build_all(manifest, captures, report, args.only, lambda m: print(m, flush=True)).items():
+        import gifs
+        for name, data in gifs.build_all(manifest, captures, report, args.only, lambda m: print(m, flush=True), args.workers).items():
             written[name] = (common.write(args.out, name, data), data)
     for name, (path, data) in sorted(written.items()):
         print("wrote %s (%d bytes)%s" % (path, len(data), "  sha256 " + hashlib.sha256(data).hexdigest()[:16] if args.check else ""))

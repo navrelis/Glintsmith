@@ -171,11 +171,12 @@ def fps_ladder(scene_fps, wanted=None):
     return [start] + [f for f in FPS_STEPS if f < start]
 
 
-def build_gif(sc, size=None, caption=True, budget_mb=8.0, fps=None, workers=1, st=None, dither=10, log=None):
+def build_gif(sc, size=None, caption=True, budget_mb=8.0, fps=None, workers=1, st=None, dither=10, log=None, min_scale=0.0):
     """The turntable of a scene as a looping GIF.  Returns (bytes, info).
 
     size: (w, h) of the picture (the caption bar is added below); default the scene's.  Steps down to fit the budget
-    (see the module docstring); exits with an error message if it cannot."""
+    (see the module docstring; scales below `min_scale` are not tried, 1 keeps the picture size); exits with an error
+    message if it cannot."""
     st = st or composite.style()
     size = tuple(size) if size else (sc.width, sc.height)
     n = len(sc.frames)
@@ -188,7 +189,7 @@ def build_gif(sc, size=None, caption=True, budget_mb=8.0, fps=None, workers=1, s
     native_fp = composite.merge_footprints([r[1] for r in res])
     _log(log, "  matted in %.1f s" % (time.time() - t0))
     ladder = [(f, 1.0) for f in fps_ladder(sc.fps, fps)]
-    ladder += [(ladder[-1][0], s) for s in SCALE_STEPS[1:]]
+    ladder += [(ladder[-1][0], s) for s in SCALE_STEPS[1:] if s >= min_scale]
     limit = budget_mb * MB
     done, tried = None, []
     for f, scale in ladder:

@@ -8,7 +8,7 @@ A "studio render" look, like a Blockbench / Blender product shot:
   blurred, about 25 % opaque, in a warm dark brown;
 * the optional DROP shadow is the subject's alpha blurred and shifted down-right, about 15 % opaque;
 * the optional CAPTION BAR under the picture is the one of the showcase GIF (cream, two brass lines on top, text in the
-  vanilla font, same as gallery/gif.py `bar`).
+  vanilla font, the bar of the old legacy/gif.py).
 
 Everything is in the style dict (`DEFAULT_STYLE`, override with `style({...})`).  Sizes are fractions of the picture
 width, so the same style looks the same at any size.  Blurs are three box blurs in a row (a Gaussian approximation) done
@@ -344,7 +344,7 @@ def ascii_text(text):
 
 
 def bar(width, height, text, scale, colour):
-    """The caption bar of gallery/gif.py: cream, a dark brass and a soft gold line on top, centred text."""
+    """The caption bar (as in the old legacy/gif.py): cream, a dark brass and a soft gold line on top, centred text."""
     b = lib.Canvas(width, height, lib.PAGE)
     b.hline(0, 0, width, lib.BORDER_DARK)
     b.hline(0, 1, width, lib.BORDER)

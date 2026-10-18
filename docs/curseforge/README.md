@@ -12,22 +12,25 @@
 
 ## Images
 
-The image names are the `out` fields of `art/gallery/cards.json`. They are composed from in-game captures of the mod
-(`art/README.md`, `art/gallery/SHOTLIST.md`); this folder only refers to them.
+The image names are the `out` fields of `art/gallery/cards.json`. They are composed from real renders of the mod: studio
+turntables and stills of the dev-only studio (`docs/STUDIO.md`) and in-game screenshots (`art/README.md`,
+`art/gallery/SHOTLIST.md`); this folder only refers to them.
 
 | File | What it shows |
 |---|---|
-| `banner.png` | Title banner: logo, name, tagline and three chips |
-| `showcase.gif` | The looks cycling: outline colours, glint presets, rules |
-| `card_universal.png` | Vanilla items and items of four mods, all outlined |
-| `card_outline_styles.png` | The five colour modes, three thicknesses and a soft glow |
+| `banner.png` | Title banner: a studio render of the sword, name, tagline and three chips |
+| `showcase.gif` | The studio turntable of one sword cycling through its looks (outline colours, glint presets), captioned, 512 px, at most 8 MB |
+| `lineup.gif` | Six items in a row, each with its own glint and outline, swinging, captioned, at most 8 MB. Next to `card_universal.png` |
+| `card_universal.png` | Two rows of studio renders: vanilla items and items of mods, all outlined |
+| `card_outline_styles.png` | The five colour modes, three thicknesses and a soft glow (studio stills) |
 | `card_targets.png` | The places an outline is drawn: hand, dropped items, frames, plus the optional worn armor and GUI targets (off by default) |
-| `card_glint_presets.png` | The vanilla glint, neutral and the seven generated presets on the same item |
-| `card_gap_fix.png` | A vanilla and a modded item, each with the fix off and on |
+| `armor.gif` | An armor stand in outlined, glinting netherite armor turning through its looks, captioned, at most 8 MB. Next to `card_targets.png` |
+| `card_glint_presets.png` | The vanilla glint, neutral and the seven generated presets on the same item (studio stills) |
+| `card_gap_fix.png` | A vanilla and a modded item, each with the fix off and on (studio stills) |
 | `card_rules.png` | The Rules tab and the rule editor |
 | `card_config.png` | The Outline and Glint tabs of the settings screen |
 | `card_shaders.png` | Sodium, and Iris with a shader pack in the world, the hand and the GUI |
-| `logo_animated.gif` | The animated logo |
+| `logo_animated.gif` | The animated logo: the same turntable at 256 px, no caption, at most 2 MB |
 
 ## Putting the description on CurseForge
 
@@ -46,3 +49,6 @@ py -B docs\curseforge\preview.py --check    verify
 
 `--check` verifies that every marker line has the exact form, names an existing file in `img/` and is used once, that
 `summary.txt` is one line of at most 250 characters, and that `preview.html` and `description_paste.md` are up to date.
+An image that is a build output of the art pipeline (an `out` of `art/gallery/cards.json`) and has not been built yet is
+reported as a NOTE, not a problem; `--strict` makes it a problem. Build the images with `py -B art/gallery/build.py`
+(see `art/README.md`) before uploading.
