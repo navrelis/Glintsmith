@@ -7,16 +7,16 @@ file form as I know it; check each one against the form you see, they change fro
 
 Paths are relative to the repository root.
 
-This is the checklist for the 2.0.0 update of the existing project. Items marked `TBD` get their final value at release.
+This is the checklist for the 2.0.0 update of the existing project. The values below are the final ones of the 2.0.0 release.
 The values of the first release (1.0.0) are kept at the end of this file.
 
 ## Before 2.0.0 goes public
 
 | Done | Item | Where |
 |---|---|---|
-| [ ] | 2.0.0 release gate: the build is made from the release commit, the tests are green, and `py -B art/verify.py` and `py -B docs/curseforge/preview.py --check` pass. Commit, test count and SHA-256 are entered in the file table below. | |
+| [x] | 2.0.0 release gate: the build is made from the release commit, the tests are green, and `py -B art/verify.py` and `py -B docs/curseforge/preview.py --check` pass. Commit, test count and SHA-256 are entered in the file table below. | |
 | [x] | The in-game checks of the 2.0.0 features are done (2026-10-18, V1 run: live preview on the Outline and Glint tabs, atlas-independent scale, custom GUI glints with ImmediatelyFast, thickness per place, proportional outlines and minimum width, the redrawn and the five new glint presets). Every pending marker in `docs/curseforge/description.md` and every not-checked note in `README.md` is resolved. The grep `grep -rn "VERIFY IN GAME\|PENDING" README.md CHANGELOG.md docs/curseforge/description.md` finds nothing. What was not tried by hand is listed in `docs/DESIGN.md` section 10, items 31 and 32. | `docs/DESIGN.md` section 10 |
-| [ ] | The gallery images show the 2.0.0 looks and the settings screen with the preview (`card_config.png` is from 1.0.0 until it is rebuilt); the gallery's preset card shows all twelve generated presets (rainbow, aurora, fire, frost, sparkle, gold, void, inferno, nebula, starlight, opal, storm), and the page text about the presets and about proportional outlines is final. | `art/README.md` |
+| [x] | The gallery images show the 2.0.0 looks and the settings screen with the preview (`card_config.png` was rebuilt from the 2.0.0 in-game screenshots); the gallery's preset card shows all twelve generated presets (rainbow, aurora, fire, frost, sparkle, gold, void, inferno, nebula, starlight, opal, storm), and the page text about the presets and about proportional outlines is final. | `art/README.md` |
 | [x] | The page text and `CHANGELOG.md` agree on the 2.0.0 section (the heading carries the release date), and `fabric.mod.json` and `gradle.properties` say 2.0.0 (`gradle.properties` has `mod_version=2.0.0`, `build.gradle` expands `${version}` in `fabric.mod.json` from it). | |
 | [x] | The gap fix, glint and outline wiring is in the build, so every setting does something. Done. | `.knowledge/plan.md` |
 | [x] | (1.0.0) The in-game test was done and no open-claim comment was left. See the 2.0.0 row above for the new features. | |
@@ -32,7 +32,7 @@ The values of the first release (1.0.0) are kept at the end of this file.
 | Field | Value |
 |---|---|
 | File to upload | `build/libs/glintsmith-2.0.0.jar` (not the `-sources` jar and not a `-dev` jar if one is in the folder) |
-| SHA-256 of the checked build | `TBD` (`build/libs/glintsmith-2.0.0.jar`, commit `TBD`, `TBD` tests green) |
+| SHA-256 of the checked build | `b91aea4f6ac4be923a9192f734b5b3438df2a29f3b286ee800a1e54f2dd283c6` (`build/libs/glintsmith-2.0.0.jar`, commit 3219f73, 486 tests green). The code is the same as in the jar checked in game on 2026-10-18 (built at 28e0ba9); since then only the icon and one glint scale tooltip (en/de) changed. |
 | Display name | `glintsmith-2.0.0.jar` (the 1.0.0 upload used the file name) |
 | Version | 2.0.0 |
 | Release type | Release |

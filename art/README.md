@@ -35,7 +35,7 @@ timestamps, fixed seeds, any number of workers).
                 py -B art/gallery/build.py --strict        cards, banner and the four GIFs into docs/curseforge/img/
                                                            (the GIFs take minutes; --no-gif skips them; gifs.py builds only them)
 4. adjust       open the images; move a crop / box in art/gallery/cards.json where the subject is off; build again
-5. verify       py -B art/verify.py --full                 (without --full the real GIFs are not rebuilt; about 6 minutes)
+5. verify       py -B art/verify.py --full                 (without --full the real GIFs are not rebuilt; about 30 minutes with --full)
                 py -B docs/curseforge/preview.py           the page preview, then --check must report 0 problems
 ```
 
@@ -207,7 +207,7 @@ subject that is cut off or too small and move its `size`, `crop` or `trim` here.
 
 ## Verify
 
-`py -B art/verify.py` (about 6 minutes) checks that
+`py -B art/verify.py` (about 2 minutes; `--full` takes about 30 minutes) checks that
 
 * the PNG reader decodes every filter type, RGB, RGBA and a 1-bit palette image exactly, and rejects garbage;
 * the manifest only uses known elements, every picture box lies inside its card, every capture and every studio shot is described in `SHOTLIST.md`
