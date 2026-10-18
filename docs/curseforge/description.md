@@ -16,7 +16,7 @@ Glintsmith works on what the game really draws, so there are no item whitelists 
 
 >>> PASTE IMAGE: lineup.gif | Every item its own look <<<
 
-**Outlines that fit your look.** Colours can be static, rainbow, pulse, gradient (up to 16 colours) or taken from the enchantments on the item, with a colour of its own for every enchantment. Thickness (0.5 to 16 screen pixels), softness, opacity, distance fade and scaling with the window size are settings. A low-durability alert makes the outline pulse towards a warning colour when an item is nearly broken, and "Only my items" leaves other players' items alone.
+**Outlines that fit your look.** Colours can be static, rainbow, pulse, gradient (up to 16 colours) or taken from the enchantments on the item, with a colour of its own for every enchantment. Thickness (0.5 to 16 screen pixels, and each place can have its own), softness, opacity, distance fade and scaling with the window size are settings. A thickness has the same width on screen in the world, in your hand and in the menus. A low-durability alert makes the outline pulse towards a warning colour when an item is nearly broken, and "Only my items" leaves other players' items alone.
 
 >>> PASTE IMAGE: card_outline_styles.png | Outlines that fit your look <<<
 
@@ -40,6 +40,10 @@ Glintsmith works on what the game really draws, so there are no item whitelists 
 
 **Everything in one screen.** The settings screen uses vanilla widgets and has tabs for outlines, glint, model fix, rules and enchantment colours, a colour picker, and a tooltip on every setting. It opens from Mod Menu, with `/glintsmith`, or with a key. The settings are one JSON file, `config/glintsmith.json`, which is read again while the game runs.
 
+**See it while you set it up.** Next to the options, a live preview shows the item in your main hand as it looks in first person, with the settings you are changing, before you save. It follows every change at once, including unsaved edits in the rule editor and the colour picker. Drag to turn the item, right click to reset the view, and a strip under the panel switches between your held item and a sample enchanted netherite sword. Short notes say why something is not shown, for example outlines off, a shader pack or an empty hand. <!-- PENDING: live preview not yet checked in game -->
+
+**A look from the first start.** A fresh config comes with a look already set: a slow rainbow outline (thickness 8.5 px, opacity 25 %), a frost glint with a light purple rainbow tint on items, a fire glint on entities and in the GUI, and no glint on armor. Existing config files keep their values. The Reset tab button puts a tab back to these values; to get the vanilla glint back, turn off "Custom glint" on the Glint tab or set the texture of a layer to vanilla.
+
 >>> PASTE IMAGE: card_config.png | Everything in one screen <<<
 
 ## Sodium and Iris
@@ -62,7 +66,7 @@ If an error happens in the outline, glint or gap fix code, that feature switches
 
 Checked on 2026-10-17 against the public pages and repositories of each project. Where a page does not say, the table says so; it does not mean the feature is missing.
 
-| | Glintsmith 1.0.0 | Custom Glow Enchantment Outline (mod) | Model Gap Fix (mod) | Rainbow Enchantment Glint (resource pack) | Enchantment Outlines (resource pack) |
+| | Glintsmith 2.0.0 | Custom Glow Enchantment Outline (mod) | Model Gap Fix (mod) | Rainbow Enchantment Glint (resource pack) | Enchantment Outlines (resource pack) |
 |---|---|---|---|---|---|
 | What it does | Outlines, glint, gap fix | Outline on enchanted held items and the Totem of Undying | Gap fix | Rainbow glint on enchanted items | Outline on enchanted tools, 3D bows and maces |
 | Which items | Every item of every mod; rules choose | Vanilla weapons, tools, shields and the totem by default; more items can be added by id, modded ones included | Block and item models | All enchanted items | Described as tools; the page does not mention modded items |
@@ -74,7 +78,7 @@ Checked on 2026-10-17 against the public pages and repositories of each project.
 | Shader packs | World outlines off, hand and GUI work | Lists Iris as compatible | not applicable | not stated | Page says compatible with most shader packs |
 | Enchantment glint | Presets, own PNG, resource-pack textures, tint, speed, scale, strength, rotation, per layer and per rule | No | No | One look for all enchanted items; the page has no settings | No |
 | Gap fix | Yes: UV shrink, side faces, modes, settings | No | Yes: removes texture zooming; an extra step for 2D items is Forge only, per its page | No | No |
-| Settings | In-game screen, JSON with live reload, commands | In-game screen (F7) | None on its page | None (resource pack) | Resource pack options |
+| Settings | In-game screen with live preview, JSON with live reload, commands | In-game screen (F7) | None on its page | None (resource pack) | Resource pack options |
 | Versions and loaders | Fabric, Minecraft 1.21.1 | Fabric, Forge, NeoForge; 1.19.2 to 26.x | Fabric, Forge, NeoForge, Quilt; 1.18.1 to 1.21.10 | 1.19 to 1.20.1 | 1.19.3 to 26.x; CIT Resewn needed below 1.21.4 |
 
 Glintsmith is narrower in one respect: it supports one loader and one Minecraft version, where the projects above reach more of both. It is also new, and the others have had many more players test them.
@@ -92,11 +96,11 @@ Client side only. Install it on your client; it does nothing on a server.
 ## Compatibility notes
 
 - Sodium 0.8.13 works. The log has one expected Sodium warning that `TeeVertexConsumer` does not support optimized vertex writing; it is harmless.
-- ImmediatelyFast: HUD batching works with GUI outlines. An outlined GUI item flushes the batch before its outline is drawn, so the hotbar, the items and the counts are drawn and outlined as usual (checked with ImmediatelyFast 1.6.15).
+- ImmediatelyFast: HUD batching works with GUI outlines. An outlined GUI item flushes the batch before its outline is drawn, so the hotbar, the items and the counts are drawn and outlined as usual (checked with ImmediatelyFast 1.6.15). Custom glints work with it too: in the first-person hand, in the world (without Iris), and in inventories, menus and the hotbar. <!-- PENDING: custom GUI glints with ImmediatelyFast not yet checked in game -->
 - First-person animation mods like Punchy keep the hand outline and the first-person glint rules (checked with Punchy 2.8f, main hand and offhand).
 - A mod that replaces the vanilla glint render types itself can win over Glintsmith's glint, or the other way round. Use one of them.
 - Items that never go through the game's normal item rendering (`ItemRenderer.render`) are not outlined. Mods that only batch the drawing of GUI items, like ImmediatelyFast, are not affected.
-- Glint presets in packs with a very large block atlas (for example 8192 x 4096 px): item glints are textured through the item's own UVs on the block atlas, like vanilla, so an item shows only a few texels of a preset at Scale 1.00 and the preset can look like a flat colour wash. Lower the glint Scale (about 0.13 for held and dropped items, about 0.2 for armor worked in such a pack). Armor textures are not on the block atlas, so armor is affected far less.
+- Big block atlases (for example 8192 x 4096 px in large modpacks): item glints are textured through the item's own UVs on the block atlas, like vanilla, so in such a pack an item covers only a few texels of a preset. The glint scale now adapts to the atlas by itself: the option "Atlas-independent scale" (Glint tab, on by default) reads the size of the block atlas after every resource reload and keeps the vanilla pattern density for items in hand, on the ground, in item frames and in the GUI, so Scale 1.00 looks right in any pack. Armor and entity models use their own textures and are not changed. If you lowered Scale for a large atlas in 1.0.0, set it back to 1.00. <!-- PENDING: atlas-independent scale not yet checked in game -->
 - Model Gap Fix (`modelfix`) can stay installed. Glintsmith's automatic mode stays off while it is present. In custom mode the settings stack on top of it, and precise spans are inactive. This is covered by unit tests; it was not tested in game for 1.0.0.
 
 ## Performance

@@ -2,7 +2,7 @@
 
 | File | What |
 |---|---|
-| `description.md` | The project description (Markdown), with one paste marker line for each image and HTML comments for claims that are not final yet (at the moment there are none) |
+| `description.md` | The project description (Markdown), with one paste marker line for each image and HTML comments (`<!-- PENDING: ... -->`) for claims that are not checked in game yet (at the moment: live preview, custom GUI glints with ImmediatelyFast, atlas-independent scale) |
 | `summary.txt` | The short summary for the project form (one line, at most 250 characters) |
 | `upload-checklist.md` | The fields of the CurseForge forms and what to enter |
 | `preview.html` | The description with the images inline, for a browser; works offline when opened from this folder |

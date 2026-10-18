@@ -238,7 +238,10 @@ finally { OutlineSystem.endItem(src2); }
 6. The target is enabled for this phase.
 7. "Only local player" is respected for THIRD_PERSON and ARMOR. The holder is taken from O2's
    `renderItem` wrap, the entity from O3/O4.
-8. `RuleEngine.resolve(stack, target).outline()` is not null and has thickness > 0 and opacity > 0.
+8. `RuleEngine.resolve(stack, target).outline()` is not null and has thickness > 0 and opacity > 0. The thickness
+   of the look is resolved in this order, later wins: the global `outline.thickness`, the own thickness of the
+   place (`outline.targetThickness`, one optional value per `OutlineTarget`; null means the place uses the global
+   one), the `thickness` of a matching rule (`RuleMatcher`). Colour, softness and opacity have no per-place value.
 9. `argb = RuleEngine.outlineColor(stack, look, timeSeconds)` has alpha × opacity > 0.
 10. `idx = phase.styles.indexFor(argb, thickness, softness, opacity)` is not 0.
 
@@ -522,6 +525,11 @@ WORLD and HAND (vanilla) outlines; GUI keeps working.
   (argb, packed thickness/softness/opacity bytes). It is reset after each composite. At most 255
   entries per composite; further distinct styles reuse index 255 (rare, logged at debug level).
   * Thickness is clamped to `[0.5, settings.maxThickness]` and to at most 31.875 px.
+  * Thickness definition: a look's thickness is the width of the outline band outward from the silhouette, in
+    framebuffer pixels. With `scaleWithResolution` it is multiplied by `framebufferHeight / 1080` (pixels at 1080p),
+    without it by 1. `OutlineRuntimeSettings.thicknessScale(height)` is the only factor and is the same for WORLD,
+    HAND, GUI and PREVIEW; the GUI scale plays no part. The composite draws full alpha up to `t` and a 0.5 px ramp
+    (about `t + 0.25` px on a straight edge).
   * Encoding is a 256x2 RGBA8 `DynamicTexture` (`NativeImage(256, 2, false)`):
     * row 0 = (R, G, B, A = round(colourAlpha × opacity)),
     * row 1 = (round(thickness × 8), round(softness × 255), 0, 255).
@@ -1629,6 +1637,9 @@ these:
   `other` (default off)
 * `handWithShaderPack` (default true)
 * `maxThickness` (default 8, cap 32)
+* `targetThickness` (2.0.0): an optional own thickness per place (`firstPerson`, `thirdPerson`, `armor`, `dropped`,
+  `itemFrame`, `gui`, `other`; null = use the global `thickness`). It is read by the rule resolution
+  (`RuleMatcher`, section 3.2 step 8) and is not part of `OutlineSettings`.
 * `fadeStart` / `fadeEnd` (blocks, default 0/0 = off)
 
 ### 8.2 T6: glint system (`navrelis.glintsmith.render.glint`)
@@ -1796,7 +1807,9 @@ the user folder `<configDir>/glintsmith/glints/` is created if missing.
    *Recommendation:* fine as is.
 7. **Thickness on high-DPI and 4K screens** is in physical pixels, so it looks thinner at 4K.
    *Recommendation:* T3 adds an optional `scaleWithResolution` flag (thickness × framebufferHeight /
-   1080) and, for GUI, `× guiScale / 2`. Decide in UI review.
+   1080). Decided (2.0.0): the same factor for every phase, WORLD, HAND, GUI and PREVIEW; the GUI scale plays no
+   part, because world and hand outlines cannot follow it and a GUI-only factor would make the same look wider or
+   thinner in the GUI (3.4).
 8. **"Only local player"** semantics for armor.
    *Recommendation:* one flag applies to both THIRD_PERSON held items and ARMOR. The lead confirms or
    asks for two flags.
@@ -2036,8 +2049,8 @@ only, and the phase needs no mixin:
 * `OutlineContexts.forPhase(PREVIEW, any context)` is FIRST_PERSON; `phaseAccepts(PREVIEW, t)` holds only for
   FIRST_PERSON. `capture` skips the live `accepts` gate for this phase (the live settings are not asked); the style
   comes from the scoped rule engine.
-* The thickness scale is the HAND formula of the snapshot (`OutlineRuntimeSettings.thicknessScale(HAND, ...)`, so
-  "scale with window height" works as in the hand), from `OutlineRuntimeSettings.from(snapshot)`, which is cached per
+* The thickness scale is the one factor of the snapshot (`OutlineRuntimeSettings.thicknessScale(height)`, section 3.4,
+  so "scale with window height" works as in the hand), from `OutlineRuntimeSettings.from(snapshot)`, which is cached per
   snapshot instance.
 * The composite is the GUI one: a flat mask without scene depth (`MaskDepth.NONE`, no depth test, no distance fade),
   clipped to the current scissor box, which is the preview box. There is no depth copy, no occluder and no
@@ -2097,7 +2110,8 @@ field of the session class: it survives closing and reopening the screen for the
   targets but not first person) or `rule_no_match` (the edited rule does not match the shown item) through
   `previewNote`.
 * The margin around the item, in GUI pixels, leaves room for the outline:
-  `ceil(min(32, thickness · (1 + softness) · thicknessScale) / guiScale) + 2`, or 2 without an outline.
+  `ceil(reach / guiScale) + 2`, with `reach = OutlineRuntimeSettings.outlineReachPixels` (the style-table radius), or
+  2 without an outline.
 
 ### 12.5 Panel and layout
 

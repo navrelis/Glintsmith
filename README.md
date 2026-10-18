@@ -26,8 +26,13 @@ with the settings you are changing. The same settings live in one JSON file that
   such as items worn on the head are available and off by default. Each place has its own switch.
 - Which items get one: enchanted items (this includes items that only show the vanilla glint), all items, or only the
   items your rules select.
-- Look: thickness (0.5 to 16 screen pixels), softness, opacity, distance fade (0 to 256 blocks), and optional scaling of the
-  thickness with the window height (measured at 1080 px). "Only my items" limits outlines to what you hold or wear.
+- Look: thickness (0.5 to 16 screen pixels, optionally per place), softness, opacity, distance fade (0 to 256 blocks), and
+  optional scaling of the thickness with the window height (measured at 1080 px). "Only my items" limits outlines to what
+  you hold or wear.
+- Thickness per place: Outline tab > "Thickness per place" gives first person, third person, armor, dropped items, item
+  frames, the GUI and other places an optional thickness of their own (config: `outline.targetThickness`). A place
+  without one uses the global thickness, and a rule that sets a thickness still wins. A thickness has the same width in
+  screen pixels in every place, the GUI included; the GUI scale does not change it.
 - Colours: static, rainbow, pulse, gradient (up to 16 colours) or enchantment colours, where the outline fades through
   the colours of the enchantments on the item. Every vanilla enchantment has a built-in colour, every other enchantment
   gets a stable colour of its own, and you can change any of them.
@@ -43,14 +48,16 @@ with the settings you are changing. The same settings live in one JSON file that
   at start-up; no third-party art is included.
 - Tint (any colour mode, including per-enchantment), speed, scale, strength and rotation.
 - The glint keeps following the game's own Glint Speed and Glint Strength sliders; the mod's values are multiplied onto them.
-- A master switch turns the whole feature off and leaves the vanilla glint untouched.
+- A master switch ("Custom glint" on the Glint tab, `glint.enabled`) turns the whole feature off and leaves the vanilla
+  glint untouched. Each layer also has its own switch, and its texture can be set back to `vanilla`.
 - Atlas-independent scale (Glint tab, on by default): item glints are textured through the item's own UVs on the block
   atlas, like vanilla. In packs with a very large block atlas (for example 8192 x 4096 px) an item covers only a tiny
   part of the atlas, so a preset at Scale 1.00 would look like a flat colour wash instead of its bands or sparkles. The
   mod reads the size of the block atlas after every resource reload and corrects the scale of customised item glints, so
   Scale 1.00 looks like vanilla density in any pack. It applies to items in hand, on the ground, in item frames and in
   the GUI. Armor, elytra and entity models use their own textures and are not changed, and high-resolution resource
-  packs are not affected. Glints you did not customise stay exactly vanilla. If you lowered Scale for a large atlas in
+  packs are not affected. Glints you did not customise stay exactly vanilla (a fresh config does customise some, see
+  "Built-in defaults" below). If you lowered Scale for a large atlas in
   1.0.0 (to about 0.13), set it back to 1.00, because the correction and the manual value would multiply. Switch the
   option off to get the 1.0.0 behaviour. Not yet checked in game.
 
@@ -99,6 +106,13 @@ A fresh config contains two example rules: a pale yellow outline for the Totem o
   fix is not part of the preview, because it only changes after a resource reload. Under a shader pack the preview
   shows the configured look and a note says what the pack changes in your hand. If drawing the preview ever fails, only
   the preview switches itself off. Not yet checked in game.
+- Built-in defaults: a fresh config (no `glintsmith.json` yet) and "Reset tab" use these. Outline: a slow rainbow colour
+  (white, speed 0.5), thickness 8.5 px, opacity 25 %. Glint: the frost preset with a light purple rainbow tint (speed
+  0.5, strength 90 %) on items, the fire preset on entities and in the GUI, and the armor glint off. Existing config
+  files keep their values. The "Reset tab" button (with a confirmation; saved only when you press Done)
+  puts the tab back to these values, not to the vanilla look. To get the vanilla glint back, turn off "Custom glint" on
+  the Glint tab, or set the texture of a layer to `vanilla`; to remove all outlines, turn off "Outlines" on the Outline
+  tab.
 - Opens from the Mod Menu entry (Mod Menu is optional), with `/glintsmith`, or with a key (see below).
 - `config/glintsmith.json` is read again about once a second when it changes on disk, and with `/glintsmith reload`. A file
   that cannot be parsed is ignored: the previous settings stay and the problem is logged and shown.
