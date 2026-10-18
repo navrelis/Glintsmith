@@ -14,17 +14,18 @@ releases are kept at the end of this file: 2.0.0 first, then 1.0.0.
 
 | Done | Item | Where |
 |---|---|---|
-| [ ] | 2.0.1 release gate: the build is made from the release commit, the tests are green, and `py -B art/verify.py` and `py -B docs/curseforge/preview.py --check` pass. Commit, test count and SHA-256 are entered in the file table below. | |
-| [ ] | The in-game check of the 2.0.1 fixes is done: no stray outline dot rings beside a turning bow or trident in the live preview of the settings screen, no wrongly coloured edge pixel on flat items (in the hand, dropped, in an item frame) with the gap fix on AUTO, and no new hairline cracks. The 2.0.0 regression run is done as well. | `CHANGELOG.md` section 2.0.1 |
-| [ ] | `gradle.properties` says `mod_version=2.0.1` and the `CHANGELOG.md` 2.0.1 heading carries the release date. | |
+| [x] | 2.0.1 release gate: the build is made from the release commit, the tests are green, and `py -B art/verify.py` and `py -B docs/curseforge/preview.py --check` pass. Commit, test count and SHA-256 are entered in the file table below. Done: built from commit 8529521; 495 tests green; `art/verify.py` and `preview.py --check` pass. | |
+| [x] | The in-game check of the 2.0.1 fixes is done: no stray outline dot rings beside a turning bow or trident in the live preview of the settings screen, no wrongly coloured edge pixel on flat items (in the hand, dropped, in an item frame) with the gap fix on AUTO, and no new hairline cracks. The 2.0.0 regression run is done as well. Done: v201check run of 2026-10-18 on the isolated instance copy (8192 x 4096 atlas, ImmediatelyFast). 94 of 94 shots, 0 failed steps, owner instance unchanged. Bow (10 shots) and trident (6 shots) turned a full revolution in the live preview with no stray dot rings. No wrong edge pixels on the held, dropped and framed bow and the dropped sword. 2.0.0 regression set (66 shots) as before. | `CHANGELOG.md` section 2.0.1 |
+| [x] | `gradle.properties` says `mod_version=2.0.1` and the `CHANGELOG.md` 2.0.1 heading carries the release date. Done: `gradle.properties` 2.0.1 and the CHANGELOG 2.0.1 heading is dated 2026-10-18. | |
 | [ ] | `lineup.gif` on the page: the repository's `docs/curseforge/img/lineup.gif` was re-rendered without the stray dots. The live page still uses attachment 2071/596 (the 2.0.0 GIF) until the owner uploads the new one and updates the link in the description. | `docs/curseforge/img/` |
+| [x] | Known and not changed by 2.0.1: in the live preview a held trident shows its 3D held model and sits partly below the panel (the preview draws the first-person transform). This is the same as in 2.0.0. | |
 
 ## The file
 
 | Field | Value |
 |---|---|
 | File to upload | `build/libs/glintsmith-2.0.1.jar` (not the `-sources` jar and not a `-dev` jar if one is in the folder) |
-| SHA-256 of the checked build | TO FILL after the release build |
+| SHA-256 of the checked build | `b86b290ef8fdb620ea280b2e2a0256919a4d8147f311a3823316d0dd3fd6ab38` (`build/libs/glintsmith-2.0.1.jar`, commit 8529521, 495 tests green; checked in game on 2026-10-18 with exactly this jar) |
 | Display name | `glintsmith-2.0.1.jar` (the earlier uploads used the file name) |
 | Version | 2.0.1 |
 | Release type | Release |

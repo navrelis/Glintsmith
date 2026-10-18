@@ -68,9 +68,9 @@ Status: open / in progress / in review / done. Size S = short (1 unit), L = long
 | B2 | Gap fix edge guard (2.0.1) | 1/64-texel geometric edge guard always on with the gap fix, failing test first, cracks unchanged, 0 strays at atlas 2048/8192/16384; CHANGELOG known issue -> Fixed, DESIGN 11 | B1 | Opus (session gap-fix, branch claude/busy-wilson-9ce123) | S | done 7dc772e (lead read diff, build 495 green; strays 0 at atlas 2048/8192/16384, cracks 1994 -> 1991) |
 | B3 | Lineup re-render + GIF | after B1+B2 in dev: studio lineup with the release studio-mods jars, strays.py 0 frames, lineup GIF < 2,000,000 bytes + cards rebuilt, verify/preview --check 0 | B1, B2 | Sonnet | S | done (strays 0/120, lineup.gif 1,731,398 bytes, verify + preview --check 0; lead re-ran strays.py and viewed frames 1/61) |
 | RL1 | 2.0.1 version + release docs | mod_version 2.0.1, CHANGELOG dated, upload checklist for 2.0.1 (2.0.0 values kept as history), comparison header; build 495 green, jar version 2.0.1, preview --check 0, verify 0 | B3 | Sonnet | S | in progress |
-| RL2 | 2.0.1 in-game check script | v201check = V1 regression + bow/trident preview turntable shots + flat-item edge close-ups (gap fix AUTO), new files only, dry run 0, never launches the game | - | Sonnet | S | in progress |
-| RL3 | 2.0.1 in-game run | lead runs v201check on the isolated instance copy with the frozen release jar; all shots present, no stray dots or edge pixels, no new cracks, owner instance unchanged | RL1, RL2 | Lead | - | open |
-| RL4 | 2.0.1 merge + tag | dev pushed, main fast-forwarded to the release commit, tag v2.0.1 | RL3 | Lead | - | open |
+| RL2 | 2.0.1 in-game check script | v201check = V1 regression + bow/trident preview turntable shots + flat-item edge close-ups (gap fix AUTO), new files only, dry run 0, never launches the game | - | Sonnet | S | done after correction 1 (full turntable revolution); 94 shots / 428 steps, dry run 0 |
+| RL3 | 2.0.1 in-game run | lead runs v201check on the isolated instance copy with the frozen release jar; all shots present, no stray dots or edge pixels, no new cracks, owner instance unchanged | RL1, RL2 | Lead | - | done (jar b86b290e: 94/94 shots, 430 steps 0 failed, owner instance unchanged; lead viewed preview sheet + edge/regression shots) |
+| RL4 | 2.0.1 merge + tag | dev pushed, main fast-forwarded to the release commit, tag v2.0.1 | RL3 | Lead | - | in progress |
 | RL5 | 2.0.1 CurseForge upload | uploader with the 2.0.0 plan conventions (jar frozen, changelog section 2.0.1, display name = file name, fabric-api required, modmenu optional), remote dry run, upload | RL4 | Lead | - | open |
 
 Parallel: T2 (Opus) with T3 + T4 (Sonnet) after T1. T5 (Opus) with T6/T7 (Sonnet), files disjoint.
@@ -108,3 +108,4 @@ Session 15 (owner follow-up): + G2MB Sonnet S 1, L1 Opus L 2 -> Sonnet ~82.5, Op
 Session 16: + L1 wiring Opus S 1 -> Sonnet ~82.5, Opus ~34.5 (about 30 % Opus).
 Session 17 (stray dot, 2.0.1): Opus B1 S 1, Sonnet B1 docs S 1, Opus B2 S 1, Sonnet B3 S 1 -> Sonnet ~84.5, Opus ~36.5 (about 30 % Opus).
 Session 17 (2.0.1 release, owner go): + Sonnet RL1 S 1, RL2 S 1 -> Sonnet ~86.5, Opus ~36.5 (about 30 % Opus).
+Session 17: + Sonnet RL2 correction (in its S), RL6 checklist values S 0.5 -> Sonnet ~87, Opus ~36.5 (about 30 % Opus).

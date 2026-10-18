@@ -56,3 +56,4 @@
 - s16: armor.gif keeps faint ghost trails from lossy 800 (owner: no fix needed); recorded as known limitation.
 - s17: B1 into dev by pushing the merged branch as a fast-forward to origin/dev; the main checkout F:\Coding\Glintsmith is not touched, so its local dev must `git pull --ff-only` before new commits.
 - s17: B2 stays with the gap-fix session (Opus, has the experiment context); 2.0.1 stays unreleased, main untouched (owner).
+- s17: tag v2.0.1 on the final release-docs commit; the uploaded jar is the in-game-tested b86b290e built from 8529521 (later commits change only docs/.knowledge, the build is reproducible).
