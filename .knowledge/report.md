@@ -125,7 +125,17 @@ Model usage: Opus B1 S 1 + B2 S 1, Sonnet B1 docs S 1 + B3 S 1; project total ab
 Open for the owner:
 - The live CurseForge page still shows the 2.0.0 lineup.gif (attachment 2071/596); upload the new file and update the
   description link if wanted.
-- Release 2.0.1 when wanted (version bump, in-game check, merge to main, tag, upload).
 - Housekeeping the permission check would not let the lead do: remove the merged worktrees `F:\Coding\Glintsmith-g4`,
   `-o9`, `-studio`, `.claude\worktreesgent-ab21401f389c63083` (locked), `busy-wilson-9ce123`, `eloquent-wing-a06858`
   and their merged local branches (commands in the session's final message).
+
+### 2.0.1 release (same day, owner go)
+
+- Version 2.0.1 (8529521), CHANGELOG dated, upload checklist with SHA and in-game result (81c5daa).
+- In-game check v201check on the isolated instance copy (8192 x 4096 atlas, ImmediatelyFast): 94/94 shots, 430 steps,
+  0 failed; bow and trident turned a full revolution in the live preview without stray rings; held, dropped and framed
+  flat items without wrong edge pixels; 2.0.0 regression set as before; owner instance unchanged.
+- main = dev = 81c5daa, tag v2.0.1; CurseForge project 1751215 file 9238522 (`glintsmith-2.0.1.jar`, SHA-256
+  b86b290e..., Release, 1.21.1 / Fabric / Java 21 / Client, Fabric API required, Mod Menu optional).
+- Still open for the owner: upload the new `docs/curseforge/img/lineup.gif` to the page and relink attachment 2071/596.
+- Known, unchanged since 2.0.0: a held trident in the live preview shows its 3D held model partly below the panel.
