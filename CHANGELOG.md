@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.2 (Fabric 1.21.1) — 2026-10-18
 
 ### Fixed
 

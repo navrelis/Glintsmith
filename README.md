@@ -230,7 +230,7 @@ Needs Java 21. The Gradle wrapper downloads everything else.
 ./gradlew test           # unit tests only
 ```
 
-The mod jar is `build/libs/glintsmith-2.0.1.jar`. Stack: Fabric Loom, official Mojang mappings, Java 21. Sodium, Mod Menu and
+The mod jar is `build/libs/glintsmith-2.0.2.jar`. Stack: Fabric Loom, official Mojang mappings, Java 21. Sodium, Mod Menu and
 Iris are compile-only dependencies and are never bundled.
 
 | Package `navrelis.glintsmith` | Contents |
