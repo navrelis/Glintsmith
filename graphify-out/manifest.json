@@ -1044,39 +1044,39 @@
     "semantic_hash": ""
   },
   ".knowledge/decisions.md": {
-    "mtime": 1792317961.168696,
-    "seen": 1792318714.5024939,
-    "ast_hash": "08940e9d37758b074e81a831f1d013c8",
+    "mtime": 1792322317.0654924,
+    "seen": 1792322746.6566868,
+    "ast_hash": "215242780d9e1bc49d671b5ba64e7edc",
     "semantic_hash": ""
   },
   ".knowledge/log.md": {
-    "mtime": 1792318685.3977509,
-    "seen": 1792318714.5024939,
-    "ast_hash": "808f23ccdf3935edd3b25e4cc657d1cb",
+    "mtime": 1792322705.8301454,
+    "seen": 1792322746.6566868,
+    "ast_hash": "52bca4306f12a115cf44c93b6e90f47a",
     "semantic_hash": ""
   },
   ".knowledge/plan.md": {
-    "mtime": 1792318685.3977509,
-    "seen": 1792318714.5024939,
-    "ast_hash": "9a689ef665dd5c0277bee9a70be8270e",
+    "mtime": 1792322705.8086655,
+    "seen": 1792322746.6566868,
+    "ast_hash": "369900db61f04806713ee1d3cfb1e146",
     "semantic_hash": ""
   },
   ".knowledge/requirements.md": {
-    "mtime": 1792317961.168696,
-    "seen": 1792318714.5024939,
-    "ast_hash": "7cd28134c7ca52829cc40f148d03a859",
+    "mtime": 1792319227.395506,
+    "seen": 1792322746.6566868,
+    "ast_hash": "a3417d47f4cb58d7abb0d4f68de416ac",
     "semantic_hash": ""
   },
   "CHANGELOG.md": {
-    "mtime": 1792318384.2054992,
-    "seen": 1792318714.5024939,
-    "ast_hash": "6dca7335bd3b228cd0200e6076a1250e",
+    "mtime": 1792322115.4323158,
+    "seen": 1792322746.6566868,
+    "ast_hash": "5302c5badbf3e008b6860bf669b78b6c",
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1792318384.2054992,
-    "seen": 1792318714.5024939,
-    "ast_hash": "396c7645cd6dd10a829f76065714f934",
+    "mtime": 1792322115.5232303,
+    "seen": 1792322746.6566868,
+    "ast_hash": "1a8d7d1ca3d4548d7f9637e4957ca956",
     "semantic_hash": ""
   },
   "art/README.md": {
@@ -1092,9 +1092,9 @@
     "semantic_hash": ""
   },
   "docs/DESIGN.md": {
-    "mtime": 1792318384.2064993,
-    "seen": 1792318714.5024939,
-    "ast_hash": "6e915795c748c670334d8ad070cdf82a",
+    "mtime": 1792321227.2455,
+    "seen": 1792322746.6566868,
+    "ast_hash": "3a92d407190d25732cb322b1db040502",
     "semantic_hash": ""
   },
   "docs/curseforge/README.md": {
@@ -1104,21 +1104,21 @@
     "semantic_hash": ""
   },
   "docs/curseforge/description.md": {
-    "mtime": 1792310811.0525658,
-    "seen": 1792318714.5024939,
-    "ast_hash": "8c662685e2aa8f7cd5c4f85193cd3270",
+    "mtime": 1792322115.6182537,
+    "seen": 1792322746.6566868,
+    "ast_hash": "347db261528ba0f61fe3e354e8b61323",
     "semantic_hash": ""
   },
   "docs/curseforge/description_paste.md": {
-    "mtime": 1792318646.456969,
-    "seen": 1792318714.5024939,
-    "ast_hash": "8c662685e2aa8f7cd5c4f85193cd3270",
+    "mtime": 1792322115.7742023,
+    "seen": 1792322746.6566868,
+    "ast_hash": "347db261528ba0f61fe3e354e8b61323",
     "semantic_hash": ""
   },
   "docs/curseforge/preview.html": {
-    "mtime": 1792318646.461225,
-    "seen": 1792318714.5024939,
-    "ast_hash": "8ea345a5a7f0683e4a92fac6ca196e4b",
+    "mtime": 1792322115.7742023,
+    "seen": 1792322746.6566868,
+    "ast_hash": "9915c25f385fb2db2b7a2372c2634f87",
     "semantic_hash": ""
   },
   "docs/curseforge/summary.txt": {
@@ -1128,9 +1128,9 @@
     "semantic_hash": ""
   },
   "docs/curseforge/upload-checklist.md": {
-    "mtime": 1792310811.1541426,
-    "seen": 1792318714.5024939,
-    "ast_hash": "79e78ad483054e694a0ce5659b70efb1",
+    "mtime": 1792322610.4248285,
+    "seen": 1792322746.6566868,
+    "ast_hash": "4dfa35185b8f1064bfa93e8d621cc6e0",
     "semantic_hash": ""
   },
   "docs/curseforge/img/banner.png": {
@@ -1356,9 +1356,9 @@
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/preview/PreviewBounds.java": {
-    "mtime": 1792310811.228203,
-    "seen": 1792318714.5024939,
-    "ast_hash": "b8be08039a354a69bec91cc72d3a3116",
+    "mtime": 1792321213.9751942,
+    "seen": 1792322746.6566868,
+    "ast_hash": "d60854893eebf40ac5bab6b96a17150d",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/render/preview/PreviewPose.java": {
@@ -1566,15 +1566,15 @@
     "semantic_hash": ""
   },
   ".knowledge/report.md": {
-    "mtime": 1792317886.8812122,
-    "seen": 1792318714.5024939,
-    "ast_hash": "b2de6c44bab65187b24352a8c2988700",
+    "mtime": 1792320685.0704143,
+    "seen": 1792322746.6566868,
+    "ast_hash": "6f4aa59fdad06c31329fab1a2f805ead",
     "semantic_hash": ""
   },
   "docs/STUDIO.md": {
-    "mtime": 1792317886.8862054,
-    "seen": 1792318714.5024939,
-    "ast_hash": "7243ea63ab311e3598ccdf855c52575a",
+    "mtime": 1792322115.5352852,
+    "seen": 1792322746.6566868,
+    "ast_hash": "6a8e0b24b6cd2d54f3fd175b4d8f70ff",
     "semantic_hash": ""
   },
   "docs/curseforge/img/armor.gif": {
@@ -1605,6 +1605,24 @@
     "mtime": 1792317763.4635148,
     "seen": 1792318714.5024939,
     "ast_hash": "a08c836b21a07a547169b755f6c9fc8b",
+    "semantic_hash": ""
+  },
+  "src/test/java/navrelis/glintsmith/render/preview/PreviewBoundsTest.java": {
+    "mtime": 1792321214.04789,
+    "seen": 1792322746.6566868,
+    "ast_hash": "acb6a84fa91136a67877f55f4e73680e",
+    "semantic_hash": ""
+  },
+  "docs/VERSIONING.md": {
+    "mtime": 1792322460.0358994,
+    "seen": 1792322746.6566868,
+    "ast_hash": "9c8383b377395a4e094bc4e3b286ef09",
+    "semantic_hash": ""
+  },
+  "handoff-2026-10-18-51238096.md": {
+    "mtime": 1792320732.4080603,
+    "seen": 1792322746.6566868,
+    "ast_hash": "70643011691db8aefd303c749eb01697",
     "semantic_hash": ""
   }
 }

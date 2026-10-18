@@ -139,3 +139,38 @@ Open for the owner:
   b86b290e..., Release, 1.21.1 / Fabric / Java 21 / Client, Fabric API required, Mod Menu optional).
 - Still open for the owner: upload the new `docs/curseforge/img/lineup.gif` to the page and relink attachment 2071/596.
 - Known, unchanged since 2.0.0: a held trident in the live preview shows its 3D held model partly below the panel.
+
+## Session 18: lineup.gif on the page, trident preview fix, 2.0.2 release
+
+What was done (2026-10-18, owner go for each step):
+- **lineup.gif on CurseForge** (lead, Chrome, owner OK): new GIF uploaded as attachment 2071/810 (CDN 1,731,398 bytes =
+  repository file); description link 2071/596 -> 2071/810, saved and re-read after reload. 2071/596 stays in the
+  gallery, unlinked. Checklist row ticked (Sonnet, 268ee10).
+- **Held trident below the preview panel** (B4, Opus side session, 1fbcf99): `PreviewBounds.Recorder` handed out one
+  consumer for every render type, so an enchanted item's `VertexMultiConsumer.create(glint, main)` threw "Duplicate
+  delegates" and the preview fitted every enchanted item as the unit cube. Every `getBuffer` call now returns its own
+  recording view. `PreviewBounds.java`, new `PreviewBoundsTest` (red first). CHANGELOG and DESIGN updated. Lead read the
+  diff and the contact sheet.
+- **Versioning rule** (owner question): semver, recorded in decisions.md and `docs/VERSIONING.md` (Sonnet, 754d87d):
+  PATCH = fixes only, MINOR = new things that keep everything working, MAJOR = breaking change.
+- **2.0.2 release** (RL7): version bump and checklist by Sonnet (07fae66, c0f759d); clean build reproducible (jar
+  840c1d78, 499 tests green); `art/verify.py` and `preview.py --check` pass (lead). In-game tridentcheck on the isolated
+  instance copy with the frozen release jar: 18/18 shots, 80 steps, 0 failed, owner instance unchanged; lead viewed all
+  18 panel crops. main = dev, tag v2.0.2, CurseForge project 1751215 **file 9238814** (`glintsmith-2.0.2.jar`, same
+  conventions as 2.0.1: Release, 1.21.1 / Fabric / Java 21 / Client, Fabric API required, Mod Menu optional).
+- Graphify updated (code AST, 3323 nodes, 10010 edges); backup quarantined in the worktree build/quarantine/graphify-backup-s18.
+
+Known: one harmless Sodium WARN per launch that the preview's measuring buffer does not support optimized vertex
+writing. Enchanted items in the preview are now sized to their real shape (the bow looks a little larger than in 2.0.1).
+
+Manual test checklist (owner, optional): in your own game with 2.0.2, open /glintsmith holding an enchanted trident and
+turn the preview: the trident stays whole inside the panel; bow and sword previews look right.
+
+Model usage this session: Opus B4 S 1 (side session); Sonnet checklist tick S 1, version bump S 1, VERSIONING.md S 1
+(+1 correction), checklist SHA S 1. Project total stays about 30 % Opus. No precision overrides.
+
+Open for the owner:
+- The live description's comparison table header was not changed by this session (the repository's description.md says
+  2.0.2); change it on the page if wanted.
+- After archiving this session: `git -C "F:/Coding/Glintsmith" branch -d claude/eloquent-wing-a06858` and
+  `git -C "F:/Coding/Glintsmith" pull --ff-only` (main checkout dev).
