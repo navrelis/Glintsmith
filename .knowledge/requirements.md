@@ -50,3 +50,10 @@ Sources studied (reference only, clones live in the session scratchpad, never in
 - 2026-10-18 Owner: CurseForge project id 1751215.
 - 2026-10-18 Owner: outline thickness controllable per place; his current config (rainbow outline 8.5 px opacity 0.25, frost item glint with rainbow tint, armor glint layer off, fire entity/GUI) becomes the built-in default for now.
 - 2026-10-18 s14 (owner, before sleeping): lead works to the end without questions: test glint and everything in game himself (isolated instance copy, never the owner's instance), then upload v2.0.0 to CurseForge (project 1751215) when done. Do not contact the owner.
+
+## Owner answers (2026-10-18, 2.0.1 follow-up)
+- Merge the lineup stray-dot fix (B1) into dev and push dev.
+- Implement the gap-fix edge guard (B2) for 2.0.1.
+- After both: re-render the lineup, rebuild the lineup GIF and cards, commit to dev if 0 stray frames.
+- No 2.0.1 CurseForge release yet; main untouched.
+- Coordinate with all other Glintsmith sessions so nothing collides.

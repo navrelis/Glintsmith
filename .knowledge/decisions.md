@@ -54,3 +54,5 @@
 - s16: owner wants speed: G2MB picks settings directly (1-2 encodes per GIF, run in parallel), L1 renders all concepts in one scene, overview first, animated GIF only for the chosen concept.
 - s16: owner picked logo concept A (golden blade: gold sword, fire glint, violet outline, colour glow on cream). Wiring goes to the L1 Opus agent (has the compose context, faster than a fresh Sonnet handover; owner wants speed); cards.json edits wait until G2MB is done.
 - s16: armor.gif keeps faint ghost trails from lossy 800 (owner: no fix needed); recorded as known limitation.
+- s17: B1 into dev by pushing the merged branch as a fast-forward to origin/dev; the main checkout F:\Coding\Glintsmith is not touched, so its local dev must `git pull --ff-only` before new commits.
+- s17: B2 stays with the gap-fix session (Opus, has the experiment context); 2.0.1 stays unreleased, main untouched (owner).
