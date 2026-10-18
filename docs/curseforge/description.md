@@ -66,7 +66,7 @@ If an error happens in the outline, glint or gap fix code, that feature switches
 
 Checked on 2026-10-17 against the public pages and repositories of each project. Where a page does not say, the table says so; it does not mean the feature is missing.
 
-| | Glintsmith 2.0.0 | Custom Glow Enchantment Outline (mod) | Model Gap Fix (mod) | Rainbow Enchantment Glint (resource pack) | Enchantment Outlines (resource pack) |
+| | Glintsmith 2.0.1 | Custom Glow Enchantment Outline (mod) | Model Gap Fix (mod) | Rainbow Enchantment Glint (resource pack) | Enchantment Outlines (resource pack) |
 |---|---|---|---|---|---|
 | What it does | Outlines, glint, gap fix | Outline on enchanted held items and the Totem of Undying | Gap fix | Rainbow glint on enchanted items | Outline on enchanted tools, 3D bows and maces |
 | Which items | Every item of every mod; rules choose | Vanilla weapons, tools, shields and the totem by default; more items can be added by id, modded ones included | Block and item models | All enchanted items | Described as tools; the page does not mention modded items |

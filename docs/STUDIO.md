@@ -6,7 +6,7 @@ The glint, the outline and the gap fix in those frames are the real Glintsmith p
 the game uses. Nothing is imitated.
 
 It is a separate Gradle source set and a separate mod (`glintsmith_studio`). The released jar
-`build/libs/glintsmith-2.0.0.jar` is built from `sourceSets.main` only and contains no studio class or resource.
+`build/libs/glintsmith-2.0.1.jar` is built from `sourceSets.main` only and contains no studio class or resource.
 
 ## Running a scene
 

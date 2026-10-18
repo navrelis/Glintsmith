@@ -57,3 +57,4 @@ Sources studied (reference only, clones live in the session scratchpad, never in
 - After both: re-render the lineup, rebuild the lineup GIF and cards, commit to dev if 0 stray frames.
 - No 2.0.1 CurseForge release yet; main untouched.
 - Coordinate with all other Glintsmith sessions so nothing collides.
+- 2026-10-18 (later): owner: release 2.0.1 now: bump the version, in-game check, merge to main, tag, upload to CurseForge. Also: delete unneeded branches/worktrees (owner ran the cleanup commands himself).
