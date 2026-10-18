@@ -30,10 +30,8 @@ public record OutlineRuntimeSettings(
 	public static final OutlineRuntimeSettings DISABLED = new OutlineRuntimeSettings(false, false, false, false, false,
 		false, false, false, false, false, false, false, 0.0f, 0.0f);
 
-	/** Reference framebuffer height for {@code scaleWithResolution} in the world and the hand. */
+	/** Reference framebuffer height for {@code scaleWithResolution}: a thickness is in pixels at this height. */
 	public static final float REFERENCE_HEIGHT = 1080.0f;
-	/** Reference GUI scale for {@code scaleWithResolution} in the GUI. */
-	public static final double REFERENCE_GUI_SCALE = 2.0;
 
 	/**
 	 * Builds the snapshot. A missing config or outline section gives {@link #DISABLED}.
@@ -141,19 +139,36 @@ public record OutlineRuntimeSettings(
 	}
 
 	/**
-	 * The factor applied to the thickness of a look before it goes into the style table. The table then caps the
-	 * outline at {@link StyleTable#MAX_RADIUS} pixels.
+	 * The factor applied to the thickness of a look before it goes into the style table. It is the same for every
+	 * phase (world, first-person hand, GUI and the settings preview), because every phase composites onto the main
+	 * target in its pixels: one thickness then has one on-screen width everywhere.
+	 * <p>
+	 * With {@code scaleWithResolution} a thickness is in pixels at a framebuffer height of {@link #REFERENCE_HEIGHT}
+	 * ({@code framebufferHeight / 1080}); without it, in framebuffer pixels (1.0). The GUI scale plays no part on
+	 * purpose: world and hand outlines cannot follow it, so a GUI-only factor would make GUI outlines wider or
+	 * narrower than the same look in the world. The table then caps the outline at {@link StyleTable#MAX_RADIUS}
+	 * pixels.
 	 *
-	 * @param framebufferHeight height of the main render target in pixels
-	 * @param guiScale the window's GUI scale
+	 * @param framebufferHeight height of the main render target in pixels; 0 or less (minimised window) gives 1.0
 	 */
-	public float thicknessScale(OutlinePhase phase, int framebufferHeight, double guiScale) {
-		if (!scaleWithResolution) {
+	public float thicknessScale(int framebufferHeight) {
+		if (!scaleWithResolution || framebufferHeight <= 0) {
 			return 1.0f;
 		}
-		if (phase == OutlinePhase.GUI) {
-			return guiScale > 0.0 && Double.isFinite(guiScale) ? (float) (guiScale / REFERENCE_GUI_SCALE) : 1.0f;
-		}
-		return framebufferHeight > 0 ? framebufferHeight / REFERENCE_HEIGHT : 1.0f;
+		return framebufferHeight / REFERENCE_HEIGHT;
+	}
+
+	/**
+	 * How far the outline of a look reaches beyond the item's silhouette, in framebuffer pixels: the search radius the
+	 * style table gives it after scaling, quantising and capping, exactly as the composite sees it. For layout code
+	 * that must keep room for the outline (the settings preview).
+	 *
+	 * @param thickness the look's thickness, before {@link #thicknessScale}
+	 * @param softness the look's softness, 0..1
+	 * @param framebufferHeight height of the main render target in pixels
+	 * @return 1..{@link StyleTable#MAX_RADIUS}
+	 */
+	public int outlineReachPixels(float thickness, float softness, int framebufferHeight) {
+		return StyleTable.radiusOf(StyleTable.packParams(thickness * thicknessScale(framebufferHeight), softness));
 	}
 }

@@ -459,9 +459,8 @@ public final class OutlineSystem {
 			}
 			preview.discard();
 			open(preview);
-			Minecraft minecraft = Minecraft.getInstance();
-			preview.thicknessScale = previewSettings.thicknessScale(OutlinePhase.HAND,
-				minecraft.getMainRenderTarget().height, minecraft.getWindow().getGuiScale());
+			// Same factor as every other phase, but from the snapshot's scaleWithResolution.
+			preview.thicknessScale = previewSettings.thicknessScale(Minecraft.getInstance().getMainRenderTarget().height);
 			return true;
 		} catch (Throwable t) {
 			OutlineFailsafe.trip("outline preview begin", t);
@@ -685,9 +684,7 @@ public final class OutlineSystem {
 		if (phase.open) {
 			return;
 		}
-		Minecraft minecraft = Minecraft.getInstance();
-		phase.thicknessScale = settings.thicknessScale(phase.phase, minecraft.getMainRenderTarget().height,
-			minecraft.getWindow().getGuiScale());
+		phase.thicknessScale = settings.thicknessScale(Minecraft.getInstance().getMainRenderTarget().height);
 		phase.open = true;
 		if (openCount < OPEN.length) {
 			OPEN[openCount++] = phase;

@@ -180,18 +180,13 @@ class OutlineRuntimeSettingsTest {
 		GlintsmithConfig config = config();
 		config.outline.scaleWithResolution = true;
 		OutlineRuntimeSettings s = OutlineRuntimeSettings.from(config);
-		assertEquals(1.0f, s.thicknessScale(OutlinePhase.WORLD, 1080, 3.0));
-		assertEquals(2.0f, s.thicknessScale(OutlinePhase.WORLD, 2160, 3.0));
-		assertEquals(2.0f, s.thicknessScale(OutlinePhase.HAND, 2160, 3.0));
-		assertEquals(1.5f, s.thicknessScale(OutlinePhase.GUI, 2160, 3.0));
-		assertEquals(0.5f, s.thicknessScale(OutlinePhase.GUI, 2160, 1.0));
-		assertEquals(1.0f, s.thicknessScale(OutlinePhase.WORLD, 0, 3.0), "minimised window");
-		assertEquals(1.0f, s.thicknessScale(OutlinePhase.GUI, 1080, 0.0));
+		assertEquals(1.0f, s.thicknessScale(1080));
+		assertEquals(2.0f, s.thicknessScale(2160));
+		assertEquals(1.0f, s.thicknessScale(0), "minimised window");
 
 		config.outline.scaleWithResolution = false;
 		OutlineRuntimeSettings fixed = OutlineRuntimeSettings.from(config);
-		assertEquals(1.0f, fixed.thicknessScale(OutlinePhase.WORLD, 2160, 3.0));
-		assertEquals(1.0f, fixed.thicknessScale(OutlinePhase.GUI, 2160, 4.0));
+		assertEquals(1.0f, fixed.thicknessScale(2160));
 	}
 
 	@Test
@@ -199,7 +194,7 @@ class OutlineRuntimeSettingsTest {
 		GlintsmithConfig config = config();
 		config.outline.scaleWithResolution = true;
 		OutlineRuntimeSettings s = OutlineRuntimeSettings.from(config);
-		float scaled = 16.0f * s.thicknessScale(OutlinePhase.WORLD, 4320, 1.0); // 8K: x4
+		float scaled = 16.0f * s.thicknessScale(4320); // 8K: x4
 		StyleTable table = new StyleTable();
 		table.indexFor(0xFFFFFFFF, scaled, 1.0f);
 		assertTrue(table.maxRadius() <= 32);

@@ -4,7 +4,6 @@ import java.util.List;
 
 import navrelis.glintsmith.config.GlintsmithConfig;
 import navrelis.glintsmith.render.outline.OutlineFailsafe;
-import navrelis.glintsmith.render.outline.OutlinePhase;
 import navrelis.glintsmith.render.outline.OutlineRuntimeSettings;
 import navrelis.glintsmith.render.outline.OutlineSystem;
 import navrelis.glintsmith.render.preview.PreviewRenderer;
@@ -38,8 +37,6 @@ public final class PreviewSession {
 	private static final float MAX_PITCH = 60.0f;
 	private static final long MAX_STEP_MS = 100L;
 	private static final long RESUME_AFTER_MS = 1500L;
-	/** Largest outline radius in pixels the margin accounts for (the style table caps it at this). */
-	private static final float MAX_OUTLINE_PX = 32.0f;
 
 	/** Kept for the whole game session: the choice survives closing and reopening the screen. */
 	public static Source source = Source.HELD;
@@ -144,15 +141,15 @@ public final class PreviewSession {
 
 	/**
 	 * Free space the renderer keeps around the item for the outline, in GUI pixels:
-	 * {@code ceil(min(32, thickness * (1 + softness) * thicknessScale) / guiScale) + 2}, or 2 without an outline.
-	 * Call after {@link #notes}.
+	 * {@code ceil(reach / guiScale) + 2}, or 2 without an outline. {@code reach} is
+	 * {@link OutlineRuntimeSettings#outlineReachPixels}: the outline's extent in framebuffer pixels with the thickness
+	 * factor every phase uses, quantised and capped like the composite. Call after {@link #notes}.
 	 */
 	public float marginGui(int framebufferHeight, double guiScale) {
-		if (outlineLook == null || outlineSettings == null || !(guiScale > 0.0)) {
+		if (outlineLook == null || outlineSettings == null || !(guiScale > 0.0) || !Double.isFinite(guiScale)) {
 			return 2.0f;
 		}
-		float scale = outlineSettings.thicknessScale(OutlinePhase.HAND, framebufferHeight, guiScale);
-		float px = Math.min(MAX_OUTLINE_PX, outlineLook.thickness() * (1.0f + outlineLook.softness()) * scale);
-		return (float) Math.ceil(px / guiScale) + 2.0f;
+		int reach = outlineSettings.outlineReachPixels(outlineLook.thickness(), outlineLook.softness(), framebufferHeight);
+		return (float) Math.ceil(reach / guiScale) + 2.0f;
 	}
 }
