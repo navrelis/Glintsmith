@@ -1,7 +1,12 @@
 package navrelis.glintsmith.gui;
 
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
+import navrelis.glintsmith.config.GlintsmithConfig;
+import navrelis.glintsmith.gui.preview.PendingEdits;
+import navrelis.glintsmith.gui.preview.PreviewHost;
+import navrelis.glintsmith.gui.preview.PreviewSession;
 import navrelis.glintsmith.gui.widget.ColorStyleButton;
 import navrelis.glintsmith.gui.widget.ColorSwatch;
 import navrelis.glintsmith.gui.widget.FloatSlider;
@@ -16,23 +21,78 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Edits a {@link ColorStyle}: mode, colours, speed, saturation and brightness, with a live animated preview.
  * The edit works on a copy; {@code onDone} receives the result when the player presses Done.
  */
-public final class ColorStyleScreen extends ConfigSubScreen {
+public final class ColorStyleScreen extends ConfigSubScreen implements PreviewHost {
 	/** Seconds of colour history shown across the preview bar. */
 	private static final double PREVIEW_WINDOW = 4.0;
 	private static final int PICK_WIDTH = 128;
 
 	private final ColorStyle working;
 	private final Consumer<ColorStyle> onDone;
+	@Nullable
+	private final PreviewHost host;
+	/** Read and write the style this edit will replace, so the preview can show the edit before Done; may be null. */
+	@Nullable
+	private final Supplier<ColorStyle> rawGet;
+	@Nullable
+	private final Consumer<ColorStyle> rawSet;
 
 	public ColorStyleScreen(Screen parent, ColorStyle style, Consumer<ColorStyle> onDone) {
+		this(parent, style, onDone, null, null);
+	}
+
+	/**
+	 * @param rawGet reads the stored style that {@code onDone} replaces; null if the preview cannot show the edit
+	 * @param rawSet writes it
+	 */
+	public ColorStyleScreen(Screen parent, ColorStyle style, Consumer<ColorStyle> onDone,
+		@Nullable Supplier<ColorStyle> rawGet, @Nullable Consumer<ColorStyle> rawSet) {
 		super(parent, Ui.t("glintsmith.color.title"));
 		this.working = style.copy().sanitize();
 		this.onDone = onDone;
+		this.host = PreviewHost.of(parent);
+		this.rawGet = rawGet;
+		this.rawSet = rawSet;
+	}
+
+	// ---- preview ------------------------------------------------------------------------------------------
+
+	@Nullable
+	@Override
+	protected PreviewHost previewHost() {
+		return host == null ? null : this;
+	}
+
+	@Override
+	public PreviewSession previewSession() {
+		if (host == null) {
+			throw new IllegalStateException("no preview host");
+		}
+		return host.previewSession();
+	}
+
+	@Override
+	public void withPendingEdits(Consumer<GlintsmithConfig> action) {
+		if (host == null) {
+			return;
+		}
+		if (rawGet == null || rawSet == null) {
+			host.withPendingEdits(action);
+		} else {
+			host.withPendingEdits(cfg -> PendingEdits.withValue(rawGet, rawSet, working, () -> action.accept(cfg)));
+		}
+	}
+
+	@Nullable
+	@Override
+	public Component previewNote(ItemStack shown) {
+		return host == null ? null : host.previewNote(shown);
 	}
 
 	@Override
@@ -105,7 +165,8 @@ public final class ColorStyleScreen extends ConfigSubScreen {
 
 	private void openPicker(int index) {
 		int argb = Ui.parseOrGray(working.colors.get(index));
-		minecraft.setScreen(new ColorPickerScreen(this, argb, picked -> working.colors.set(index, Colors.toHex(picked))));
+		minecraft.setScreen(new ColorPickerScreen(this, argb, picked -> working.colors.set(index, Colors.toHex(picked)),
+			() -> working.colors.get(index), hex -> working.colors.set(index, hex)));
 	}
 
 	@Override

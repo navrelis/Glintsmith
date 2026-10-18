@@ -1,15 +1,21 @@
 package navrelis.glintsmith.gui;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import navrelis.glintsmith.config.ConfigManager;
 import navrelis.glintsmith.config.GlintsmithConfig;
+import navrelis.glintsmith.gui.preview.PreviewHost;
+import navrelis.glintsmith.gui.preview.PreviewLayout;
+import navrelis.glintsmith.gui.preview.PreviewPanel;
+import navrelis.glintsmith.gui.preview.PreviewSession;
 import navrelis.glintsmith.gui.tab.ConfigTab;
 import navrelis.glintsmith.gui.tab.EnchantmentColorsTab;
 import navrelis.glintsmith.gui.tab.GlintTab;
 import navrelis.glintsmith.gui.tab.ModelFixTab;
 import navrelis.glintsmith.gui.tab.OutlineTab;
 import navrelis.glintsmith.gui.tab.RulesTab;
+import navrelis.glintsmith.render.preview.PreviewRenderer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
@@ -32,7 +38,7 @@ import net.minecraft.network.chat.Component;
  * changed. The widgets of the tabs read and write that copy only, so nothing is lost when the window is resized
  * or a sub screen (colour picker, rule editor) is opened.
  */
-public final class GlintsmithScreen extends Screen {
+public final class GlintsmithScreen extends Screen implements PreviewHost {
 	private static final SystemToast.SystemToastId SAVE_FAILED = new SystemToast.SystemToastId(10000L);
 	private static final int FOOTER_HEIGHT = 56;
 	private static final int BUTTON_WIDTH = 104;
@@ -41,7 +47,9 @@ public final class GlintsmithScreen extends Screen {
 	private final Screen parent;
 	private final GlintsmithConfig working;
 	private final String baseline;
+	private final PreviewSession previewSession = new PreviewSession();
 	private final TabManager tabManager = new TabManager(this::addRenderableWidget, this::removeWidget);
+	private PreviewPanel previewPanel;
 	private TabNavigationBar tabBar;
 	private List<ConfigTab> tabs = List.of();
 	private int selectedTab;
@@ -83,6 +91,9 @@ public final class GlintsmithScreen extends Screen {
 		openTexturesButton = addRenderableWidget(Button.builder(Ui.t("glintsmith.button.open_textures"),
 			button -> Util.getPlatform().openPath(ConfigManager.instance().textureDir()))
 			.tooltip(Ui.tip("glintsmith.button.open_textures")).build());
+		// Not renderable: drawn by render() after the tab list, whose background would cover it. It is added before
+		// the tab widgets (added by selectTab below) so it is asked about clicks first.
+		previewPanel = addWidget(new PreviewPanel(this));
 
 		for (ConfigTab tab : tabs) {
 			tab.rebuild();
@@ -105,10 +116,42 @@ public final class GlintsmithScreen extends Screen {
 		headerHeight = tabBar.getRectangle().bottom();
 		tabManager.setTabArea(new ScreenRectangle(0, headerHeight, width, height - FOOTER_HEIGHT - headerHeight));
 		layoutFooter();
+		layoutPreview();
+	}
+
+	private int buttonWidth() {
+		return Math.min(BUTTON_WIDTH, (width - 24) / 3);
+	}
+
+	private int fileWidth() {
+		return Math.min(FILE_BUTTON_WIDTH, (width - 20) / 2);
+	}
+
+	/** The preview goes right of the options; if that does not fit, left of the footer buttons; else it is hidden. */
+	private void layoutPreview() {
+		PreviewLayout.Layout layout = PreviewLayout.side(width, headerHeight, height - FOOTER_HEIGHT);
+		if (layout.mode() == PreviewLayout.Mode.HIDDEN) {
+			int widestRow = Math.max(3 * buttonWidth() + 2 * Ui.GAP, 2 * fileWidth() + Ui.GAP);
+			layout = PreviewLayout.footer(width, height, FOOTER_HEIGHT, widestRow);
+		}
+		if (previewPanel != null) {
+			previewPanel.setLayout(layout);
+		}
+	}
+
+	@Override
+	public PreviewSession previewSession() {
+		return previewSession;
+	}
+
+	/** The working copy is the root of the preview chain: nothing to write in, the edits are already there. */
+	@Override
+	public void withPendingEdits(Consumer<GlintsmithConfig> action) {
+		action.accept(working);
 	}
 
 	private void layoutFooter() {
-		int buttonWidth = Math.min(BUTTON_WIDTH, (width - 24) / 3);
+		int buttonWidth = buttonWidth();
 		int rowWidth = 3 * buttonWidth + 2 * Ui.GAP;
 		int x = (width - rowWidth) / 2;
 		int top = height - FOOTER_HEIGHT + 6;
@@ -116,7 +159,7 @@ public final class GlintsmithScreen extends Screen {
 		place(cancelButton, x + buttonWidth + Ui.GAP, top, buttonWidth);
 		place(resetButton, x + 2 * (buttonWidth + Ui.GAP), top, buttonWidth);
 
-		int fileWidth = Math.min(FILE_BUTTON_WIDTH, (width - 20) / 2);
+		int fileWidth = fileWidth();
 		int fileRow = 2 * fileWidth + Ui.GAP;
 		int fileX = (width - fileRow) / 2;
 		int fileTop = top + Ui.HEIGHT + Ui.GAP;
@@ -142,6 +185,7 @@ public final class GlintsmithScreen extends Screen {
 				Component.literal(error == null ? "?" : error).withStyle(ChatFormatting.RED));
 			minecraft.getToasts().addToast(toast);
 		}
+		PreviewRenderer.clearCache();
 		minecraft.setScreen(parent);
 	}
 
@@ -151,10 +195,16 @@ public final class GlintsmithScreen extends Screen {
 
 	private void requestCancel() {
 		if (!hasChanges()) {
+			PreviewRenderer.clearCache();
 			minecraft.setScreen(parent);
 			return;
 		}
-		minecraft.setScreen(new ConfirmScreen(discard -> minecraft.setScreen(discard ? parent : this),
+		minecraft.setScreen(new ConfirmScreen(discard -> {
+			if (discard) {
+				PreviewRenderer.clearCache();
+			}
+			minecraft.setScreen(discard ? parent : this);
+		},
 			Ui.t("glintsmith.confirm.discard.title"), Ui.t("glintsmith.confirm.discard.message"),
 			Ui.t("glintsmith.confirm.discard.yes"), Component.translatable("gui.back")));
 	}
@@ -201,6 +251,9 @@ public final class GlintsmithScreen extends Screen {
 			selectedTab = Math.max(0, tabs.indexOf(current));
 		}
 		super.render(graphics, mouseX, mouseY, partialTick);
+		if (previewPanel != null) {
+			previewPanel.render(graphics, mouseX, mouseY, partialTick);
+		}
 	}
 
 	@Override

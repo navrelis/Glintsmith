@@ -81,13 +81,24 @@ public final class SettingRows {
 
 	/** A full width colour style button that opens the style editor. */
 	public static ColorStyleButton styleButton(int width, String key, Supplier<ColorStyle> get, Consumer<ColorStyle> set) {
+		return styleButton(width, key, get, get, set);
+	}
+
+	/**
+	 * A full width colour style button that opens the style editor.
+	 *
+	 * @param shown the style the button and the editor start from (may be an inherited stand-in)
+	 * @param raw the style actually stored, which {@code set} replaces; the preview swaps the edit in through it
+	 */
+	public static ColorStyleButton styleButton(int width, String key, Supplier<ColorStyle> shown, Supplier<ColorStyle> raw,
+		Consumer<ColorStyle> set) {
 		ColorStyleButton[] self = new ColorStyleButton[1];
-		self[0] = new ColorStyleButton(width, Ui.t(key), get, () -> {
+		self[0] = new ColorStyleButton(width, Ui.t(key), shown, () -> {
 			Minecraft minecraft = Minecraft.getInstance();
-			minecraft.setScreen(new ColorStyleScreen(minecraft.screen, get.get().copy(), result -> {
+			minecraft.setScreen(new ColorStyleScreen(minecraft.screen, shown.get().copy(), result -> {
 				set.accept(result);
 				self[0].refresh();
-			}));
+			}, raw, set));
 		});
 		self[0].setTooltip(Ui.tip(key));
 		return self[0];
@@ -180,7 +191,7 @@ public final class SettingRows {
 		ColorStyle shownWhenInherited, Consumer<ColorStyle> setter) {
 		boolean custom = get.get() != null;
 		ColorStyleButton button = styleButton(Ui.WIDTH - INHERIT_WIDTH - Ui.GAP, key,
-			() -> get.get() != null ? get.get() : shownWhenInherited, setter);
+			() -> get.get() != null ? get.get() : shownWhenInherited, get, setter);
 		button.active = custom;
 		CycleButton<Boolean> toggle = Ui.inheritToggle(INHERIT_WIDTH, custom, nowCustom -> {
 			button.active = nowCustom;

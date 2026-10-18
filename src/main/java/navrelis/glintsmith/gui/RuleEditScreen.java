@@ -6,6 +6,9 @@ import java.util.function.Consumer;
 import com.google.gson.Gson;
 import navrelis.glintsmith.config.ConfigManager;
 import navrelis.glintsmith.config.GlintsmithConfig;
+import navrelis.glintsmith.gui.preview.PendingEdits;
+import navrelis.glintsmith.gui.preview.PreviewHost;
+import navrelis.glintsmith.gui.preview.PreviewSession;
 import navrelis.glintsmith.gui.widget.OptionList.LabeledRow;
 import navrelis.glintsmith.gui.widget.PatternBox;
 import navrelis.glintsmith.style.ColorStyle;
@@ -14,23 +17,30 @@ import navrelis.glintsmith.style.GlintSettings;
 import navrelis.glintsmith.style.OutlineSettings;
 import navrelis.glintsmith.style.OutlineTarget;
 import navrelis.glintsmith.style.Rule;
+import navrelis.glintsmith.style.RuleEngine;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Edits one {@link Rule}: name, match conditions and the outline / glint overrides. Works on a copy; the caller's
  * {@code onDone} receives the edited rule when the player presses Done.
  */
-public final class RuleEditScreen extends ConfigSubScreen {
+public final class RuleEditScreen extends ConfigSubScreen implements PreviewHost {
 	private static final Gson GSON = new Gson();
 	/** The targets a rule can pick; {@code OTHER} is only reachable by leaving the list empty. */
 	private static final List<OutlineTarget> TARGETS = List.of(OutlineTarget.FIRST_PERSON, OutlineTarget.THIRD_PERSON,
 		OutlineTarget.ARMOR, OutlineTarget.DROPPED, OutlineTarget.ITEM_FRAME, OutlineTarget.GUI);
 
 	private final Rule working;
+	/** The rule as the caller handed it over: the one in the list that Done replaces, or a new rule not in it yet. */
+	private final Rule original;
+	@Nullable
+	private final PreviewHost host;
 	private final String baseline;
 	private final Consumer<Rule> onDone;
 	/** Overrides switched off again, kept so switching back on restores them. */
@@ -39,6 +49,8 @@ public final class RuleEditScreen extends ConfigSubScreen {
 
 	public RuleEditScreen(Screen parent, Rule rule, Consumer<Rule> onDone) {
 		super(parent, Ui.t("glintsmith.rule.title"));
+		this.original = rule;
+		this.host = PreviewHost.of(parent);
 		this.working = rule.copy().sanitize();
 		this.baseline = snapshot(working);
 		this.onDone = onDone;
@@ -46,6 +58,42 @@ public final class RuleEditScreen extends ConfigSubScreen {
 
 	private static String snapshot(Rule rule) {
 		return GSON.toJson(rule.copy().sanitize());
+	}
+
+	// ---- preview ------------------------------------------------------------------------------------------
+
+	@Nullable
+	@Override
+	protected PreviewHost previewHost() {
+		return host == null ? null : this;
+	}
+
+	@Override
+	public PreviewSession previewSession() {
+		if (host == null) {
+			throw new IllegalStateException("no preview host");
+		}
+		return host.previewSession();
+	}
+
+	/** The rule being edited stands in for its original (or is added) in the config the preview sees. */
+	@Override
+	public void withPendingEdits(Consumer<GlintsmithConfig> action) {
+		if (host != null) {
+			host.withPendingEdits(cfg -> PendingEdits.withRule(cfg, original, working, () -> action.accept(cfg)));
+		}
+	}
+
+	@Nullable
+	@Override
+	public Component previewNote(ItemStack shown) {
+		if (!working.targets.isEmpty() && !working.targets.contains(OutlineTarget.FIRST_PERSON)) {
+			return Ui.t("glintsmith.preview.note.rule_not_first_person");
+		}
+		if (!working.copy().sanitize().matches(RuleEngine.factsOf(shown), OutlineTarget.FIRST_PERSON)) {
+			return Ui.t("glintsmith.preview.note.rule_no_match");
+		}
+		return null;
 	}
 
 	@Override

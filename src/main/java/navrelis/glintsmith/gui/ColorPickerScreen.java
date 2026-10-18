@@ -1,7 +1,15 @@
 package navrelis.glintsmith.gui;
 
+import java.util.function.Consumer;
 import java.util.function.IntConsumer;
+import java.util.function.Supplier;
 
+import navrelis.glintsmith.config.GlintsmithConfig;
+import navrelis.glintsmith.gui.preview.PendingEdits;
+import navrelis.glintsmith.gui.preview.PreviewHost;
+import navrelis.glintsmith.gui.preview.PreviewLayout;
+import navrelis.glintsmith.gui.preview.PreviewPanel;
+import navrelis.glintsmith.gui.preview.PreviewSession;
 import navrelis.glintsmith.gui.widget.ColorSwatch;
 import navrelis.glintsmith.gui.widget.GradientSlider;
 import navrelis.glintsmith.gui.widget.HexBox;
@@ -12,12 +20,14 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Picks one colour with hue, saturation and brightness sliders, a hex box and a row of presets.
  * The colour lives in the fields of this screen, so resizing the window keeps it.
  */
-public final class ColorPickerScreen extends Screen {
+public final class ColorPickerScreen extends Screen implements PreviewHost {
 	private static final int[] PRESETS = {
 		0xFFD088FC, 0xFFFFF3A5, 0xFF55FFFF, 0xFFFF5555, 0xFF55FF55, 0xFFFFAA00,
 		0xFFFFFFFF, 0xFFAA00AA, 0xFF5555FF, 0xFFFF55FF, 0xFF00AAAA, 0xFFFFD700
@@ -28,6 +38,13 @@ public final class ColorPickerScreen extends Screen {
 	private final Screen parent;
 	private final int initial;
 	private final IntConsumer onDone;
+	@Nullable
+	private final PreviewHost host;
+	/** Read and write the stored colour that {@code onDone} replaces, so the preview can show the pick; may be null. */
+	@Nullable
+	private final Supplier<String> rawGet;
+	@Nullable
+	private final Consumer<String> rawSet;
 	private float hue;
 	private float saturation;
 	private float value;
@@ -41,11 +58,52 @@ public final class ColorPickerScreen extends Screen {
 	private int previewY;
 
 	public ColorPickerScreen(Screen parent, int initialArgb, IntConsumer onDone) {
+		this(parent, initialArgb, onDone, null, null);
+	}
+
+	/**
+	 * @param rawGet reads the stored hex colour that {@code onDone} replaces; null if the preview cannot show the pick
+	 * @param rawSet writes it
+	 */
+	public ColorPickerScreen(Screen parent, int initialArgb, IntConsumer onDone, @Nullable Supplier<String> rawGet,
+		@Nullable Consumer<String> rawSet) {
 		super(Ui.t("glintsmith.picker.title"));
 		this.parent = parent;
 		this.initial = initialArgb;
 		this.onDone = onDone;
+		this.host = PreviewHost.of(parent);
+		this.rawGet = rawGet;
+		this.rawSet = rawSet;
 		setFromArgb(initialArgb);
+	}
+
+	// ---- preview ------------------------------------------------------------------------------------------
+
+	@Override
+	public PreviewSession previewSession() {
+		if (host == null) {
+			throw new IllegalStateException("no preview host");
+		}
+		return host.previewSession();
+	}
+
+	@Override
+	public void withPendingEdits(Consumer<GlintsmithConfig> action) {
+		if (host == null) {
+			return;
+		}
+		if (rawGet == null || rawSet == null) {
+			host.withPendingEdits(action);
+		} else {
+			host.withPendingEdits(cfg -> PendingEdits.withValue(rawGet, rawSet, Colors.toHex(currentArgb()),
+				() -> action.accept(cfg)));
+		}
+	}
+
+	@Nullable
+	@Override
+	public Component previewNote(ItemStack shown) {
+		return host == null ? null : host.previewNote(shown);
 	}
 
 	private void setFromArgb(int argb) {
@@ -62,6 +120,10 @@ public final class ColorPickerScreen extends Screen {
 
 	@Override
 	protected void init() {
+		if (host != null) {
+			PreviewPanel panel = addRenderableWidget(new PreviewPanel(this));
+			panel.setLayout(PreviewLayout.side(width, 6, height - 33));
+		}
 		int left = width / 2 - 155;
 		int blockHeight = 16 + PREVIEW_HEIGHT + 6 + 3 * 24 + 24 + 20;
 		titleY = Math.max(6, (height - 33 - blockHeight) / 2);

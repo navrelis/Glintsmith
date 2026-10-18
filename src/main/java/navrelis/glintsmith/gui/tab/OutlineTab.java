@@ -95,7 +95,7 @@ public final class OutlineTab extends ConfigTab {
 		Runnable open = () -> minecraft.setScreen(new ColorPickerScreen(minecraft.screen, Ui.parseOrGray(alert.color), picked -> {
 			alert.color = Colors.toHex(picked);
 			hex.setValueSilently(alert.color);
-		}));
+		}, () -> alert.color, s -> alert.color = s));
 		ColorSwatch swatch = new ColorSwatch(Ui.HEIGHT, Ui.t("glintsmith.outline.durability.color"),
 			() -> Ui.parseOrGray(alert.color), open);
 		swatch.setTooltip(Ui.tip("glintsmith.outline.durability.color"));

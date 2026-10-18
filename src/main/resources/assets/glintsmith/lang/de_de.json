@@ -299,5 +299,23 @@
 	"glintsmith.picker.hex": "Hex-Farbe",
 	"glintsmith.picker.hex.tooltip": "Hex-Farbe: #RRGGBB. Änderungen hier aktualisieren die Regler.",
 	"glintsmith.picker.revert": "Zurücksetzen",
-	"glintsmith.picker.revert.tooltip": "Zurück zur Farbe, mit der du angefangen hast."
+	"glintsmith.picker.revert.tooltip": "Zurück zur Farbe, mit der du angefangen hast.",
+
+	"glintsmith.preview": "Vorschau",
+	"glintsmith.preview.tooltip": "So sieht der Gegenstand mit den Einstellungen dieses Bildschirms in deiner Hand aus, noch bevor du speicherst. Ziehen zum Drehen, Rechtsklick zum Zurücksetzen.",
+	"glintsmith.preview.narration": "Vorschau von %s in der Ego-Perspektive",
+	"glintsmith.preview.source.held": "Gegenstand in der Hand",
+	"glintsmith.preview.source.sample": "Beispielschwert",
+	"glintsmith.preview.source.tooltip": "Klicken, um zwischen dem Gegenstand in deiner Haupthand und einem verzauberten Netheritschwert zu wechseln.",
+	"glintsmith.preview.note.unavailable": "Die Vorschau ist nicht verfügbar (siehe Log)",
+	"glintsmith.preview.note.outlines_off": "Umrisse sind aus",
+	"glintsmith.preview.note.first_person_off": "Umrisse in der Ego-Perspektive sind aus",
+	"glintsmith.preview.note.no_outline": "Kein Umriss für diesen Gegenstand",
+	"glintsmith.preview.note.map": "Karten in der Hand haben keinen Umriss",
+	"glintsmith.preview.note.shader_hand_off": "Shaderpack: kein Umriss in der Hand",
+	"glintsmith.preview.note.shader_glint": "Shaderpack: in der Hand bleibt der Vanilla-Glanz",
+	"glintsmith.preview.note.no_world": "Keine Welt geladen: Schwert ohne Verzauberungen",
+	"glintsmith.preview.note.empty_hand": "Deine Hand ist leer: Beispielschwert wird gezeigt",
+	"glintsmith.preview.note.rule_not_first_person": "Diese Regel gilt nicht in der Ego-Perspektive",
+	"glintsmith.preview.note.rule_no_match": "Diese Regel passt nicht auf den gezeigten Gegenstand"
 }

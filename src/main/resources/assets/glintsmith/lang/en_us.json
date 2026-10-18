@@ -299,5 +299,23 @@
 	"glintsmith.picker.hex": "Hex color",
 	"glintsmith.picker.hex.tooltip": "Hex color: #RRGGBB. Changes here update the sliders.",
 	"glintsmith.picker.revert": "Revert",
-	"glintsmith.picker.revert.tooltip": "Go back to the color you started with."
+	"glintsmith.picker.revert.tooltip": "Go back to the color you started with.",
+
+	"glintsmith.preview": "Preview",
+	"glintsmith.preview.tooltip": "How this item looks in your hand with the settings on this screen, before you save. Drag to turn it, right click to reset.",
+	"glintsmith.preview.narration": "Preview of %s in first person",
+	"glintsmith.preview.source.held": "Held item",
+	"glintsmith.preview.source.sample": "Sample sword",
+	"glintsmith.preview.source.tooltip": "Click to switch between the item in your main hand and an enchanted netherite sword.",
+	"glintsmith.preview.note.unavailable": "The preview is not available (see the log)",
+	"glintsmith.preview.note.outlines_off": "Outlines are off",
+	"glintsmith.preview.note.first_person_off": "First-person outlines are off",
+	"glintsmith.preview.note.no_outline": "No outline for this item",
+	"glintsmith.preview.note.map": "Maps in your hand have no outline",
+	"glintsmith.preview.note.shader_hand_off": "Shader pack: no outline in your hand",
+	"glintsmith.preview.note.shader_glint": "Shader pack: your hand keeps the vanilla glint",
+	"glintsmith.preview.note.no_world": "No world loaded: sword without enchantments",
+	"glintsmith.preview.note.empty_hand": "Your hand is empty: showing the sample sword",
+	"glintsmith.preview.note.rule_not_first_person": "This rule does not apply in first person",
+	"glintsmith.preview.note.rule_no_match": "This rule does not match the previewed item"
 }
