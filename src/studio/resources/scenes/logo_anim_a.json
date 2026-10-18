@@ -1,0 +1,45 @@
+{
+	"scene": "logo_anim_a",
+	"type": "turntable",
+	"width": 256,
+	"height": 256,
+	"supersample": 4,
+	"fps": 20,
+	"frames_per_look": 165,
+	"turns_per_look": 0,
+	"time_offset": 0.0,
+	"camera": {
+		"projection": "orthographic",
+		"pitch": 8,
+		"distance": 4,
+		"view_height": 1.16
+	},
+	"lights": {
+		"key": [-0.45, 0.75, 0.6],
+		"fill": [0.65, 0.2, 0.45]
+	},
+	"subjects": [
+		{
+			"type": "item",
+			"item": {
+				"item": "minecraft:golden_sword",
+				"enchantments": { "minecraft:sharpness": 5, "minecraft:fire_aspect": 2 }
+			},
+			"phase": 20,
+			"spin": false
+		}
+	],
+	"sequence": ["gold_fire_flow"],
+	"looks": [
+		{
+			"id": "gold_fire_flow",
+			"caption": "Fire glint (speed 10) + violet / magenta / blue gradient outline",
+			"outline": {
+				"color": { "mode": "gradient", "colors": ["#9B4DFF", "#FF4FD8", "#4B7BFF"], "speed": 0.5454545 },
+				"thickness": 4
+			},
+			"glint": { "texture": "preset:fire", "scale": 0.12, "speed": 10.0 },
+			"gap_fix": { "enabled": true, "mode": "CUSTOM", "uvShrinkMultiplier": 1.0, "sideExpansion": 0.005, "sideIndent": 0.0001, "preciseSpans": false }
+		}
+	]
+}
