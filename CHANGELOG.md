@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.0.1 (Fabric 1.21.1) — Unreleased
+
+### Fixed
+
+- Outlines no longer show a stray dot (a ring around an empty pixel) next to flat items that are turned away from the
+  camera, for example in the live preview of the settings screen. The GUI and preview outline mask now culls back faces
+  like the item itself.
+
+### Known issues
+
+- With the model gap fix on AUTO (Windows and Linux) a single pixel at the outer edge of a flat item can take the colour
+  of the neighbouring sprite of the block atlas and then gets its own outline ring. Gap fix off or a UV shrink
+  multiplier of 1.0 avoids it, at the price of some of the hairline cracks the gap fix closes.
+
 ## 2.0.0 (Fabric 1.21.1) — 2026-10-18
 
 ### Added

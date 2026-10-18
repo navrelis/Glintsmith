@@ -306,7 +306,7 @@ type is maskable only if all of these hold:
   If the format has UV0 but the texture is unknown (a custom lambda shard), the type is **not** masked,
   because a quad-shaped outline would look wrong.
 
-Each maskable source type owns its mask types: one depth-tested and one flat (GUI). They are created
+Each maskable source type owns its mask types: one depth-tested and one flat (GUI and PREVIEW). They are created
 lazily and never shared with another source type, even for the same texture, so two source buffers
 used at the same time (for example through a `VertexMultiConsumer`) cannot interleave their vertices
 in one mask buffer. A mask type is built like this:
@@ -317,7 +317,7 @@ RenderType.create("glintsmith_outline_mask", DefaultVertexFormat.POSITION_TEX_CO
     .setShaderState(new RenderStateShard.ShaderStateShard(OutlineShaders::mask))
     .setTextureState(textureShard)    // EmptyTextureStateShard: binds the texture, leaves its filter alone
     .setTransparencyState(RenderStateShard.NO_TRANSPARENCY)
-    .setCullState(depth ? sourceCull : RenderStateShard.NO_CULL)   // sourceCull: the source's cull state, NO_CULL if unreadable
+    .setCullState(sourceCull)         // the source's cull state, NO_CULL if unreadable (both types, since 2.0.1)
     .setDepthTestState(depth ? RenderStateShard.LEQUAL_DEPTH_TEST : RenderStateShard.NO_DEPTH_TEST)
     .setLayeringState(depth ? sourceLayering : RenderStateShard.NO_LAYERING)
     .setWriteMaskState(depth ? RenderStateShard.COLOR_DEPTH_WRITE : RenderStateShard.COLOR_WRITE)
@@ -333,16 +333,27 @@ RenderType.create("glintsmith_outline_mask", DefaultVertexFormat.POSITION_TEX_CO
   types), so that its depth equals the depth of the item's main draw. There is no polygon offset: the
   mask is not meant to pass against the scene.
 
-  The depth-tested item mask and the first-person occluder repeat the source render type's face culling,
-  as they repeat its layering. Generated item models contain one-sided thin geometry (back quad, inner and
-  merged side quads); drawn double-sided into the mask, its back-facing slivers became isolated seed
-  pixels and stray 1-px rings. The flat GUI mask stays double-sided (in orthographic GUI space back faces
-  only fill pinholes inside the icon). If the cull state cannot be read, the masks fall back to
-  double-sided drawing (`NO_CULL`). The cull state is read through `CompositeStateAccessor`
+  The depth-tested item mask, the flat mask and the first-person occluder repeat the source render type's
+  face culling, as the depth-tested mask and the occluder repeat its layering. Generated item models contain
+  one-sided thin geometry (back quad, inner and merged side quads); drawn double-sided into the mask, its
+  back-facing slivers became isolated seed pixels and stray 1-px rings. If the cull state cannot be read,
+  the masks fall back to double-sided drawing (`NO_CULL`). The cull state is read through `CompositeStateAccessor`
   (`outlineCullState`) by `MaskTypes.cullOf`. Verified in game (T24, Iris 1.8.14-beta.1 installed,
   shaders off and on): no stray 1-px rings around GUI items in the inventory captures, and the dashed
   line inside the GUI sword under the Iris capture is gone.
-* **Flat type** (GUI). `NO_DEPTH_TEST`, no layering, `COLOR_WRITE`, `NO_CULL` (double-sided).
+* **Flat type** (GUI and PREVIEW). `NO_DEPTH_TEST`, no layering, `COLOR_WRITE`, the source's cull state
+  (`NO_CULL` only if it cannot be read).
+
+  Until 2.0.0 the flat type was always double-sided (`NO_CULL`), on the reasoning that in orthographic GUI space
+  back faces only fill pinholes inside the icon. That holds only while an item faces the camera head-on. On a
+  turntable (the live preview of 2.0.0, the dev studio scenes) the back quad of a generated (flat) item model
+  sticks out a few pixels past the front quad. Pixels exactly on its edge, where u or v equals the sprite
+  boundary, sample the neighbouring sprite of the block atlas, because the gap fix's AUTO mode on Windows and Linux
+  sets the UV shrink to 0 (section 11). When that texel is opaque, the double-sided mask got a pixel that the colour
+  pass, which culls back faces, did not draw, and the outline drew a full ring around it: the stray dot next to the
+  bow in the lineup GIF of 2.0.0. 2.0.1 gives the flat type the source's cull state, like the other two. Measured
+  in the studio lineup scene; head-on GUI items in the inventory are unchanged, because front and back quad
+  cover the same pixels there.
 * The mask vertex shader uses the exact vanilla expression `ProjMat * ModelViewMat * vec4(Position, 1.0)`,
   the same invariance that vanilla glint relies on for its EQUAL depth test. The seed rule in 3.3
   depends on it.
@@ -2066,6 +2077,10 @@ values act on it: the UV shrink multiplier on the block atlas, the side expansio
 
 * The CUSTOM defaults mirror AUTO on Windows and Linux.
 * macOS keeps vanilla's UV shrink and a larger indent, because its drivers bleed without the shrink.
+* The trade-off of UV shrink 0 on the other platforms: pixels on the front quad's outer edge can sample the
+  neighbouring sprite of the atlas, which leaves a single wrongly coloured pixel that then gets its own outline ring.
+  Measured in the studio lineup scene: 61 of 120 frames with AUTO, 0 with gap fix off or a multiplier of 1.0. Open
+  (changing AUTO trades cracks against bleed); not changed in 2.0.1.
 * On the other platforms the side quads grow by 0.005 on both in-plane axes. An in-game sweep showed that
   0.005 closes the 1 px step-corner cracks of generated item models, while 0.01 and above left jagged
   slivers along the step edges.

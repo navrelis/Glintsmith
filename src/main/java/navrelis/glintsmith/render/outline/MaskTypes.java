@@ -33,9 +33,12 @@ import org.jetbrains.annotations.Nullable;
  * the source's face culling: generated item models are full of faces that only exist from one side (the back quad,
  * side quads seen from inside, side quads that vanilla merges across transparent pixels), and drawn double-sided
  * their back-facing slivers seeded isolated 1-px outline rings next to the item where vanilla draws nothing. The flat
- * type (GUI) has no depth test and no depth write and stays double-sided: under the orthographic GUI projection a
- * back face lies inside the item's own silhouette with the same style index, so it can only close pinholes there,
- * and the GUI mask never depends on the winding of a GUI pose.
+ * type (GUI, PREVIEW) has no depth test and no depth write and repeats the source's culling as well. A back face only
+ * coincides with the front face while the item faces the camera head-on; on a turntable (the live preview, the dev
+ * studio) the back quad of a generated item sticks out past the front quad, and the pixels on its edge sample the
+ * neighbouring atlas sprite (no UV shrink with the gap fix), so it seeded outline rings where the colour pass drew
+ * nothing. Both passes use the same vertices, matrices and cull state, so the mask follows the winding of any pose
+ * exactly as the item does.
  * <p>
  * The occluder type (first-person hand under a shader pack) writes only depth, tested {@code LEQUAL} against the mask
  * depth with the source's layering, culling and cutout: the geometry hides outlines and item pixels behind it, as it
@@ -294,8 +297,8 @@ final class MaskTypes {
 				.setShaderState(MASK_SHADER)
 				.setTextureState(textureShard)
 				.setTransparencyState(RenderStateShard.NO_TRANSPARENCY)
-				// The source's back faces stay culled; the flat GUI mask draws both sides (see the class comment).
-				.setCullState(depth ? cull : RenderStateShard.NO_CULL)
+				// Both mask types cull like the source, so the mask holds exactly the faces the colour pass draws.
+				.setCullState(cull)
 				.setDepthTestState(depth ? RenderStateShard.LEQUAL_DEPTH_TEST : RenderStateShard.NO_DEPTH_TEST)
 				.setLayeringState(depth ? layering : RenderStateShard.NO_LAYERING)
 				.setWriteMaskState(depth ? RenderStateShard.COLOR_DEPTH_WRITE : RenderStateShard.COLOR_WRITE)

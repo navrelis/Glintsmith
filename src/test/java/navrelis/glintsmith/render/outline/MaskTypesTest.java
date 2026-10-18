@@ -148,7 +148,7 @@ class MaskTypesTest {
 	}
 
 	@Test
-	void depthTestedMaskAndOccluderRepeatTheSourceCulling() {
+	void masksAndOccluderRepeatTheSourceCulling() {
 		// Vanilla's item sheets (itemEntityTranslucentCull, entitySolid, entityCutout) cull back faces: drawn
 		// double-sided, the back quad and the inner side quads of a generated item seeded stray 1-px outline rings.
 		RenderType item = RenderType.itemEntityTranslucentCull(TEXTURE);
@@ -164,9 +164,13 @@ class MaskTypesTest {
 		assertSame(RenderStateShard.NO_CULL, stateOf(MaskTypes.forSource(cutoutNoCull, true)).glintsmith$outlineCullState(),
 			"double-sided sources stay double-sided");
 
-		// The flat GUI mask draws both sides whatever the source does.
-		assertSame(RenderStateShard.NO_CULL, stateOf(MaskTypes.forSource(item, false)).glintsmith$outlineCullState());
-		assertSame(RenderStateShard.NO_CULL, stateOf(MaskTypes.forSource(solid, false)).glintsmith$outlineCullState());
+		// The flat mask (GUI, PREVIEW) culls exactly like the source too. Drawn double-sided, the back quad of a
+		// generated item turned on a turntable stuck out past the front quad, and its edge pixels sampled the
+		// neighbouring atlas sprite: mask-only seeds with a full outline ring where the colour pass drew nothing.
+		assertSame(RenderStateShard.CULL, stateOf(MaskTypes.forSource(item, false)).glintsmith$outlineCullState());
+		assertSame(RenderStateShard.CULL, stateOf(MaskTypes.forSource(solid, false)).glintsmith$outlineCullState());
+		assertSame(RenderStateShard.NO_CULL, stateOf(MaskTypes.forSource(cutoutNoCull, false)).glintsmith$outlineCullState(),
+			"double-sided sources stay double-sided in the flat mask");
 
 		// Occluders hide exactly what the source's own faces hide: the arm culls, the sleeve does not.
 		assertSame(RenderStateShard.CULL, stateOf(MaskTypes.occluderFor(solid)).glintsmith$outlineCullState());
