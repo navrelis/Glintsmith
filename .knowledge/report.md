@@ -170,7 +170,6 @@ Model usage this session: Opus B4 S 1 (side session); Sonnet checklist tick S 1,
 (+1 correction), checklist SHA S 1. Project total stays about 30 % Opus. No precision overrides.
 
 Open for the owner:
-- The live description's comparison table header was not changed by this session (the repository's description.md says
-  2.0.2); change it on the page if wanted.
+- Done (owner OK): the live description's comparison header said "Glintsmith 2.0.0" (never changed for 2.0.1); now  "Glintsmith 2.0.2", saved and re-read after reload, matching the repository's description.md.
 - After archiving this session: `git -C "F:/Coding/Glintsmith" branch -d claude/eloquent-wing-a06858` and
   `git -C "F:/Coding/Glintsmith" pull --ff-only` (main checkout dev).
