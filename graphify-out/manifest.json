@@ -6,9 +6,9 @@
     "semantic_hash": ""
   },
   "art/gallery/cards.json": {
-    "mtime": 1792317886.8812122,
-    "seen": 1792318714.5024939,
-    "ast_hash": "f548b60cb659d2cc7dcc0522d4ebef4c",
+    "mtime": 1792369769.5527737,
+    "seen": 1792371312.812885,
+    "ast_hash": "81473e07eb0537c1549f0b3bf6196643",
     "semantic_hash": ""
   },
   "art/gallery/common.py": {
@@ -18,9 +18,9 @@
     "semantic_hash": ""
   },
   "art/gallery/synth.py": {
-    "mtime": 1792317886.8812122,
-    "seen": 1792318714.5024939,
-    "ast_hash": "b204ddd5ef0fb1560053fce37ff65f28",
+    "mtime": 1792369499.8919423,
+    "seen": 1792371312.812885,
+    "ast_hash": "12163cd6833182af1f2016770333c667",
     "semantic_hash": ""
   },
   "art/imgio.py": {
@@ -42,9 +42,9 @@
     "semantic_hash": ""
   },
   "art/verify.py": {
-    "mtime": 1792317886.8862054,
-    "seen": 1792318714.5024939,
-    "ast_hash": "4f53018cc77ee9a97403450a6ce4232f",
+    "mtime": 1792369499.8919423,
+    "seen": 1792371312.812885,
+    "ast_hash": "60e7ec49817af29670c585b09cc4b074",
     "semantic_hash": ""
   },
   "build.gradle": {
@@ -1044,21 +1044,21 @@
     "semantic_hash": ""
   },
   ".knowledge/decisions.md": {
-    "mtime": 1792358785.5511827,
-    "seen": 1792358826.3457654,
-    "ast_hash": "255a9bfdf81809d0bbbbbddc7105e423",
+    "mtime": 1792369277.755054,
+    "seen": 1792371312.812885,
+    "ast_hash": "0ebacf4c76d1ab074da0a57fc999d934",
     "semantic_hash": ""
   },
   ".knowledge/log.md": {
-    "mtime": 1792358785.5511827,
-    "seen": 1792358826.3457654,
-    "ast_hash": "6fa230652a46e648a5efb126edb27198",
+    "mtime": 1792371099.68961,
+    "seen": 1792371312.812885,
+    "ast_hash": "0df5f3e29d5f71fb6aec59a9596b4d38",
     "semantic_hash": ""
   },
   ".knowledge/plan.md": {
-    "mtime": 1792358785.5760927,
-    "seen": 1792358826.3457654,
-    "ast_hash": "3dc7079c35ea938a515dee293dbe10cc",
+    "mtime": 1792371099.68961,
+    "seen": 1792371312.812885,
+    "ast_hash": "00e960c67a2426c520fa3bd070dd4a26",
     "semantic_hash": ""
   },
   ".knowledge/requirements.md": {
@@ -1080,15 +1080,15 @@
     "semantic_hash": ""
   },
   "art/README.md": {
-    "mtime": 1792317886.8812122,
-    "seen": 1792318714.5024939,
-    "ast_hash": "6a4a4787a4cb694eb234fc2011d05df3",
+    "mtime": 1792369499.8899002,
+    "seen": 1792371312.812885,
+    "ast_hash": "a4741e09fe095fc2db8a15e24660b3d2",
     "semantic_hash": ""
   },
   "art/gallery/SHOTLIST.md": {
-    "mtime": 1792317886.8812122,
-    "seen": 1792318714.5024939,
-    "ast_hash": "d69d54de2e909c409e598582236169a6",
+    "mtime": 1792370806.403197,
+    "seen": 1792371312.812885,
+    "ast_hash": "b4fb6c3f6fcabfed39563d723946e36b",
     "semantic_hash": ""
   },
   "docs/DESIGN.md": {
@@ -1098,27 +1098,27 @@
     "semantic_hash": ""
   },
   "docs/curseforge/README.md": {
-    "mtime": 1792317886.8900576,
-    "seen": 1792318714.5024939,
-    "ast_hash": "6174ef536fc585d7bbe9ab0c8d856637",
+    "mtime": 1792369499.8904057,
+    "seen": 1792371312.812885,
+    "ast_hash": "0256ecc28e57900fcfb4a19785805e8a",
     "semantic_hash": ""
   },
   "docs/curseforge/description.md": {
-    "mtime": 1792358049.6326563,
-    "seen": 1792358826.3457654,
-    "ast_hash": "3e6d43294152d6a0b3f2dade90861c4b",
+    "mtime": 1792369453.5370688,
+    "seen": 1792371312.812885,
+    "ast_hash": "1e675ca60869c98885bcc0c0efbbc070",
     "semantic_hash": ""
   },
   "docs/curseforge/description_paste.md": {
-    "mtime": 1792358053.1658237,
-    "seen": 1792358826.3457654,
-    "ast_hash": "3e6d43294152d6a0b3f2dade90861c4b",
+    "mtime": 1792370947.6496115,
+    "seen": 1792371312.812885,
+    "ast_hash": "1e675ca60869c98885bcc0c0efbbc070",
     "semantic_hash": ""
   },
   "docs/curseforge/preview.html": {
-    "mtime": 1792358053.1643004,
-    "seen": 1792358826.3457654,
-    "ast_hash": "4bae017a92cf7769a5675979b3ea6551",
+    "mtime": 1792370947.6496115,
+    "seen": 1792371312.812885,
+    "ast_hash": "d1ef2dd725eeea381cd5acba8a78d68e",
     "semantic_hash": ""
   },
   "docs/curseforge/summary.txt": {
@@ -1128,63 +1128,63 @@
     "semantic_hash": ""
   },
   "docs/curseforge/upload-checklist.md": {
-    "mtime": 1792358774.6226678,
-    "seen": 1792358826.3457654,
-    "ast_hash": "112973e4ff24fa4e38ffe03fdf235c76",
+    "mtime": 1792369499.8904057,
+    "seen": 1792371312.812885,
+    "ast_hash": "55e32f7047a694333b7f81fac015f166",
     "semantic_hash": ""
   },
   "docs/curseforge/img/banner.png": {
-    "mtime": 1792310811.0777354,
-    "seen": 1792318714.5024939,
-    "ast_hash": "d8a7d978d1b8d4a3cb9c01251ed31ec3",
+    "mtime": 1792370764.1285965,
+    "seen": 1792371312.812885,
+    "ast_hash": "10c1820dcd7e1ee3259ebc06bc41fece",
     "semantic_hash": ""
   },
   "docs/curseforge/img/card_config.png": {
-    "mtime": 1792310811.0798254,
-    "seen": 1792318714.5024939,
-    "ast_hash": "029852527439ea58e07920668b9cd3bb",
+    "mtime": 1792370764.1306014,
+    "seen": 1792371312.812885,
+    "ast_hash": "ad61ded0062d7eeefc2b8ea41f4ffcc1",
     "semantic_hash": ""
   },
   "docs/curseforge/img/card_gap_fix.png": {
-    "mtime": 1792310811.0798254,
-    "seen": 1792318714.5024939,
-    "ast_hash": "5e47408519e9bef108f7a6c6972f2913",
+    "mtime": 1792370764.1306014,
+    "seen": 1792371312.812885,
+    "ast_hash": "6f887d708832bbb2f69eda24a2338ec1",
     "semantic_hash": ""
   },
   "docs/curseforge/img/card_glint_presets.png": {
-    "mtime": 1792310811.0798254,
-    "seen": 1792318714.5024939,
-    "ast_hash": "7164716f8455f71ac5552e2a31cc9b0c",
+    "mtime": 1792370764.1296015,
+    "seen": 1792371312.812885,
+    "ast_hash": "77641c0ec926e341c5632fa326ba6894",
     "semantic_hash": ""
   },
   "docs/curseforge/img/card_outline_styles.png": {
-    "mtime": 1792310811.0827248,
-    "seen": 1792318714.5024939,
-    "ast_hash": "7d6ab178ba227fa8f2c5f9366ca87687",
+    "mtime": 1792370764.1296015,
+    "seen": 1792371312.812885,
+    "ast_hash": "2f6fdc1890c1685368e78c05e0956326",
     "semantic_hash": ""
   },
   "docs/curseforge/img/card_rules.png": {
-    "mtime": 1792310811.0827248,
-    "seen": 1792318714.5024939,
+    "mtime": 1792370764.1306014,
+    "seen": 1792371312.812885,
     "ast_hash": "dd3958e33bbc7f3461103961985e0b8d",
     "semantic_hash": ""
   },
   "docs/curseforge/img/card_shaders.png": {
-    "mtime": 1792310811.0827248,
-    "seen": 1792318714.5024939,
+    "mtime": 1792370764.1316016,
+    "seen": 1792371312.812885,
     "ast_hash": "39934900e1ebdd7c609c8290416194f4",
     "semantic_hash": ""
   },
   "docs/curseforge/img/card_targets.png": {
-    "mtime": 1792310811.0858538,
-    "seen": 1792318714.5024939,
-    "ast_hash": "59ff8cd144a6d7450831a8fd93c31e34",
+    "mtime": 1792370764.1296015,
+    "seen": 1792371312.812885,
+    "ast_hash": "8aaa7e294919ecfccdf1dcba95535514",
     "semantic_hash": ""
   },
   "docs/curseforge/img/card_universal.png": {
-    "mtime": 1792310811.0872169,
-    "seen": 1792318714.5024939,
-    "ast_hash": "1e0915a2073f8f5b53eb0bcc4a558078",
+    "mtime": 1792370764.1285965,
+    "seen": 1792371312.812885,
+    "ast_hash": "635cb3ef9b6ed176a003d453760faff5",
     "semantic_hash": ""
   },
   "docs/curseforge/img/logo_animated.gif": {
@@ -1194,9 +1194,9 @@
     "semantic_hash": ""
   },
   "docs/curseforge/img/showcase.gif": {
-    "mtime": 1792317886.9265716,
-    "seen": 1792318714.5024939,
-    "ast_hash": "83b9c0234297c3c23b714487157d8afe",
+    "mtime": 1792369959.7646847,
+    "seen": 1792371312.812885,
+    "ast_hash": "21ec23cfc0b01cc9834afd7b35d3394b",
     "semantic_hash": ""
   },
   "src/main/resources/assets/glintsmith/icon.png": {
@@ -1266,9 +1266,9 @@
     "semantic_hash": ""
   },
   "art/studio/synth_studio.py": {
-    "mtime": 1792317886.8862054,
-    "seen": 1792318714.5024939,
-    "ast_hash": "9ddbd762244987c775169b039f55293c",
+    "mtime": 1792369374.629269,
+    "seen": 1792371312.812885,
+    "ast_hash": "527f4a8bdde7584948f56bd75e8d1eea",
     "semantic_hash": ""
   },
   "src/main/java/navrelis/glintsmith/gui/preview/PendingEdits.java": {
@@ -1380,9 +1380,9 @@
     "semantic_hash": ""
   },
   "src/studio/java/navrelis/glintsmith/studio/Looks.java": {
-    "mtime": 1792310811.2442577,
-    "seen": 1792318714.5024939,
-    "ast_hash": "81af2eee997c73d39729c78c8f062e84",
+    "mtime": 1792369003.4738224,
+    "seen": 1792371312.812885,
+    "ast_hash": "91545d4c94c9eb25541ead80258ae962",
     "semantic_hash": ""
   },
   "src/studio/java/navrelis/glintsmith/studio/PipelineBridge.java": {
@@ -1464,15 +1464,15 @@
     "semantic_hash": ""
   },
   "src/studio/resources/scenes/armor_stand.json": {
-    "mtime": 1792310811.2497704,
-    "seen": 1792318714.5024939,
-    "ast_hash": "bfd1bdcabd6bc18261b162fd3b7af67a",
+    "mtime": 1792369305.6903555,
+    "seen": 1792371312.812885,
+    "ast_hash": "f0b6b2fd3e2cee2d40fae53b394c6ecd",
     "semantic_hash": ""
   },
   "src/studio/resources/scenes/hero_sword.json": {
-    "mtime": 1792310811.2497704,
-    "seen": 1792318714.5024939,
-    "ast_hash": "3317880fa1f09e9f47dba9c2f6b35752",
+    "mtime": 1792369305.6903555,
+    "seen": 1792371312.812885,
+    "ast_hash": "d292b0ea0a2ed4268efb7393a93b9282",
     "semantic_hash": ""
   },
   "src/studio/resources/scenes/lineup.json": {
@@ -1488,15 +1488,15 @@
     "semantic_hash": ""
   },
   "src/studio/resources/scenes/stills_hero.json": {
-    "mtime": 1792310811.2507706,
-    "seen": 1792318714.5024939,
-    "ast_hash": "cc11d1cb3b6bb2b395673a4fbec7923d",
+    "mtime": 1792369305.6898518,
+    "seen": 1792371312.812885,
+    "ast_hash": "4e6ddf9af3eab448ed261f4d50712910",
     "semantic_hash": ""
   },
   "src/studio/resources/scenes/stills_tiles.json": {
-    "mtime": 1792310811.2507706,
-    "seen": 1792318714.5024939,
-    "ast_hash": "8228f68e62a28ecc18a445518f89dfa7",
+    "mtime": 1792369305.6903555,
+    "seen": 1792371312.812885,
+    "ast_hash": "bb5cec902e79145c6c1773d0f49f05f0",
     "semantic_hash": ""
   },
   "src/studio/resources/scenes/stills_wide.json": {
@@ -1566,26 +1566,26 @@
     "semantic_hash": ""
   },
   ".knowledge/report.md": {
-    "mtime": 1792323115.7618372,
-    "seen": 1792358826.3457654,
-    "ast_hash": "e4e08df1c72851006f44aa36b7a3692b",
+    "mtime": 1792360643.9847064,
+    "seen": 1792371312.812885,
+    "ast_hash": "cc25b70798c6c2edfb6b040e63ae5294",
     "semantic_hash": ""
   },
   "docs/STUDIO.md": {
-    "mtime": 1792358049.6326563,
-    "seen": 1792358826.3457654,
-    "ast_hash": "90dff44dac25aa91a353abdb81fa0467",
+    "mtime": 1792369510.6295707,
+    "seen": 1792371312.812885,
+    "ast_hash": "e7a2f80737c02c377f7559a6c83c3738",
     "semantic_hash": ""
   },
   "docs/curseforge/img/armor.gif": {
-    "mtime": 1792317886.9005487,
-    "seen": 1792318714.5024939,
-    "ast_hash": "6731919a06621137d3c6d7155c9a49b1",
+    "mtime": 1792369959.766024,
+    "seen": 1792371312.812885,
+    "ast_hash": "cfcef9b1237c598871116fafce3d2387",
     "semantic_hash": ""
   },
   "docs/curseforge/img/lineup.gif": {
-    "mtime": 1792318557.283269,
-    "seen": 1792318714.5024939,
+    "mtime": 1792369959.7646847,
+    "seen": 1792371312.812885,
     "ast_hash": "3905bb0b8bab92474912ca68bbd2e4a9",
     "semantic_hash": ""
   },
@@ -1641,6 +1641,30 @@
     "mtime": 1792357219.8293893,
     "seen": 1792358826.3457654,
     "ast_hash": "f0425e2dd24490cfdbad9da601815bd6",
+    "semantic_hash": ""
+  },
+  "src/studio/resources/scenes/stills_default.json": {
+    "mtime": 1792369305.58548,
+    "seen": 1792371312.812885,
+    "ast_hash": "6660088ec1206db58f9b0be0133bd824",
+    "semantic_hash": ""
+  },
+  "src/studio/resources/scenes/stills_default_armor.json": {
+    "mtime": 1792369033.4530785,
+    "seen": 1792371312.812885,
+    "ast_hash": "29812cb9d2b699cfaf516801cbe6b93a",
+    "semantic_hash": ""
+  },
+  "handoff-2026-10-19-12c21bcc.md": {
+    "mtime": 1792370644.806802,
+    "seen": 1792371312.812885,
+    "ast_hash": "b59988017ef928fc221e63a332dffc22",
+    "semantic_hash": ""
+  },
+  "docs/curseforge/img/card_default_look.png": {
+    "mtime": 1792370764.1306014,
+    "seen": 1792371312.812885,
+    "ast_hash": "afbdce53065fbd78d7d8832806fd8810",
     "semantic_hash": ""
   }
 }

@@ -203,3 +203,39 @@ instance with 2.1.0 and check the look matches your setup; your existing config 
 
 Model usage this session: Sonnet D1 finish S 1 (+1 correction), D2 S 1, bump S 1, checklist S 0.5; no Opus. Project
 total about 28 % Opus. No precision overrides.
+
+## Session 20: page images with the 2.1.0 default look
+
+What was done (2026-10-19, owner request: re-render all page images, update CurseForge, add the new images):
+- **R2a studio** (Sonnet L): studio looks get `"base": "defaults"` (= `new GlintsmithConfig().sanitize()`); banner,
+  showcase look 2, armor look 2, the neutral glint tile and the static outline tile use the 2.1.0 defaults. New scenes
+  `stills_default`, `stills_default_armor` and the new card `card_default_look.png` (vanilla / default / armor), with a
+  marker after "A look from the first start" in the description. Card texts, art/README, SHOTLIST, STUDIO, verify and
+  synth updated. All studio scenes re-rendered except the logo scenes (brand look).
+- **R2b/R2c in-game** (Sonnet script, lead ran it): 8 captures re-shot under the built-in defaults (gallerydef run
+  20261019-024017, PASS 8/8); card_targets and card_config rebuilt.
+- **R2d** (Sonnet script, lead ran it): the lead found the first card_config preview edge-on with a diamond sword;
+  the configfix script holds the netherite sword and resets the preview (yaw 0) just before the shot. Run
+  20261019-030220 PASS 2/2, owner instance unchanged; card_config rebuilt and viewed.
+- Commits aeb1e94 (re-render + new card) and a47c639 (card_config). Graphify updated (3365 nodes, 10083 edges, backup
+  in build/quarantine/graphify-backup-s20).
+
+Checks: `./gradlew build` 502 tests green; `build.py --strict --no-gif`, `art/verify.py`, `preview.py --check
+--strict` exit 0 (agent runs, after each change); lead viewed banner, card_default_look, card_targets, card_config.
+
+**Not done: CurseForge images.** banner.png was uploaded once to the project media (a new gallery attachment, not
+linked in the description yet). The next upload, and even closing the dialog, were refused by the Claude Code
+auto-mode classifier (public content). Still open, for the owner or a session where the owner allows it:
+- upload showcase.gif, armor.gif, card_glint_presets.png, card_outline_styles.png, card_targets.png, card_config.png,
+  card_default_look.png from `docs/curseforge/img/` (card_universal and card_gap_fix changed only by pixel noise);
+- in the description swap 2071/600 banner, 598 showcase, 599 armor, 590 glint presets, 591 outline styles, 594 targets,
+  601 config for the new attachment URLs and add `![A look from the first start](<url>)` after the paragraph
+  "**A look from the first start.**"; save and check every image loads after a reload.
+
+Also open: defcheck (in-game fresh-config check) not run; the game lock was held by AutoModpackUpdater the whole time.
+
+Manual test checklist (owner): judge whether the faint 25 % default outline reads well enough in the banner and
+cards; check the default look in a test instance without glintsmith.json.
+
+Model usage this session: Sonnet R2a L 2, R2b S 1, R2c S 1, R2d script S 1, R2d drop S 1; no Opus. Project total
+about 27 % Opus. No precision overrides.

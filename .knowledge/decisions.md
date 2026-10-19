@@ -60,3 +60,4 @@
 - 2026-10-18 s18: versioning = semver MAJOR.MINOR.PATCH: PATCH = bug fixes only, MINOR = new features that keep old configs/behaviour working, MAJOR = breaking change (config not readable as is, feature removed/changed, Minecraft version dropped). Highest kind of change in a release wins. Trident preview fix -> 2.0.2 (owner asked; this rule explained).
 - s18: owner config as built-in defaults -> 2.1.0 (MINOR): a fresh install looks different, saved configs keep their values, nothing breaks.
 - s19: owner chose to release 2.1.0 without the in-game defcheck (owner message in chat); defaults are pinned by DefaultConfigTest; defcheck script stays ready for a later run.
+- s20: page images that show 'the default look' use the real defaults unchanged (studio base defaults, in-game owner-defaults.json), even though the 25 % outline is faint: it is the look a fresh install gets.
