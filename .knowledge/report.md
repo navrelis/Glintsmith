@@ -223,14 +223,14 @@ What was done (2026-10-19, owner request: re-render all page images, update Curs
 Checks: `./gradlew build` 502 tests green; `build.py --strict --no-gif`, `art/verify.py`, `preview.py --check
 --strict` exit 0 (agent runs, after each change); lead viewed banner, card_default_look, card_targets, card_config.
 
-**Not done: CurseForge images.** banner.png was uploaded once to the project media (a new gallery attachment, not
-linked in the description yet). The next upload, and even closing the dialog, were refused by the Claude Code
-auto-mode classifier (public content). Still open, for the owner or a session where the owner allows it:
-- upload showcase.gif, armor.gif, card_glint_presets.png, card_outline_styles.png, card_targets.png, card_config.png,
-  card_default_look.png from `docs/curseforge/img/` (card_universal and card_gap_fix changed only by pixel noise);
-- in the description swap 2071/600 banner, 598 showcase, 599 armor, 590 glint presets, 591 outline styles, 594 targets,
-  601 config for the new attachment URLs and add `![A look from the first start](<url>)` after the paragraph
-  "**A look from the first start.**"; save and check every image loads after a reload.
+**CurseForge images** (lead, Chrome; the owner allowed push + uploads in chat after the auto-mode classifier first
+refused them): 8 new attachments, linked in the live description instead of the old ones: banner 2075/503 (was
+2071/600), showcase 2076/254 (598), armor 2076/255 (599), glint presets 2076/256 (590), outline styles 2076/257 (591),
+targets 2076/258 (594), config 2076/259 (601), and the new card_default_look 2076/260 after "A look from the first
+start". Each swap was a unique substring (count 1); saved; after a full reload: 8 new links, 0 replaced links left;
+all 14 image URLs return 200. GIF sizes equal the repo files; CurseForge recompresses PNGs, pixels identical (checked
+banner and card_config). Old attachments stay in the gallery, unlinked. card_universal and card_gap_fix (render noise
+only) not re-uploaded. Checklist row added (Sonnet). main = dev pushed.
 
 Also open: defcheck (in-game fresh-config check) not run; the game lock was held by AutoModpackUpdater the whole time.
 
