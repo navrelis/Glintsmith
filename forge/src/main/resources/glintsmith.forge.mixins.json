@@ -1,0 +1,13 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "navrelis.glintsmith.forge.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"MinecraftLifecycleMixin",
+		"LevelRendererWorldEventsMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

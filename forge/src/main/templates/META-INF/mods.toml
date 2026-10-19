@@ -1,0 +1,34 @@
+# The mod metadata read by Forge. Generated from this template by the generateModMetadata task (values from
+# ../gradle/shared.properties and gradle.properties).
+# See https://docs.minecraftforge.net/en/1.21.x/gettingstarted/modfiles/#modstoml
+
+modLoader="javafml"
+loaderVersion="${forge_loader_version_range}"
+license="${mod_license}"
+issueTrackerURL="https://github.com/navrelis/Glintsmith/issues"
+# Client-only: a server without the mod is fine, and a client with it can join a server without it (FML then uses the
+# display test IGNORE_ALL_VERSION for it).
+clientSideOnly=true
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+displayURL="https://github.com/navrelis/Glintsmith"
+logoFile="assets/glintsmith/icon.png"
+authors="${mod_authors}"
+description='''${mod_description}'''
+
+[[dependencies.${mod_id}]]
+modId="forge"
+mandatory=true
+versionRange="${forge_version_range}"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies.${mod_id}]]
+modId="minecraft"
+mandatory=true
+versionRange="${minecraft_version_range}"
+ordering="NONE"
+side="CLIENT"

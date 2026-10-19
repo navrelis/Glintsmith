@@ -1,0 +1,227 @@
+plugins {
+	id 'java-library'
+	id 'idea'
+	id 'net.minecraftforge.gradle' version '7.0.40'
+}
+
+// Jar: glintsmith-<mod version>+<minecraft version>-forge.jar
+// (mod_id, mod_version, minecraft_version, ... come from ../gradle/shared.properties, see settings.gradle)
+version = "${mod_version}+${minecraft_version}-forge"
+group = mod_group
+
+base {
+	archivesName = mod_id
+}
+
+java {
+	// Mojang ships Java 21 to end users in 1.21.1, so mods should target Java 21.
+	toolchain.languageVersion = JavaLanguageVersion.of(java_version as int)
+	withSourcesJar()
+}
+
+// The loader-neutral code and assets in ../common are compiled and packaged into this jar.
+def commonDir = file('../common')
+
+sourceSets {
+	main {
+		java.srcDir "${commonDir}/src/main/java"
+		resources.srcDir "${commonDir}/src/main/resources"
+	}
+	test {
+		java.srcDir "${commonDir}/src/test/java"
+	}
+}
+
+// The three shared mixin configs (common) and the Forge-only one (src/main/resources).
+def mixinConfigs = [
+	'glintsmith.mixins.json',
+	'glintsmith.glint.mixins.json',
+	'glintsmith.outline.mixins.json',
+	'glintsmith.forge.mixins.json'
+]
+
+minecraft {
+	// common/ needs vanilla members that Fabric API's access widener opens up; here the transformer does it.
+	useDefaultAccessTransformer() // src/main/resources/META-INF/accesstransformer.cfg
+
+	// Official Mojang names; Forge runs on them since 1.20.6, so the jar is not reobfuscated.
+	mappings channel: 'official', version: minecraft_version
+
+	runs {
+		configureEach {
+			workingDir = layout.projectDirectory.dir('run')
+			// A dev run loads classes from folders, so there is no jar manifest: the mixin configs go in as arguments
+			// (the jar names them in its MixinConfigs manifest attribute, see jar below).
+			mixinConfigs.each { args "--mixin.config=${it}" }
+			// gradlew runClient -PmixinExport: writes every mixed class to run/.mixin.out, to check what was injected.
+			if (project.hasProperty('mixinExport')) {
+				systemProperty 'mixin.debug.export', 'true'
+			}
+		}
+
+		register('client') {
+		}
+	}
+}
+
+repositories {
+	minecraft.mavenizer(it)
+	maven fg.forgeMaven
+	maven fg.minecraftLibsMaven
+	mavenCentral()
+
+	// Optional integrations. Each repository only serves the groups listed in its content filter.
+	maven {
+		name = 'Modrinth'
+		url = 'https://api.modrinth.com/maven'
+		content {
+			includeGroup 'maven.modrinth'
+		}
+	}
+}
+
+// Forge 52's dev runs stop with "Module jopt.simple not found, required by cpw.mods.modlauncher": its bootstrap-api
+// pulls in jopt-simple 6.0-alpha-3 (module "joptsimple"). 5.0.4 has the module name modlauncher asks for.
+configurations.configureEach {
+	resolutionStrategy.force 'net.sf.jopt-simple:jopt-simple:5.0.4'
+}
+
+dependencies {
+	// The unit tests exercise vanilla types: testImplementation extends implementation, so Minecraft is on their
+	// classpath too.
+	implementation minecraft.dependency("net.minecraftforge:forge:${minecraft_version}-${forge_version}")
+
+	// Optional integration: compile-only, never bundled, never on the runtime classpath (Iris does not exist for Forge;
+	// common only touches its API after isModLoaded("iris")).
+	compileOnly "maven.modrinth:iris:${iris_version}"
+
+	// MixinExtras (used by the common mixins): the API classes for compiling here; at runtime it is bundled, see jarJar below.
+	compileOnly "io.github.llamalad7:mixinextras-common:${mixinextras_version}"
+	runtimeOnly "io.github.llamalad7:mixinextras-forge:${mixinextras_version}"
+
+	testImplementation "org.junit.jupiter:junit-jupiter:${junit_version}"
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// Expands the replace properties in the templates (META-INF/mods.toml and pack.mcmeta; Forge ignores the resources of a
+// mod without pack.mcmeta). A missing property is an error.
+var generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
+	var replaceProperties = [
+		minecraft_version_range   : forge_minecraft_version_range,
+		forge_version_range       : forge_version_range,
+		forge_loader_version_range: forge_loader_version_range,
+		mod_id                    : mod_id,
+		mod_name                  : mod_name,
+		mod_license               : mod_license,
+		mod_version               : mod_version,
+		mod_authors               : mod_authors,
+		mod_description           : mod_description
+	]
+	inputs.properties replaceProperties
+	expand replaceProperties
+	from 'src/main/templates'
+	into 'build/generated/sources/modMetadata'
+}
+// Include the output of "generateModMetadata" as an input directory for the build.
+sourceSets.main.resources.srcDir generateModMetadata
+
+// merge-source-sets puts the classes and the resources of a source set into one directory, so compileJava and
+// processResources have overlapping outputs. processResources is not incremental: before it runs, Gradle deletes its
+// previous outputs, and after a compileJava restored from the build cache those can include the classes (the jar then
+// had no classes). So processResources is not tracked (it always runs and never deletes anything; stale resources go
+// with clean) and runs after the compile task of its source set.
+sourceSets.configureEach { sourceSet ->
+	tasks.named(sourceSet.processResourcesTaskName) {
+		doNotTrackState('Shares its output directory with the compile task (merge-source-sets)')
+		mustRunAfter tasks.named(sourceSet.compileJavaTaskName)
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+	options.release = java_version as int
+}
+
+tasks.named('test', Test) {
+	useJUnitPlatform()
+}
+
+// ../common must stay loader-neutral: loader and optional-mod APIs are only reached through the platform service
+// (navrelis.glintsmith.platform).
+tasks.register('checkCommonIsLoaderNeutral') {
+	def sources = fileTree("${commonDir}/src/main/java") { include '**/*.java' }
+	inputs.files sources
+	doLast {
+		def forbidden = ~/^\s*import\s+(static\s+)?(net\.fabricmc|com\.terraformersmc|net\.neoforged|net\.minecraftforge)\./
+		def offenders = sources.files.collectMany { file ->
+			file.readLines('UTF-8').findAll { it =~ forbidden }.collect { "${file.path}: ${it.trim()}" }
+		}
+		if (!offenders.isEmpty()) {
+			throw new GradleException("common/ must not import loader or optional-mod APIs:\n" + offenders.join('\n'))
+		}
+	}
+}
+
+tasks.named('check') {
+	dependsOn tasks.named('checkCommonIsLoaderNeutral')
+}
+
+// Jar in jar: Forge 52 does not ship MixinExtras (checked: neither the Forge installer libraries nor the userdev
+// dependencies list it), but the common mixins need it. It is bundled as META-INF/jarjar/<jar> plus the metadata.json
+// that FML reads (the ForgeGradle 7 build has no jarJar of its own; this writes the same layout). The range lets the
+// highest MixinExtras of all installed mods win.
+configurations.create('jarJar') {
+	canBeConsumed = false
+	canBeResolved = true
+	transitive = false
+}
+dependencies {
+	jarJar "io.github.llamalad7:mixinextras-forge:${mixinextras_version}"
+}
+def jarJarMetadataDir = layout.buildDirectory.dir('generated/jarjar')
+def mixinExtrasVersion = mixinextras_version
+def jarJarMetadata = tasks.register('generateJarJarMetadata') {
+	def out = jarJarMetadataDir.map { it.file('META-INF/jarjar/metadata.json') }
+	inputs.property 'mixinExtrasVersion', mixinExtrasVersion
+	outputs.file out
+	doLast {
+		def file = out.get().asFile
+		file.parentFile.mkdirs()
+		file.text = """{
+	"jars": [
+		{
+			"identifier": {"group": "io.github.llamalad7", "artifact": "mixinextras-forge"},
+			"version": {"range": "[${mixinExtrasVersion},)", "artifactVersion": "${mixinExtrasVersion}"},
+			"path": "META-INF/jarjar/mixinextras-forge-${mixinExtrasVersion}.jar",
+			"isObfuscated": false
+		}
+	]
+}
+"""
+	}
+}
+
+// Resolved while configuring: the configuration cache cannot read project properties at execution time.
+def licenseFileName = "LICENSE_${mod_id}"
+def mixinConfigsAttribute = mixinConfigs.join(',')
+tasks.named('jar', Jar) {
+	dependsOn jarJarMetadata
+	from(jarJarMetadataDir)
+	into('META-INF/jarjar') {
+		from configurations.jarJar
+	}
+	manifest {
+		attributes 'MixinConfigs': mixinConfigsAttribute
+	}
+	from(file('../LICENSE')) {
+		rename { licenseFileName }
+	}
+}
+
+// IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.
+idea {
+	module {
+		downloadSources = true
+		downloadJavadoc = true
+	}
+}
