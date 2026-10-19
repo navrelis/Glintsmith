@@ -76,5 +76,5 @@ Owner: "you can't really see the difference in the pictures in curseforge" and "
 1. Before any Gradle build, test run or Minecraft client: count Java processes (`(Get-Process java,javaw -ErrorAction SilentlyContinue).Count`); if 8 or more, wait 60 s and re-check; start only below 8.
 2. At most ONE Gradle invocation and ONE game client at a time per session (subagents included); loaders built and smoked in sequence.
 3. At most 2 subagents alive at once per session; a subagent running Gradle follows rule 1.
-4. After a build batch in a worktree: `./gradlew --stop` there; kill smoke/game clients as soon as their screenshots are taken.
+4. Every Gradle invocation runs with `--no-daemon` (or org.gradle.daemon=false in the worktree), never `gradlew --stop` (it kills other sessions' daemons of the same Gradle version); kill smoke/game clients as soon as their screenshots are taken. (Corrected by the recovery session, 2026-10-19.)
 5. After a restart nothing is assumed running; re-verify on disk.
