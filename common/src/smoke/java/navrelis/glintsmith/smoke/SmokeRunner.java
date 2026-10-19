@@ -66,6 +66,8 @@ public final class SmokeRunner {
 	private static final int OUTLINE_R = 0x00;
 	private static final int OUTLINE_G = 0xFF;
 	private static final int OUTLINE_B = 0x40;
+	private static final int REFERENCE_WIDTH = 1280;
+	private static final int REFERENCE_HEIGHT = 720;
 
 	private static final int MENU_TIMEOUT_TICKS = 20 * 120;
 	private static final int LOAD_TIMEOUT_TICKS = 20 * 120;
@@ -445,11 +447,18 @@ public final class SmokeRunner {
 			info.addProperty("height", image.getHeight());
 			analyse(image, info);
 			if (name.startsWith("03_")) {
-				// The helmet of the worn armor stands alone against the wall: outline pixels around the top of the head.
-				// Fixed camera and window size, so a fixed box.
+				// Every worn armor piece is checked on its own, so one piece that loses its outline cannot hide behind the others.
+				// Fixed camera and window size (1280x720 reference), so fixed boxes, given in reference pixels and scaled to the image.
+				// The shield and the held sword cover the torso: the chestplate is measured at the shoulders / upper arms, the leggings
+				// and boots at the outer edges of the legs.
 				int w = image.getWidth();
 				int h = image.getHeight();
-				info.addProperty("armorOutlinePixels", countOutline(image, (int) (w * 0.44), (int) (h * 0.40), (int) (w * 0.56), (int) (h * 0.46)));
+				JsonObject pieces = new JsonObject();
+				pieces.addProperty("helmet", countOutline(image, w, h, new int[][] { { 563, 288, 717, 331 } }));
+				pieces.addProperty("chestplate", countOutline(image, w, h, new int[][] { { 576, 368, 603, 419 }, { 655, 366, 713, 388 } }));
+				pieces.addProperty("leggings", countOutline(image, w, h, new int[][] { { 594, 496, 609, 525 }, { 669, 508, 682, 526 } }));
+				pieces.addProperty("boots", countOutline(image, w, h, new int[][] { { 592, 527, 690, 598 } }));
+				info.add("armorOutlinePixels", pieces);
 				// Mean colour of the helmet top (outline pixels left out): the ARMOR glint layer tints it
 				long[] sum = new long[4];
 				for (int y = (int) (h * 0.44); y < (int) (h * 0.47); y++) {
@@ -480,12 +489,19 @@ public final class SmokeRunner {
 		return Math.abs(r - OUTLINE_R) <= 60 && Math.abs(g - OUTLINE_G) <= 35 && Math.abs(b - OUTLINE_B) <= 60;
 	}
 
-	private static long countOutline(NativeImage image, int x0, int y0, int x1, int y1) {
+	/** Outline pixels in the boxes {x0, y0, x1, y1} given for a 1280x720 image, scaled to the actual size. */
+	private static long countOutline(NativeImage image, int w, int h, int[][] boxes) {
 		long count = 0;
-		for (int y = y0; y < y1; y++) {
-			for (int x = x0; x < x1; x++) {
-				if (isOutlineColor(image.getPixelRGBA(x, y))) {
-					count++;
+		for (int[] box : boxes) {
+			int x0 = box[0] * w / REFERENCE_WIDTH;
+			int x1 = box[2] * w / REFERENCE_WIDTH;
+			int y0 = box[1] * h / REFERENCE_HEIGHT;
+			int y1 = box[3] * h / REFERENCE_HEIGHT;
+			for (int y = y0; y < y1; y++) {
+				for (int x = x0; x < x1; x++) {
+					if (isOutlineColor(image.getPixelRGBA(x, y))) {
+						count++;
+					}
 				}
 			}
 		}

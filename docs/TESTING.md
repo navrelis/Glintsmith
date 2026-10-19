@@ -98,9 +98,14 @@ mod's lifecycle mixin; NeoForge has no client started event) and `SmokeWindowMix
 * A mixin that fails to apply to a required config does not end up in `latest.log` but on stderr (see the Gradle log copied next
   to the result).
 
-The screenshot check also requires outline pixels at the helmet in `03_third_person_front` (`armorOutlinePixels`): it caught that
-NeoForge patches `HumanoidArmorLayer` so that vanilla's `renderArmorPiece` is no longer called (see
-`HumanoidArmorLayerNeoForgeMixin`).
+The screenshot check also requires outline pixels on every worn armor piece in `03_third_person_front`
+(`armorOutlinePixels` in smoke-result.json is an object `{helmet, chestplate, leggings, boots}`): it caught that NeoForge patches
+`HumanoidArmorLayer` so that vanilla's `renderArmorPiece` is no longer called (see `HumanoidArmorLayerNeoForgeMixin`). Each piece
+has its own box in 1280x720 reference pixels (`SmokeRunner.capture`), because a port once lost only the chestplate outline while the
+other pieces still had one. The shield and the held sword cover the torso, so the boxes sit on the armor's own silhouette edge: helmet
+top and sides, chestplate at the shoulders / upper arms, leggings and boots at the outer edges of the legs. The thresholds in
+`scripts/smoke.ps1` are a third of the minimum seen across the three loaders (dev and exported): helmet 38 (min 114), chestplate 50
+(151), leggings 20 (60), boots 28 (85). Move a box or a threshold only together with the camera pose of `SmokeScene`.
 
 ### Forge
 

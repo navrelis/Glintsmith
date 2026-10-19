@@ -54,7 +54,8 @@ $loaders = @($Loader | ForEach-Object { $_ -split '[,\s]+' } | Where-Object { $_
 $shots = '01_first_person', '02_inventory', '03_third_person_front', '04_glintsmith_screen', '05_dropped_closeup', '06_item_frame_closeup'
 $minDistinctColors = 200
 $minOutlinePixels = 50
-$minArmorOutlinePixels = 10
+# Per worn armor piece in 03_third_person_front (a third of the minimum seen across loaders, see docs/TESTING.md)
+$minArmorOutlinePixels = [ordered]@{ helmet = 38; chestplate = 50; leggings = 20; boots = 28 }
 
 function New-Check([string]$Name, [bool]$Ok, [string]$Detail = '') {
 	[pscustomobject]@{ Name = $Name; Ok = $Ok; Detail = $Detail }
@@ -117,6 +118,7 @@ function Test-Loader([string]$Name) {
 	# --- screenshots ---------------------------------------------------------------------------------------------------
 	$shotProblems = @()
 	$shotInfo = @()
+	$armorInfo = @()
 	foreach ($shot in $shots) {
 		$file = Join-Path $runDir "screenshots/$shot.png"
 		$step = if ($result) { @($result.steps | Where-Object { $_.name -eq $shot })[0] } else { $null }
@@ -128,10 +130,16 @@ function Test-Loader([string]$Name) {
 		if (-not $step -or $null -eq $step.distinctColors) { $shotProblems += "$shot has no statistics in the result"; continue }
 		if ($step.distinctColors -lt $minDistinctColors) { $shotProblems += "$shot looks blank ($($step.distinctColors) colours)" }
 		if ($step.outlinePixels -lt $minOutlinePixels) { $shotProblems += "$shot has no outline ($($step.outlinePixels) px of the outline colour)" }
-		if ($shot -eq '03_third_person_front' -and [int]$step.armorOutlinePixels -lt $minArmorOutlinePixels) { $shotProblems += "${shot}: the worn armor has no outline ($($step.armorOutlinePixels) px at the helmet)" }
+		if ($shot -eq '03_third_person_front') {
+			foreach ($piece in $minArmorOutlinePixels.Keys) {
+				$px = if ($step.armorOutlinePixels) { [int]$step.armorOutlinePixels.$piece } else { 0 }
+				$armorInfo += "${piece}:$px"
+				if ($px -lt $minArmorOutlinePixels[$piece]) { $shotProblems += "${shot}: the worn $piece has no outline ($px px, minimum $($minArmorOutlinePixels[$piece]))" }
+			}
+		}
 		$shotInfo += "$($shot.Substring(0, 2)):$($step.outlinePixels)px"
 	}
-	$checks.Add((New-Check 'screenshots' ($shotProblems.Count -eq 0) $(if ($shotProblems.Count) { $shotProblems -join '; ' } else { "6 PNGs, outline pixels $($shotInfo -join ' ')" })))
+	$checks.Add((New-Check 'screenshots' ($shotProblems.Count -eq 0) $(if ($shotProblems.Count) { $shotProblems -join '; ' } else { "6 PNGs, outline pixels $($shotInfo -join ' '); armor $($armorInfo -join ' ')" })))
 
 	# Routing of the glint layers: the armor layer of the smoke config is a red preset, so the helmet must not stay diamond teal.
 	# Information only: the glint is a sparse animation, so a fixed spot of the helmet is not a reliable colour test.
