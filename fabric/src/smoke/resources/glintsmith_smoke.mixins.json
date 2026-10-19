@@ -1,0 +1,12 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "navrelis.glintsmith.smoke.fabric.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"SmokeWindowMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

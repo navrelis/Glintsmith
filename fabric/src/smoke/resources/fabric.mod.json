@@ -1,0 +1,25 @@
+{
+	"schemaVersion": 1,
+	"id": "glintsmith_smoke",
+	"version": "1.0.0-dev",
+	"name": "Glintsmith Smoke Test",
+	"description": "Dev-only in-game smoke test: loads a world, takes screenshots of the mod and exits. Never shipped.",
+	"authors": [
+		"navrelis"
+	],
+	"license": "MIT",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"navrelis.glintsmith.smoke.fabric.SmokeMod"
+		]
+	},
+	"mixins": [
+		"glintsmith_smoke.mixins.json"
+	],
+	"depends": {
+		"glintsmith": "*",
+		"fabricloader": ">=0.16.0",
+		"fabric-api": "*"
+	}
+}

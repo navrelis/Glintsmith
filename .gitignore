@@ -58,3 +58,6 @@ art/captures/*
 # glintsmith studio (dev-only render mode): run dir and optional local mod jars
 run-studio/
 studio-mods/
+
+# glintsmith smoke test (dev-only in-game test): run folder of each loader
+run-smoke/

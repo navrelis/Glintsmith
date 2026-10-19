@@ -56,6 +56,13 @@ sourceSets {
 		compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
 		runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
 	}
+	// Dev-only in-game smoke test (docs/TESTING.md): the loader-neutral runner from ../common/src/smoke plus the Fabric
+	// wiring in src/smoke, as its own mod (glintsmith_smoke). Never packaged.
+	smoke {
+		java.srcDir "${commonDir}/src/smoke/java"
+		compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
+		runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
+	}
 }
 
 loom {
@@ -65,6 +72,9 @@ loom {
 		}
 		"glintsmith_studio" {
 			sourceSet sourceSets.studio
+		}
+		"glintsmith_smoke" {
+			sourceSet sourceSets.smoke
 		}
 	}
 
@@ -93,6 +103,19 @@ loom {
 			if (extraMods) {
 				property "fabric.addMods", extraMods.collect { it.absolutePath }.join(File.pathSeparator)
 			}
+		}
+
+		// ./gradlew runSmoke (or scripts/smoke.ps1): loads a test world, takes screenshots, writes
+		// run-smoke/smoke-result.json and exits. See docs/TESTING.md.
+		smoke {
+			client()
+			name = "Glintsmith Smoke"
+			source sourceSets.smoke
+			runDir "run-smoke"
+			ideConfigGenerated false
+			property "glintsmith.smoke.minecraft", minecraft_version
+			property "glintsmith.smoke.version", mod_version
+			programArgs "--width", "1280", "--height", "720"
 		}
 	}
 }
@@ -156,9 +179,43 @@ tasks.register("checkCommonIsLoaderNeutral") {
 	}
 }
 
-// Compile the studio with every build so it cannot rot; it is never packaged.
+// Compile the studio and the smoke test with every build so they cannot rot; neither is ever packaged.
 tasks.named("check") {
-	dependsOn tasks.named("studioClasses"), tasks.named("checkCommonIsLoaderNeutral")
+	dependsOn tasks.named("studioClasses"), tasks.named("smokeClasses"), tasks.named("checkCommonIsLoaderNeutral")
+}
+
+// runSmoke starts from a clean run folder (no old result, screenshots or worlds) with the fixed smoke config, and fails
+// unless the game wrote a result that says every step passed.
+tasks.named("runSmoke") {
+	def runDir = file("run-smoke")
+	def smokeConfig = file("${commonDir}/src/smoke/resources/glintsmith-smoke.json")
+	inputs.file smokeConfig
+	timeout = java.time.Duration.ofMinutes(9)
+	// The result file decides; the exit code is checked after the result was read
+	ignoreExitValue = true
+	doFirst {
+		["smoke-result.json", "screenshots", "saves", "logs/latest.log", "config/glintsmith.json"].each {
+			delete new File(runDir, it)
+		}
+		new File(runDir, "config").mkdirs()
+		java.nio.file.Files.copy(smokeConfig.toPath(), new File(runDir, "config/glintsmith.json").toPath())
+	}
+	doLast {
+		def result = new File(runDir, "smoke-result.json")
+		if (!result.isFile()) {
+			throw new GradleException("The smoke run wrote no result (${result}); see ${runDir}/logs/latest.log")
+		}
+		def json = new groovy.json.JsonSlurper().parse(result)
+		(json.steps ?: []).each { logger.lifecycle("  ${it.ok ? 'ok  ' : 'FAIL'} ${it.name}${it.error ? ': ' + it.error : ''}") }
+		if (!json.passed) {
+			throw new GradleException("Smoke run FAILED${json.fatal ? ': ' + json.fatal : ''} (${result})")
+		}
+		def exit = executionResult.get().exitValue
+		if (exit != 0) {
+			throw new GradleException("Every smoke step passed but the game exited with code ${exit}")
+		}
+		logger.lifecycle("Smoke run passed in ${json.durationMs} ms: ${runDir}")
+	}
 }
 
 tasks.withType(JavaCompile).configureEach {
