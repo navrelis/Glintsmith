@@ -27,7 +27,7 @@ timestamps, fixed seeds, any number of workers).
 ## Workflow
 
 ```
-1. render       ./gradlew runStudio -Pscene=<scene>        for the scenes of the contract (below): art/captures/studio/<scene>/
+1. render       cd fabric && ./gradlew runStudio -Pscene=<scene>        for the scenes of the contract (below): art/captures/studio/<scene>/
    capture      the 14 in-world shots of art/gallery/SHOTLIST.md, saved as art/captures/<name>.png
 2. look         py -B art/studio/studio.py check           every studio scene: frames, sizes, named stills
                 py -B art/gallery/build.py --list          which captures and studio frames exist, which are missing

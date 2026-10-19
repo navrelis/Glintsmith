@@ -5,7 +5,7 @@ Every image of the CurseForge gallery is a real render of the mod (see `art/READ
 * **14 in-world captures** (sections 0 to 3): unedited 1920 x 1080 screenshots of the running game, for the cards that show the game as it is: targets,
   rules, config and shaders. They are listed below with their rig, scene and config. `py -B art/gallery/build.py --list` prints the same names and tells you
   which ones are still missing.
-* **Studio renders** (section 4): the dev-only studio (`docs/STUDIO.md`, `./gradlew runStudio -Pscene=<scene>`) renders turntables and named stills of items
+* **Studio renders** (section 4): the dev-only studio (`docs/STUDIO.md`, `cd fabric && ./gradlew runStudio -Pscene=<scene>`) renders turntables and named stills of items
   and armor through the real Glintsmith pipeline, every frame over pure black and pure white, into `art/captures/studio/<scene>/`. The banner, the logo, the
   icon, the four GIFs and the universal, glint preset, outline style, gap fix and default look cards are built from them (`art/studio/`, `art/gallery/gifs.py`).
 
@@ -306,7 +306,7 @@ All four are wide shots at FOV 70 in the quartz room B with **no backdrop panel*
 
 ## 4. Studio renders
 
-These come from the dev-only studio (`docs/STUDIO.md`), not from screenshots. Run `./gradlew runStudio -Pscene=<scene>` once per scene; each writes
+These come from the dev-only studio (`docs/STUDIO.md`), not from screenshots. Run `cd fabric && ./gradlew runStudio -Pscene=<scene>` once per scene; each writes
 `art/captures/studio/<scene>/` (git-ignored). **The names, sizes and shots below are the contract** the gallery builds from: `py -B art/studio/studio.py check` validates the
 folders, `py -B art/gallery/build.py --list` shows which ones are still missing, and `py -B art/studio/synth_studio.py DIR --contract` writes synthetic stand-ins of all eleven
 scenes (to test the layout; see `art/README.md`).
@@ -350,7 +350,7 @@ The order of the frames inside a still scene does not matter (the shot name is l
 
 1. Rooms built, stand and frames summoned, rig options set, GUI scale 2 (in-world captures).
 2. Capture the 14 in-world shots (no gap fix switch is needed any more).
-3. Render the studio scenes: `./gradlew runStudio -Pscene=hero_sword` and the same for `lineup`, `armor_stand`, `stills_hero`, `stills_wide`, `stills_tiles`, `stills_gap`, `stills_default`, `stills_default_armor`, `logo_concepts`, `logo_anim_a`.
+3. Render the studio scenes: `cd fabric && ./gradlew runStudio -Pscene=hero_sword` and the same for `lineup`, `armor_stand`, `stills_hero`, `stills_wide`, `stills_tiles`, `stills_gap`, `stills_default`, `stills_default_armor`, `logo_concepts`, `logo_anim_a`.
    Then `py -B art/studio/studio.py check` (every scene ok) and `py -B art/gallery/build.py --list` (nothing MISSING).
 4. `py -B art/logo.py` (logo, icon, animated logo), `py -B art/gallery/build.py --strict` (cards and the four GIFs; the GIFs take minutes), and look at each image; move crops in `cards.json` where the subject is off.
 5. `py -B art/verify.py --full`, `py -B docs/curseforge/preview.py`.

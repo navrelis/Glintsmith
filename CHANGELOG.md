@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Internal: source split into common + per-loader builds for multi-loader support
+
 ## 2.1.0 (Fabric 1.21.1) — 2026-10-18
 
 ### Changed

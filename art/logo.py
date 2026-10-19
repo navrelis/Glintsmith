@@ -5,7 +5,7 @@
 The picture is "the golden blade": an enchanted golden sword on the diagonal (fire glint, violet outline), rendered by the
 in-game studio, on the cream studio backdrop with a soft glow of its own colours.
 
-Inputs (studio frame contract, K / W pairs, see docs/STUDIO.md; scenes in src/studio/resources/scenes/):
+Inputs (studio frame contract, K / W pairs, see docs/STUDIO.md; scenes in fabric/src/studio/resources/scenes/):
 
     art/captures/studio/logo_concepts/   the still `concept_a` (512 x 512, supersample 2)       -> the stills
     art/captures/studio/logo_anim_a/     165 frames at 20 fps (256 x 256, supersample 4), the same

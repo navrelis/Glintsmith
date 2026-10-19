@@ -41,6 +41,7 @@ def jar_candidates():
     home = os.path.expanduser("~")
     pats = [
         os.path.join(ROOT, ".gradle", "loom-cache", "minecraftMaven", "**", "minecraft-merged-*-1.21.1-*.jar"),
+        os.path.join(ROOT, "fabric", ".gradle", "loom-cache", "minecraftMaven", "**", "minecraft-merged-*-1.21.1-*.jar"),
         os.path.join(home, ".gradle", "caches", "fabric-loom", "1.21.1", "minecraft-client.jar"),
         os.path.join(home, ".gradle", "caches", "fabric-loom", "1.21.1", "minecraft-client-only.jar"),
         os.path.join(home, ".gradle", "caches", "fabric-loom", "1.21.1", "minecraft-merged.jar"),
@@ -68,7 +69,7 @@ def mc_jar():
         else:
             sys.exit("No Minecraft 1.21.1 client jar with assets found (looked in: %s).\n"
                      "Set the environment variable %s to the path of a 1.21.1 client jar (for example the "
-                     "Loom cache: .gradle/loom-cache/minecraftMaven/net/minecraft/minecraft-merged-*/...jar)."
+                     "Loom cache: fabric/.gradle/loom-cache/minecraftMaven/net/minecraft/minecraft-merged-*/...jar)."
                      % (", ".join(tried) or "nothing", JAR_ENV))
     return _cache["jar"]
 

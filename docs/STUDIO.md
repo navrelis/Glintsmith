@@ -6,19 +6,20 @@ The glint, the outline and the gap fix in those frames are the real Glintsmith p
 the game uses. Nothing is imitated.
 
 It is a separate Gradle source set and a separate mod (`glintsmith_studio`). The released jar
-`build/libs/glintsmith-2.1.0.jar` is built from `sourceSets.main` only and contains no studio class or resource.
+`fabric/build/libs/glintsmith-2.2.0+1.21.1-fabric.jar` is built from `sourceSets.main` only and contains no studio class or resource.
 
 ## Running a scene
 
 ```
+cd fabric
 ./gradlew runStudio -Pscene=hero_sword
 ./gradlew runStudio -Pscene=src/studio/resources/scenes/lineup.json
 ./gradlew runStudio -Pscene=C:/path/to/my_scene.json
 ./gradlew runStudio -Pscene=hero_sword -PstudioOut=C:/somewhere/else   # output base folder override
 ```
 
-* `-Pscene` is a JSON file (relative to the repository root or absolute) or the name of a scene in
-  `src/studio/resources/scenes/` (`hero_sword`, `lineup`, `armor_stand`, `stills_hero`, `stills_default`, `stills_default_armor`, `stills_wide`, `stills_tiles`, `stills_gap`, `logo_concepts`, `logo_anim_a`). Gradle passes it to the game as
+* `-Pscene` is a JSON file (relative to `fabric/` or absolute) or the name of a scene in
+  `fabric/src/studio/resources/scenes/` (`hero_sword`, `lineup`, `armor_stand`, `stills_hero`, `stills_default`, `stills_default_armor`, `stills_wide`, `stills_tiles`, `stills_gap`, `logo_concepts`, `logo_anim_a`). Gradle passes it to the game as
   `-Dglintsmith.studio.scene=...`. Without it the studio mod stays idle and the dev client is a normal client.
 * The game runs in `run-studio/` (git-ignored) with its own options, config and saves. It never touches a player's game
   directory, and the in-memory looks never write `run-studio/config/glintsmith.json`.
@@ -167,7 +168,7 @@ same names are overwritten; nothing is ever deleted.
 
 ## Scene format (input)
 
-Scenes live in `src/studio/resources/scenes/` (also loadable by name) or anywhere on disk. Full example with every
+Scenes live in `fabric/src/studio/resources/scenes/` (also loadable by name) or anywhere on disk. Full example with every
 key (values shown are the defaults where a key is optional):
 
 ```json
@@ -327,10 +328,10 @@ a pair use the same view, so the pair can be shown as before / after (or flipped
 
 ## Files
 
-* `build.gradle`: the `studio` source set, the `glintsmith_studio` Loom mod, the `runStudio` run config, and
+* `fabric/build.gradle`: the `studio` source set, the `glintsmith_studio` Loom mod, the `runStudio` run config, and
   `check` depends on `studioClasses` (the studio is compiled by every build, never packaged).
-* `src/studio/resources/fabric.mod.json`, `glintsmith_studio.mixins.json`, `scenes/*.json`.
-* `src/studio/java/navrelis/glintsmith/studio/`: `StudioMod` (entry point, options, watchdog, exit code),
+* `fabric/src/studio/resources/fabric.mod.json`, `glintsmith_studio.mixins.json`, `scenes/*.json`.
+* `fabric/src/studio/java/navrelis/glintsmith/studio/`: `StudioMod` (entry point, options, watchdog, exit code),
   `StudioBootstrap` (world), `StudioScreen` (frames), `Scene` (parser), `Looks` (look to config), `PipelineBridge`
   (reflection into the config manager and the outline WORLD phase), `FrameWriter` (PNGs, `scene.json`),
   `StudioClock`, and `mixin/` (clock redirects, exit code).

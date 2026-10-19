@@ -1,0 +1,184 @@
+plugins {
+	id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
+}
+
+// Jar: glintsmith-<mod version>+<minecraft version>-fabric.jar
+// (mod_id, mod_version, minecraft_version, ... come from ../gradle/shared.properties, see settings.gradle)
+version = "${mod_version}+${minecraft_version}-fabric"
+group = mod_group
+
+base {
+	archivesName = mod_id
+}
+
+// The loader-neutral code and assets in ../common are compiled and packaged into this jar.
+def commonDir = file('../common')
+
+repositories {
+	mavenCentral()
+
+	// Optional integrations. Each repository only serves the groups listed in its content filter.
+	maven {
+		name = 'CaffeineMC'
+		url = 'https://maven.caffeinemc.net/releases/'
+		content {
+			includeGroup 'net.caffeinemc'
+		}
+	}
+	maven {
+		name = 'TerraformersMC'
+		url = 'https://maven.terraformersmc.com/releases/'
+		content {
+			includeGroup 'com.terraformersmc'
+			includeGroup 'dev.emi'
+		}
+	}
+	maven {
+		name = 'Modrinth'
+		url = 'https://api.modrinth.com/maven'
+		content {
+			includeGroup 'maven.modrinth'
+		}
+	}
+}
+
+// Dev-only "studio" render mode (docs/STUDIO.md): its own source set and mod (glintsmith_studio). Nothing of it ends
+// up in the released jar, which is built from sourceSets.main only.
+sourceSets {
+	main {
+		java.srcDir "${commonDir}/src/main/java"
+		resources.srcDir "${commonDir}/src/main/resources"
+	}
+	test {
+		java.srcDir "${commonDir}/src/test/java"
+	}
+	studio {
+		compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
+		runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
+	}
+}
+
+loom {
+	mods {
+		"glintsmith" {
+			sourceSet sourceSets.main
+		}
+		"glintsmith_studio" {
+			sourceSet sourceSets.studio
+		}
+	}
+
+	runs {
+		// ./gradlew runStudio -Pscene=<scene file, or the name of a scene in src/studio/resources/scenes>
+		// (run from this folder; a relative scene path is relative to it)
+		studio {
+			client()
+			name = "Glintsmith Studio"
+			source sourceSets.studio
+			// The run folder and the optional mod jars stay at the repository root, next to art/.
+			runDir "../run-studio"
+			ideConfigGenerated false
+			property "glintsmith.studio.repo", projectDir.parentFile.absolutePath
+			def scene = project.findProperty("scene")
+			if (scene != null) {
+				def sceneFile = file(scene.toString())
+				property "glintsmith.studio.scene", sceneFile.isFile() ? sceneFile.absolutePath : scene.toString()
+			}
+			def studioOut = project.findProperty("studioOut")
+			if (studioOut != null) {
+				property "glintsmith.studio.out", file(studioOut.toString()).absolutePath
+			}
+			// Optional local mod jars (git-ignored), so a scene can show items of other mods without a build dependency.
+			def extraMods = file("../studio-mods").listFiles()?.findAll { it.isFile() && it.name.endsWith(".jar") }?.sort { it.name }
+			if (extraMods) {
+				property "fabric.addMods", extraMods.collect { it.absolutePath }.join(File.pathSeparator)
+			}
+		}
+	}
+}
+
+dependencies {
+	// To change the versions see the gradle.properties file
+	minecraft "com.mojang:minecraft:${minecraft_version}"
+	mappings loom.officialMojangMappings()
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Optional integrations: compile-only, never bundled, never on the runtime classpath.
+	modCompileOnly "net.caffeinemc:sodium-fabric-api:${project.sodium_version}"
+	modCompileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+	modCompileOnly "maven.modrinth:iris:${project.iris_version}"
+
+	testImplementation "org.junit.jupiter:junit-jupiter:${project.junit_version}"
+	testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+
+	// Boots Fabric Loader (and therefore the mixins) inside a plain JUnit run.
+	testImplementation "net.fabricmc:fabric-loader-junit:${project.loader_version}"
+}
+
+test {
+	useJUnitPlatform()
+
+	// Keep loader/bootstrap scratch files (logs, .fabric, config) out of the project root.
+	workingDir = layout.buildDirectory.dir("test-run").get().asFile
+	doFirst {
+		workingDir.mkdirs()
+	}
+}
+
+processResources {
+	// fabric.mod.json takes the mod version (not the jar version) and the Minecraft version predicate.
+	def expandProps = [
+		version        : mod_version,
+		minecraft_range: fabric_minecraft_range
+	]
+	inputs.properties expandProps
+
+	filesMatching("fabric.mod.json") {
+		expand expandProps
+	}
+}
+
+// ../common must stay loader-neutral: loader and optional-mod APIs are only reached through the platform service
+// (navrelis.glintsmith.platform).
+tasks.register("checkCommonIsLoaderNeutral") {
+	def sources = fileTree("${commonDir}/src/main/java") { include "**/*.java" }
+	inputs.files sources
+	doLast {
+		def forbidden = ~/^\s*import\s+(static\s+)?(net\.fabricmc|com\.terraformersmc|net\.neoforged|net\.minecraftforge)\./
+		def offenders = sources.files.collectMany { file ->
+			file.readLines("UTF-8").findAll { it =~ forbidden }.collect { "${file.path}: ${it.trim()}" }
+		}
+		if (!offenders.isEmpty()) {
+			throw new GradleException("common/ must not import loader or optional-mod APIs:\n" + offenders.join("\n"))
+		}
+	}
+}
+
+// Compile the studio with every build so it cannot rot; it is never packaged.
+tasks.named("check") {
+	dependsOn tasks.named("studioClasses"), tasks.named("checkCommonIsLoaderNeutral")
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = java_version as int
+}
+
+java {
+	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
+	// if it is present.
+	// If you remove this line, sources will not be generated.
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
+}
+
+// Resolved while configuring: the licence file is named after the mod id.
+def licenseFileName = "LICENSE_${mod_id}"
+jar {
+	from("../LICENSE") {
+		rename { licenseFileName }
+	}
+}
