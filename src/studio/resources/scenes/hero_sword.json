@@ -32,44 +32,61 @@
 	"looks": [
 		{ "id": "vanilla", "caption": "Vanilla", "vanilla": true },
 		{
-			"id": "default_look",
-			"caption": "Default look",
-			"base": "defaults"
-		},
-		{
 			"id": "rainbow",
-			"caption": "Rainbow glint + rainbow outline",
+			"caption": "Rainbow",
 			"outline": {
+				"enabled": true,
 				"color": { "mode": "rainbow", "speed": 1.0 },
-				"thickness": 3
+				"thickness": 6,
+				"softness": 0.0,
+				"opacity": 1.0
 			},
 			"glint": { "texture": "preset:rainbow", "scale": 0.12 },
 			"gap_fix": "auto"
 		},
 		{
 			"id": "fire",
-			"caption": "Fire glint + pulse outline",
+			"caption": "Fire",
 			"outline": {
+				"enabled": true,
 				"color": { "mode": "pulse", "colors": ["#FF4A00", "#FFD23F"], "speed": 1.5 },
-				"thickness": 3
+				"thickness": 6,
+				"softness": 0.0,
+				"opacity": 1.0
 			},
 			"glint": { "texture": "preset:fire", "scale": 0.12 },
 			"gap_fix": "auto"
 		},
 		{
-			"id": "nebula",
-			"caption": "Nebula glint + gradient outline",
+			"id": "frost",
+			"caption": "Frost",
 			"outline": {
+				"enabled": true,
+				"color": "#3FE0FF",
+				"thickness": 6,
+				"softness": 0.0,
+				"opacity": 1.0
+			},
+			"glint": { "texture": "preset:frost", "scale": 0.12 },
+			"gap_fix": "auto"
+		},
+		{
+			"id": "nebula",
+			"caption": "Nebula",
+			"outline": {
+				"enabled": true,
 				"color": { "mode": "gradient", "colors": ["#4B7BFF", "#C05CFF", "#FF5CC8"], "speed": 1.0 },
-				"thickness": 3
+				"thickness": 6,
+				"softness": 0.0,
+				"opacity": 1.0
 			},
 			"glint": { "texture": "preset:nebula", "scale": 0.12 },
 			"gap_fix": "auto"
 		},
 		{
 			"id": "inferno_glow",
-			"caption": "Inferno glint + soft glow",
-			"outline": { "color": "#FF6A1F", "thickness": 6, "softness": 0.85, "opacity": 0.9 },
+			"caption": "Inferno glow",
+			"outline": { "enabled": true, "color": "#FF6A1F", "thickness": 8, "softness": 0.85, "opacity": 1.0 },
 			"glint": { "texture": "preset:inferno", "scale": 0.12 },
 			"gap_fix": "auto"
 		}

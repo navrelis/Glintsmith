@@ -28,9 +28,17 @@
 	],
 	"looks": [
 		{
-			"id": "hero_default",
-			"caption": "The Glintsmith default look",
-			"base": "defaults"
+			"id": "hero_rainbow",
+			"caption": "Rainbow glint + rainbow outline",
+			"outline": {
+				"enabled": true,
+				"color": { "mode": "rainbow", "speed": 1.0 },
+				"thickness": 6,
+				"softness": 0.0,
+				"opacity": 1.0
+			},
+			"glint": { "texture": "preset:rainbow", "scale": 0.12 },
+			"gap_fix": "auto"
 		},
 		{
 			"id": "logo",
@@ -41,7 +49,7 @@
 		}
 	],
 	"shots": [
-		{ "name": "banner_hero", "look": "hero_default", "yaw": 28, "pitch": 22, "time": 2.1 },
+		{ "name": "banner_hero", "look": "hero_rainbow", "yaw": 28, "pitch": 22, "time": 1.0 },
 		{ "name": "logo", "look": "logo", "yaw": 0, "pitch": 6, "time": 2.0 }
 	]
 }

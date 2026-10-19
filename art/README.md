@@ -63,10 +63,10 @@ look up (`stills_tiles` has 24 frames, `outline_soft_80` among them).
 
 | Scene | Size | What |
 | --- | --- | --- |
-| `hero_sword` | 512 x 512 | turntable, 5 to 6 looks of one sword (the second one is the default look): `showcase.gif` (384 px + caption bar), at most 2,000,000 bytes |
+| `hero_sword` | 512 x 512 | turntable, vanilla and five vivid looks of one sword (outline opacity 1.0, glint preset; never the faint default look): `showcase.gif` (384 px + caption bar), at most 2,000,000 bytes |
 | `lineup` | 1200 x 400 | turntable, six items in a row with a +-35 degree yaw swing: `lineup.gif` (810 x 270 + caption bar, at most 2,000,000 bytes) |
-| `armor_stand` | 480 x 600 | turntable, 3 to 4 looks of a stand in netherite armor (the second one is the default look): `armor.gif` (320 x 400 + caption bar, at most 2,000,000 bytes) |
-| `stills_hero` | 1024 x 1024 | `banner_hero` (the banner picture, the default look of 2.1.0); `logo` (the old logo still, no longer used) |
+| `armor_stand` | 480 x 600 | turntable, vanilla and four vivid looks of a stand in netherite armor (outline opacity 1.0; never the faint default look): `armor.gif` (320 x 400 + caption bar, at most 2,000,000 bytes) |
+| `stills_hero` | 1024 x 1024 | `banner_hero` (the banner picture, a vivid rainbow look); `logo` (the old logo still, no longer used) |
 | `stills_default` | 1024 x 1024 | `default_vanilla`, `default_look` (the mod's built-in defaults, look `"base": "defaults"`): left and middle of `card_default_look.png` |
 | `stills_default_armor` | 480 x 600 | `default_armor` (the armor stand in the default look): right of `card_default_look.png` |
 | `logo_concepts` | 512 x 512 | `concept_a` (logo, icon, small logo: the golden blade); `concept_b`, `concept_c` (the two logo concepts not chosen, kept for reference) |
@@ -271,19 +271,19 @@ the GIFs on disk; run it once after the real build.
 | `art/logo/logo_32.png` | 32 x 32 | the small logo |
 | `src/main/resources/assets/glintsmith/icon.png` | 128 x 128 | the mod icon, from `logo_concepts` / `concept_a` |
 | `docs/curseforge/img/logo_animated.gif` | 256 x 256 | the golden blade, `logo_anim_a` (glint and outline colour, fixed pose), made by `logo.py`, at most 2,000,000 bytes |
-| `docs/curseforge/img/banner.png` | 1000 x 420 | the `banner_hero` render (the default look), title, tagline and chips |
+| `docs/curseforge/img/banner.png` | 1000 x 420 | the `banner_hero` render (rainbow glint and outline), title, tagline and chips |
 | `docs/curseforge/img/card_universal.png` | 1000 x 590 | two rows of studio renders: vanilla and modded items, all outlined |
 | `docs/curseforge/img/lineup.gif` | 810 x 306 | six items in a row, each with its own look, swinging, captioned, at most 2,000,000 bytes |
 | `docs/curseforge/img/card_glint_presets.png` | 1000 x 822 | the neutral glint and all twelve generated presets (seven clean, five rich) as studio stills, with the vanilla glint as the before, in a grid of 5 x 3 (the last slot holds a note) |
 | `docs/curseforge/img/card_outline_styles.png` | 1000 x 648 | ten outline styles as studio stills: vanilla, static, rainbow, pulse, gradient, per enchantment, thickness, soft glow |
-| `docs/curseforge/img/card_default_look.png` | 1000 x 640 | the default look of 2.1.0: vanilla sword, the sword in the mod's built-in defaults and the armor stand in them (studio stills), the text and four chips |
+| `docs/curseforge/img/card_default_look.png` | 1000 x 940 | the default look of 2.1.0: vanilla sword, the sword in the mod's built-in defaults and the armor stand in them (studio stills), a second row with a 4x close-up of the blade tip in vanilla and in the defaults (the real outline and tint are faint, the zoom makes them visible), the text and four chips |
 | `docs/curseforge/img/card_targets.png` | 1000 x 590 | hand and armor (hero shots), third person, dropped items, item frames, inventory |
 | `docs/curseforge/img/armor.gif` | 320 x 436 | the armor stand turning through its looks, captioned, at most 2,000,000 bytes |
 | `docs/curseforge/img/card_gap_fix.png` | 1000 x 744 | before / after of the gap fix on an enchanted netherite sword and a modded chestplate: 3x detail crops of the studio stills, the cracks show in the vanilla tiles |
 | `docs/curseforge/img/card_rules.png` | 1000 x 590 | the rule list and the rule editor |
 | `docs/curseforge/img/card_config.png` | 1000 x 846 | the 2.0.0 settings screen with the live preview panel, Outline and Glint tabs |
 | `docs/curseforge/img/card_shaders.png` | 1000 x 590 | Sodium, and an Iris shader pack in the world, the hand and the inventory |
-| `docs/curseforge/img/showcase.gif` | 384 x 420 | the `hero_sword` turntable through its looks (vanilla, default look, ...), captioned, at most 2,000,000 bytes |
+| `docs/curseforge/img/showcase.gif` | 384 x 420 | the `hero_sword` turntable through its looks (vanilla, rainbow, fire, frost, nebula, inferno glow), captioned, at most 2,000,000 bytes |
 
 ## Licence and sources
 

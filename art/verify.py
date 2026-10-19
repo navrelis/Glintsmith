@@ -212,10 +212,13 @@ def test_manifest(manifest):
                     "card_glint_presets.png": [n for n in synth_studio.SHOTS["stills_tiles"] if n.startswith("glint_")],
                     "card_outline_styles.png": [n for n in synth_studio.SHOTS["stills_tiles"] if n.startswith("outline_")],
                     "card_gap_fix.png": synth_studio.SHOTS["stills_gap"],
-                    "card_default_look.png": ["default_vanilla", "default_look", "default_armor"]}
+                    "card_default_look.png": ["default_vanilla", "default_look", "default_armor", "default_vanilla", "default_look"]}   # + the 4x close-ups
     for name, shots in sorted(studio_cards.items()):
         got = [e["frame"] for c in manifest["cards"] if c["out"] == name for e in c["elements"] if e["type"] == "studio"]
         check(got == shots, "%s shows the studio shots %s (%d)" % (name, shots[0] + " ... " + shots[-1] if len(shots) > 2 else ", ".join(shots), len(got)))
+    zooms = [e for c in manifest["cards"] if c["out"] == "card_default_look.png" for e in c["elements"] if e["type"] == "studio" and e.get("up", 1) >= 3]
+    check(len(zooms) == 2 and all(e.get("crop") for e in zooms) and zooms[0].get("crop") == zooms[1].get("crop"),
+          "card_default_look.png has two close-ups (vanilla and defaults) of the same crop, enlarged by nearest neighbour")
     lg = manifest.get("logo", {})
     check(lg and lg.get("scene") in synth_studio.SHOTS and lg.get("frame") in synth_studio.SHOTS.get(lg.get("scene"), []) and lg["frame"] in shotlist,
           "logo section: the studio still %s / %s is in the contract and described in SHOTLIST.md" % (lg.get("scene"), lg.get("frame")))

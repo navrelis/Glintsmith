@@ -1028,7 +1028,7 @@
    "out": "card_default_look.png",
    "size": [
     1000,
-    640
+    940
    ],
    "seed": 37,
    "title": "A look from the first start",
@@ -1097,26 +1097,74 @@
      "label_below": "Armor glint + outline"
     },
     {
-     "type": "text",
+     "type": "studio",
+     "scene": "stills_default",
+     "frame": "default_vanilla",
      "at": [
       40,
       500
      ],
+     "size": [
+      450,
+      230
+     ],
+     "crop": [
+      380,
+      95,
+      300,
+      153
+     ],
+     "up": 3,
+     "shadow": false,
+     "border": true,
+     "label_style": "dim",
+     "label_below": "Vanilla, 4x zoom"
+    },
+    {
+     "type": "studio",
+     "scene": "stills_default",
+     "frame": "default_look",
+     "at": [
+      510,
+      500
+     ],
+     "size": [
+      450,
+      230
+     ],
+     "crop": [
+      380,
+      95,
+      300,
+      153
+     ],
+     "up": 3,
+     "shadow": false,
+     "border": true,
+     "label_style": "accent",
+     "label_below": "Glintsmith 2.1.0 defaults, 4x zoom"
+    },
+    {
+     "type": "text",
+     "at": [
+      40,
+      800
+     ],
      "width": 920,
-     "text": "A fresh config starts with this look: a pale violet outline and the neutral glint with a slowly changing rainbow tint, on items, worn armor and the GUI. Existing configs keep their values, and the Reset button of a tab brings the look back."
+     "text": "A fresh config starts with this look: a pale violet outline and the neutral glint with a slowly changing rainbow tint. It is gentle by design, so the close-ups show it at 4x. Existing configs keep their values; Reset brings the look back."
     },
     {
      "type": "rule",
      "at": [
       40,
-      576
+      876
      ]
     },
     {
      "type": "chips",
      "at": [
       40,
-      588
+      888
      ],
      "items": [
       "#E6B2FF OUTLINE",
