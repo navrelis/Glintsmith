@@ -1,0 +1,149 @@
+plugins {
+	id 'java-library'
+	id 'net.neoforged.moddev' version '2.0.147'
+}
+
+// Jar: glintsmith-<mod version>+<minecraft version>-neoforge.jar
+// (mod_id, mod_version, minecraft_version, ... come from ../gradle/shared.properties, see settings.gradle)
+version = "${mod_version}+${minecraft_version}-neoforge"
+group = mod_group
+
+base {
+	archivesName = mod_id
+}
+
+// The loader-neutral code and assets in ../common are compiled and packaged into this jar.
+def commonDir = file('../common')
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
+	withSourcesJar()
+}
+
+repositories {
+	mavenCentral()
+
+	// Optional integrations. The repository only serves the group listed in its content filter.
+	exclusiveContent {
+		forRepository {
+			maven {
+				name = 'Modrinth'
+				url = 'https://api.modrinth.com/maven'
+			}
+		}
+		filter {
+			includeGroup 'maven.modrinth'
+		}
+	}
+}
+
+sourceSets {
+	main {
+		java.srcDir "${commonDir}/src/main/java"
+		resources.srcDir "${commonDir}/src/main/resources"
+	}
+	test {
+		java.srcDir "${commonDir}/src/test/java"
+	}
+}
+
+neoForge {
+	version = neo_version
+
+	parchment {
+		minecraftVersion = parchment_minecraft_version
+		mappingsVersion = parchment_mappings_version
+	}
+
+	// The common tests load Minecraft and mod classes (class references, the mixin plugin), so they need Minecraft on
+	// their classpath too. They run as plain JUnit 5, not inside the game.
+	addModdingDependenciesTo sourceSets.test
+
+	mods {
+		"${mod_id}" {
+			sourceSet sourceSets.main
+		}
+	}
+
+	runs {
+		client {
+			client()
+			gameDirectory = file('run')
+			sourceSet = sourceSets.main
+			loadedMods = [mods."${mod_id}"]
+			// Where the client log of a manual check is written; also gives the mixin trace on request.
+			jvmArguments.add '-Dmixin.debug.verbose=true'
+			logLevel = org.slf4j.event.Level.DEBUG
+		}
+	}
+}
+
+dependencies {
+	// Optional integration: compile-only, never bundled, never on the runtime classpath.
+	// common/ references net.irisshaders.iris.api.v0.IrisApi (IrisCompat).
+	compileOnly "maven.modrinth:iris:${project.iris_version}"
+
+	testImplementation "org.junit.jupiter:junit-jupiter:${project.junit_version}"
+	testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+// Fills neoforge.mods.toml with the values of shared.properties and gradle.properties.
+def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
+	def replaceProperties = [
+		neo_version                  : neo_version,
+		neoforge_version_range_min   : neoforge_version_range_min,
+		neoforge_loader_version_range: neoforge_loader_version_range,
+		minecraft_version_range      : minecraft_version_range,
+		mod_id                       : mod_id,
+		mod_name                     : mod_name,
+		mod_license                  : mod_license,
+		mod_version                  : mod_version,
+		mod_authors                  : mod_authors,
+		mod_description              : mod_description
+	]
+	inputs.properties replaceProperties
+	expand replaceProperties
+	from 'src/main/templates'
+	into layout.buildDirectory.dir('generated/sources/modMetadata')
+}
+// Part of the resources of main, for Gradle and for the IDE.
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
+
+test {
+	useJUnitPlatform()
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+	options.release = java_version as int
+}
+
+// ../common must stay loader-neutral: loader and optional-mod APIs are only reached through the platform service
+// (navrelis.glintsmith.platform).
+tasks.register("checkCommonIsLoaderNeutral") {
+	def sources = fileTree("${commonDir}/src/main/java") { include "**/*.java" }
+	inputs.files sources
+	doLast {
+		def forbidden = ~/^\s*import\s+(static\s+)?(net\.fabricmc|com\.terraformersmc|net\.neoforged|net\.minecraftforge)\./
+		def offenders = sources.files.collectMany { file ->
+			file.readLines("UTF-8").findAll { it =~ forbidden }.collect { "${file.path}: ${it.trim()}" }
+		}
+		if (!offenders.isEmpty()) {
+			throw new GradleException("common/ must not import loader or optional-mod APIs:\n" + offenders.join("\n"))
+		}
+	}
+}
+
+tasks.named("check") {
+	dependsOn tasks.named("checkCommonIsLoaderNeutral")
+}
+
+// Resolved while configuring: the licence file is named after the mod id.
+def licenseFileName = "LICENSE_${mod_id}"
+tasks.named('jar', Jar) {
+	from("../LICENSE") {
+		rename { licenseFileName }
+	}
+}

@@ -1,0 +1,13 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "navrelis.glintsmith.neoforge.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"LevelRendererHooksMixin",
+		"MinecraftLifecycleMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
