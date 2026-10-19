@@ -1,0 +1,53 @@
+{
+	"scene": "stills_default_armor",
+	"type": "still",
+	"width": 480,
+	"height": 600,
+	"supersample": 2,
+	"fps": 30,
+	"time_offset": 5.0,
+	"camera": {
+		"projection": "orthographic",
+		"pitch": 10,
+		"distance": 6,
+		"view_height": 3.4
+	},
+	"lights": {
+		"key": [-0.45, 0.75, 0.6],
+		"fill": [0.65, 0.2, 0.45]
+	},
+	"subjects": [
+		{
+			"type": "armor_stand",
+			"nbt": "{ShowArms:1b,NoBasePlate:1b,Pose:{RightArm:[-15f,0f,10f],LeftArm:[-10f,0f,-10f]}}",
+			"equipment": {
+				"head": {
+					"item": "minecraft:netherite_helmet",
+					"enchantments": { "minecraft:protection": 4 }
+				},
+				"chest": {
+					"item": "minecraft:netherite_chestplate",
+					"enchantments": { "minecraft:protection": 4 }
+				},
+				"legs": {
+					"item": "minecraft:netherite_leggings",
+					"enchantments": { "minecraft:protection": 4 }
+				},
+				"feet": {
+					"item": "minecraft:netherite_boots",
+					"enchantments": { "minecraft:protection": 4 }
+				},
+				"mainhand": {
+					"item": "minecraft:netherite_sword",
+					"enchantments": { "minecraft:sharpness": 5 }
+				}
+			}
+		}
+	],
+	"looks": [
+		{ "id": "defaults", "caption": "Glintsmith defaults", "base": "defaults" }
+	],
+	"shots": [
+		{ "name": "default_armor", "look": "defaults", "yaw": 20, "time": 2.1 }
+	]
+}

@@ -28,6 +28,13 @@ import org.jetbrains.annotations.Nullable;
  * in this order: {@code vanilla}, {@code outline}, {@code glint} (all four layers), {@code glint_layers},
  * {@code gap_fix}, {@code rules}, {@code config} (a raw partial {@code glintsmith.json}). Finally every outline
  * thickness is multiplied by the supersample factor.
+ * <p>
+ * {@code "base": "defaults"} replaces that baseline by the mod's real built-in defaults (a fresh
+ * {@code new GlintsmithConfig()}, sanitised): nothing of the baseline is applied, the look's keys are merged over the
+ * defaults in the same order, and the thickness is not multiplied by the supersample factor, because the defaults go
+ * through the same path as in the game (proportional width: the item's size on screen in the render target, which
+ * already is supersample times larger; or, with {@code proportional} off, {@code scaleWithResolution} against the
+ * render target height). {@code "base": "studio"} or no {@code base} is the baseline above.
  */
 final class Looks {
 	private static final String[] LAYERS = {"item", "armor", "entity", "gui"};
@@ -40,6 +47,62 @@ final class Looks {
 	 *                       change baked models in the middle of a frame)
 	 */
 	static GlintsmithConfig build(Scene.Look look, int supersample, @Nullable GlintsmithConfig.GapFix gapFixOverride) {
+		JsonObject json = look.json();
+		String path = "looks." + look.id();
+		boolean defaults = isDefaultsBase(json, path);
+		JsonObject tree = defaults ? defaultsTree() : studioTree();
+		applyLook(tree, json, path);
+
+		GlintsmithConfig config;
+		try {
+			config = ConfigManager.fromJson(tree.toString());
+		} catch (RuntimeException e) {
+			throw new IllegalArgumentException(path + ": not a valid Glintsmith config: " + e.getMessage(), e);
+		}
+		config.sanitize();
+		for (String warning : config.warnings()) {
+			throw new IllegalArgumentException(path + ": " + warning);
+		}
+		for (Rule rule : config.rules) {
+			if (rule.error != null) {
+				throw new IllegalArgumentException(path + ".rules: " + rule.error);
+			}
+		}
+		// Pixel sizes are output pixels: the frames are rendered supersample times larger and downsampled later.
+		// The defaults base keeps the game's own thickness path instead (see the class comment).
+		if (!defaults) {
+			config.outline.thickness *= supersample;
+			for (Rule rule : config.rules) {
+				if (rule.outline != null && rule.outline.thickness != null) {
+					rule.outline.thickness *= supersample;
+				}
+			}
+		}
+		if (gapFixOverride != null) {
+			config.gapFix = copyGapFix(gapFixOverride);
+		}
+		return config.sanitize();
+	}
+
+	private static boolean isDefaultsBase(JsonObject json, String path) {
+		if (!json.has("base")) {
+			return false;
+		}
+		JsonElement base = json.get("base");
+		String name = base.isJsonPrimitive() ? base.getAsString().toLowerCase(Locale.ROOT) : "";
+		return switch (name) {
+			case "defaults" -> true;
+			case "studio" -> false;
+			default -> throw new IllegalArgumentException(path + ".base: expected studio or defaults");
+		};
+	}
+
+	/** The mod's real built-in defaults: a fresh config, sanitised, as the game starts with it. */
+	private static JsonObject defaultsTree() {
+		return JsonParser.parseString(ConfigManager.toJson(new GlintsmithConfig().sanitize())).getAsJsonObject();
+	}
+
+	private static JsonObject studioTree() {
 		GlintsmithConfig base = new GlintsmithConfig();
 		base.rules.clear();
 		base.enchantmentColors.clear();
@@ -80,9 +143,11 @@ final class Looks {
 		t.gui = true;
 		t.other = true;
 
-		JsonObject tree = JsonParser.parseString(ConfigManager.toJson(base)).getAsJsonObject();
-		JsonObject json = look.json();
-		String path = "looks." + look.id();
+		return JsonParser.parseString(ConfigManager.toJson(base)).getAsJsonObject();
+	}
+
+	/** Merges the look's keys over the base tree, in the documented order. */
+	private static void applyLook(JsonObject tree, JsonObject json, String path) {
 		if (json.has("vanilla") && json.get("vanilla").getAsBoolean()) {
 			tree.getAsJsonObject("outline").addProperty("enabled", false);
 			tree.getAsJsonObject("glint").addProperty("enabled", false);
@@ -140,33 +205,6 @@ final class Looks {
 		if (json.has("config")) {
 			merge(tree, normalize(Scene.asObject(json.get("config"), path + ".config")));
 		}
-
-		GlintsmithConfig config;
-		try {
-			config = ConfigManager.fromJson(tree.toString());
-		} catch (RuntimeException e) {
-			throw new IllegalArgumentException(path + ": not a valid Glintsmith config: " + e.getMessage(), e);
-		}
-		config.sanitize();
-		for (String warning : config.warnings()) {
-			throw new IllegalArgumentException(path + ": " + warning);
-		}
-		for (Rule rule : config.rules) {
-			if (rule.error != null) {
-				throw new IllegalArgumentException(path + ".rules: " + rule.error);
-			}
-		}
-		// Pixel sizes are output pixels: the frames are rendered supersample times larger and downsampled later.
-		config.outline.thickness *= supersample;
-		for (Rule rule : config.rules) {
-			if (rule.outline != null && rule.outline.thickness != null) {
-				rule.outline.thickness *= supersample;
-			}
-		}
-		if (gapFixOverride != null) {
-			config.gapFix = copyGapFix(gapFixOverride);
-		}
-		return config.sanitize();
 	}
 
 	private static GlintsmithConfig.GapFix copyGapFix(GlintsmithConfig.GapFix src) {

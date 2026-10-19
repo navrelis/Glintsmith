@@ -1,0 +1,37 @@
+{
+	"scene": "stills_default",
+	"type": "still",
+	"width": 1024,
+	"height": 1024,
+	"supersample": 2,
+	"fps": 30,
+	"time_offset": 5.0,
+	"camera": {
+		"projection": "orthographic",
+		"pitch": 20,
+		"distance": 4,
+		"view_height": 1.7
+	},
+	"lights": {
+		"key": [-0.45, 0.75, 0.6],
+		"fill": [0.65, 0.2, 0.45]
+	},
+	"subjects": [
+		{
+			"type": "item",
+			"item": {
+				"item": "minecraft:netherite_sword",
+				"enchantments": { "minecraft:sharpness": 5, "minecraft:unbreaking": 3, "minecraft:mending": 1 }
+			},
+			"rotation": [0, 0, 45]
+		}
+	],
+	"looks": [
+		{ "id": "vanilla", "caption": "Vanilla", "vanilla": true },
+		{ "id": "defaults", "caption": "Glintsmith defaults", "base": "defaults" }
+	],
+	"shots": [
+		{ "name": "default_vanilla", "look": "vanilla", "yaw": 28, "pitch": 22, "time": 2.1 },
+		{ "name": "default_look", "look": "defaults", "yaw": 28, "pitch": 22, "time": 2.1 }
+	]
+}

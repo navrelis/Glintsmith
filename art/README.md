@@ -12,7 +12,7 @@ edge round every in-game capture (2 px, dark brass then soft tan, `lib.BORDER_DA
 studio renders have no frame: the item stands straight on the card, or on the studio backdrop of a GIF, with a soft contact shadow.
 
 * **The studio** (`art/studio/`, scenes in `art/captures/studio/<scene>/`, git-ignored) makes: the banner picture, the logo and the
-  icon, the four GIFs, and the universal, glint preset, outline style and gap fix cards.
+  icon, the four GIFs, and the universal, glint preset, outline style, gap fix and default look cards.
 * **In-world captures** (`art/captures/<name>.png`, git-ignored, 14 of them, `gallery/SHOTLIST.md`) make the targets, rules, config
   and shaders cards. They are shot on a white backdrop: the rooms are built of white blocks, every air cell holds a level 15 light
   block, the game runs at gamma 1.0 with Night Vision, and every close-up stands in front of a full-bright white panel (a
@@ -27,7 +27,7 @@ timestamps, fixed seeds, any number of workers).
 ## Workflow
 
 ```
-1. render       ./gradlew runStudio -Pscene=<scene>        for the 7 scenes of the contract (below): art/captures/studio/<scene>/
+1. render       ./gradlew runStudio -Pscene=<scene>        for the scenes of the contract (below): art/captures/studio/<scene>/
    capture      the 14 in-world shots of art/gallery/SHOTLIST.md, saved as art/captures/<name>.png
 2. look         py -B art/studio/studio.py check           every studio scene: frames, sizes, named stills
                 py -B art/gallery/build.py --list          which captures and studio frames exist, which are missing
@@ -63,14 +63,16 @@ look up (`stills_tiles` has 24 frames, `outline_soft_80` among them).
 
 | Scene | Size | What |
 | --- | --- | --- |
-| `hero_sword` | 512 x 512 | turntable, 5 to 6 looks of one sword: `showcase.gif` (384 px + caption bar), at most 2,000,000 bytes |
+| `hero_sword` | 512 x 512 | turntable, 5 to 6 looks of one sword (the second one is the default look): `showcase.gif` (384 px + caption bar), at most 2,000,000 bytes |
 | `lineup` | 1200 x 400 | turntable, six items in a row with a +-35 degree yaw swing: `lineup.gif` (810 x 270 + caption bar, at most 2,000,000 bytes) |
-| `armor_stand` | 480 x 600 | turntable, 3 to 4 looks of a stand in netherite armor: `armor.gif` (320 x 400 + caption bar, at most 2,000,000 bytes) |
-| `stills_hero` | 1024 x 1024 | `banner_hero` (the banner picture); `logo` (the old logo still, no longer used) |
+| `armor_stand` | 480 x 600 | turntable, 3 to 4 looks of a stand in netherite armor (the second one is the default look): `armor.gif` (320 x 400 + caption bar, at most 2,000,000 bytes) |
+| `stills_hero` | 1024 x 1024 | `banner_hero` (the banner picture, the default look of 2.1.0); `logo` (the old logo still, no longer used) |
+| `stills_default` | 1024 x 1024 | `default_vanilla`, `default_look` (the mod's built-in defaults, look `"base": "defaults"`): left and middle of `card_default_look.png` |
+| `stills_default_armor` | 480 x 600 | `default_armor` (the armor stand in the default look): right of `card_default_look.png` |
 | `logo_concepts` | 512 x 512 | `concept_a` (logo, icon, small logo: the golden blade); `concept_b`, `concept_c` (the two logo concepts not chosen, kept for reference) |
 | `logo_anim_a` | 256 x 256, supersample 4 | fixed pose of `concept_a`, 165 frames at 20 fps, glint and outline colour in an exact 8.25 s loop: `logo_animated.gif` |
 | `stills_wide` | 1200 x 400 | `universal_vanilla`, `universal_modded` (the two rows of `card_universal.png`) |
-| `stills_tiles` | 512 x 512 | `glint_vanilla`, `glint_neutral`, `glint_rainbow`, `glint_aurora`, `glint_fire`, `glint_frost`, `glint_sparkle`, `glint_gold`, `glint_void`, `glint_inferno`, `glint_nebula`, `glint_starlight`, `glint_opal`, `glint_storm` (`card_glint_presets.png`) and `outline_vanilla`, `outline_static`, `outline_rainbow`, `outline_pulse`, `outline_gradient`, `outline_enchant`, `outline_thick_1`, `outline_thick_3`, `outline_thick_6`, `outline_soft_80` (`card_outline_styles.png`) |
+| `stills_tiles` | 512 x 512 | `glint_vanilla`, `glint_neutral` (with the default rainbow tint), `glint_rainbow`, `glint_aurora`, `glint_fire`, `glint_frost`, `glint_sparkle`, `glint_gold`, `glint_void`, `glint_inferno`, `glint_nebula`, `glint_starlight`, `glint_opal`, `glint_storm` (`card_glint_presets.png`) and `outline_vanilla`, `outline_static` (`#E6B2FF`), `outline_rainbow`, `outline_pulse`, `outline_gradient`, `outline_enchant`, `outline_thick_1`, `outline_thick_3`, `outline_thick_6`, `outline_soft_80` (`card_outline_styles.png`) |
 | `stills_gap` | 800 x 800 | `gap_sword_off`, `gap_sword_on`, `gap_modded_off`, `gap_modded_on` (`card_gap_fix.png`) |
 
 ### The logo and the icon
@@ -137,12 +139,12 @@ grey GIF in the same way. `logo.py` writes nothing (see above). The repository s
 py -B art/gallery/synth.py DIR [--frames N] [--supersample S] [--workers N] [--no-studio]
 py -B art/gallery/build.py --captures DIR --out DIR2            cards, banner and GIFs from the synthetic input
 py -B art/logo.py --captures DIR --out DIR3                     logo, icon, animated logo (DIR3/art/logo, DIR3/src/main/resources/..., DIR3/docs/...)
-py -B art/studio/synth_studio.py DIR --contract                 only the nine synthetic studio scenes
+py -B art/studio/synth_studio.py DIR --contract                 only the eleven synthetic studio scenes
 py -B art/studio/synth_studio.py DIR --size 256 | 480x600       one synthetic turntable of that size
 ```
 
 `synth.py` writes a 1920 x 1080 stand-in for every in-world capture the manifest names (a gradient with a coordinate grid, a diagonal
-bar, the file name and the words "SYNTHETIC TEST CAPTURE") and, unless `--no-studio`, the nine studio scenes of the contract in
+bar, the file name and the words "SYNTHETIC TEST CAPTURE") and, unless `--no-studio`, the eleven studio scenes of the contract in
 `DIR/studio/` (a little extruded sword turning on a vertical axis, a row of six for the lineup, with a glow, as black / white frame pairs
 in the contract's names and sizes: 12 frames per turntable by default, one frame per still shot). Look at `DIR2` / `DIR3` to check
 crops, scales, labels and spacing. These files are only ever written to a folder you name (use a temp folder); they carry the text in a
@@ -216,7 +218,7 @@ text stays crisp. The card text uses only ASCII, set in the game's own font read
 
 The cards that use studio renders: `banner.png` (`stills_hero` / `banner_hero`, left of the title), `card_universal.png` (`universal_vanilla`,
 `universal_modded`: two 920 x 164 rows, `trim: "y"`, no shadow), `card_glint_presets.png` and `card_outline_styles.png` (the 14 + 10 tile shots at
-150 px, a name box under each tile; the outline tiles are cropped to 235 x 213 matte pixels and set at 176 x 160, see "Outline tiles" in `docs/STUDIO.md`), `card_gap_fix.png` (the four gap shots as 3x nearest-neighbour detail crops, `crop` + `up` + `border`, 450 x 198 px each). When the real renders exist, check each tile for a
+150 px, a name box under each tile; the outline tiles are cropped to 235 x 213 matte pixels and set at 176 x 160, see "Outline tiles" in `docs/STUDIO.md`), `card_gap_fix.png` (the four gap shots as 3x nearest-neighbour detail crops, `crop` + `up` + `border`, 450 x 198 px each), `card_default_look.png` (`default_vanilla`, `default_look` and `default_armor`: three 290 x 340 slots with a crop of the matte each, a name box under each). When the real renders exist, check each tile for a
 subject that is cut off or too small and move its `size`, `crop` or `trim` here.
 
 ## Verify
@@ -225,7 +227,7 @@ subject that is cut off or too small and move its `size`, `crop` or `trim` here.
 
 * the PNG reader decodes every filter type, RGB, RGBA and a 1-bit palette image exactly, and rejects garbage;
 * the manifest only uses known elements, every picture box lies inside its card, every capture and every studio shot is described in `SHOTLIST.md`
-  and exists in the studio contract, the cards show the shots they should (banner, universal, glint presets, outline styles, gap fix), the `logo`
+  and exists in the studio contract, the cards show the shots they should (banner, universal, glint presets, outline styles, gap fix, default look), the `logo`
   section names a contract still, the four GIFs are turntables of the contract with the scene's shape, at most 1000 px wide and at most 2,000,000 bytes (budget at most 1.9), and
   every image of the manifest has its paste marker in `docs/curseforge/description.md`;
 * every text colour the build puts on a cream surface has a WCAG contrast of at least **4.5:1** (`MIN_CONTRAST`; the 3:1
@@ -236,7 +238,7 @@ subject that is cut off or too small and move its `size`, `crop` or `trim` here.
   `text` and `bullets` element of `cards.json` on the card, the dither speck and the panel it sits in, and the caption
   bar text of the GIFs on `PAGE`. Text that is part of an in-game capture is the game's own and is not checked;
 * the cards, the logo files and the GIFs are built twice, from the captures in the repository (the GIFs only with `--full`) and from synthetic
-  input (in-world PNGs plus the nine synthetic studio scenes), and come out byte-identical both times, and the synthetic build draws no placeholder;
+  input (in-world PNGs plus the eleven synthetic studio scenes), and come out byte-identical both times, and the synthetic build draws no placeholder;
   the synthetic scenes have the contract's names, sizes and still shots;
 * the GIFs built from the synthetic scenes have the manifest's size (plus the caption bar), loop forever, have frame delays of at least 2 cs and
   are below their budget; with `--full` the GIFs in `docs/curseforge/img/` are checked the same way (a shrunk picture of at least 0.6 of the size
@@ -269,18 +271,19 @@ the GIFs on disk; run it once after the real build.
 | `art/logo/logo_32.png` | 32 x 32 | the small logo |
 | `src/main/resources/assets/glintsmith/icon.png` | 128 x 128 | the mod icon, from `logo_concepts` / `concept_a` |
 | `docs/curseforge/img/logo_animated.gif` | 256 x 256 | the golden blade, `logo_anim_a` (glint and outline colour, fixed pose), made by `logo.py`, at most 2,000,000 bytes |
-| `docs/curseforge/img/banner.png` | 1000 x 420 | the `banner_hero` render, title, tagline and chips |
+| `docs/curseforge/img/banner.png` | 1000 x 420 | the `banner_hero` render (the default look), title, tagline and chips |
 | `docs/curseforge/img/card_universal.png` | 1000 x 590 | two rows of studio renders: vanilla and modded items, all outlined |
 | `docs/curseforge/img/lineup.gif` | 810 x 306 | six items in a row, each with its own look, swinging, captioned, at most 2,000,000 bytes |
 | `docs/curseforge/img/card_glint_presets.png` | 1000 x 822 | the neutral glint and all twelve generated presets (seven clean, five rich) as studio stills, with the vanilla glint as the before, in a grid of 5 x 3 (the last slot holds a note) |
 | `docs/curseforge/img/card_outline_styles.png` | 1000 x 648 | ten outline styles as studio stills: vanilla, static, rainbow, pulse, gradient, per enchantment, thickness, soft glow |
+| `docs/curseforge/img/card_default_look.png` | 1000 x 640 | the default look of 2.1.0: vanilla sword, the sword in the mod's built-in defaults and the armor stand in them (studio stills), the text and four chips |
 | `docs/curseforge/img/card_targets.png` | 1000 x 590 | hand and armor (hero shots), third person, dropped items, item frames, inventory |
 | `docs/curseforge/img/armor.gif` | 320 x 436 | the armor stand turning through its looks, captioned, at most 2,000,000 bytes |
 | `docs/curseforge/img/card_gap_fix.png` | 1000 x 744 | before / after of the gap fix on an enchanted netherite sword and a modded chestplate: 3x detail crops of the studio stills, the cracks show in the vanilla tiles |
 | `docs/curseforge/img/card_rules.png` | 1000 x 590 | the rule list and the rule editor |
 | `docs/curseforge/img/card_config.png` | 1000 x 846 | the 2.0.0 settings screen with the live preview panel, Outline and Glint tabs |
 | `docs/curseforge/img/card_shaders.png` | 1000 x 590 | Sodium, and an Iris shader pack in the world, the hand and the inventory |
-| `docs/curseforge/img/showcase.gif` | 384 x 420 | the `hero_sword` turntable through its looks, captioned, at most 2,000,000 bytes |
+| `docs/curseforge/img/showcase.gif` | 384 x 420 | the `hero_sword` turntable through its looks (vanilla, default look, ...), captioned, at most 2,000,000 bytes |
 
 ## Licence and sources
 

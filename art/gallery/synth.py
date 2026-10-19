@@ -5,9 +5,9 @@
 
 Writes, into DIR, a 1920 x 1080 PNG for every in-world capture the manifest names (a light gradient like the white / cream
 in-game backdrop, with a coordinate grid, a few shapes, and the file name in the vanilla font) and, unless --no-studio is
-given, the nine synthetic studio scenes of the gallery contract (art/studio/synth_studio.py: the turntables hero_sword,
+given, the eleven synthetic studio scenes of the gallery contract (art/studio/synth_studio.py: the turntables hero_sword,
 lineup, armor_stand and logo_anim_a with N frames each, and the still scenes stills_hero, stills_wide, stills_tiles,
-stills_gap and logo_concepts with their named shots).
+stills_gap, stills_default, stills_default_armor and logo_concepts with their named shots).
 Point the builders at it with `--captures DIR` to check crops, scales, labels and spacing before real captures
 exist.  Every picture is stamped "SYNTHETIC TEST CAPTURE" so it cannot be mistaken for a real one.
 

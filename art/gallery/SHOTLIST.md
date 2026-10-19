@@ -7,7 +7,7 @@ Every image of the CurseForge gallery is a real render of the mod (see `art/READ
   which ones are still missing.
 * **Studio renders** (section 4): the dev-only studio (`docs/STUDIO.md`, `./gradlew runStudio -Pscene=<scene>`) renders turntables and named stills of items
   and armor through the real Glintsmith pipeline, every frame over pure black and pure white, into `art/captures/studio/<scene>/`. The banner, the logo, the
-  icon, the four GIFs and the universal, glint preset, outline style and gap fix cards are built from them (`art/studio/`, `art/gallery/gifs.py`).
+  icon, the four GIFs and the universal, glint preset, outline style, gap fix and default look cards are built from them (`art/studio/`, `art/gallery/gifs.py`).
 
 Nothing here may be faked, drawn or composited by hand: an in-world capture is one unedited screenshot, a studio frame is what the game rendered. The only
 things set by code are layout (the card frame, panels and text), the studio matte, the cream backdrop with its soft shadows and the GIF encoding.
@@ -61,7 +61,7 @@ Settings > FOV, or the Director `options fov=30`); the camera distances below we
 pixels per block on the 1080 px high capture. Wide shots (shaders, targets, the screens, `hero_firstperson`) stay at FOV 70 (the first person hand is drawn with
 a fixed FOV of 70 anyway).
 
-Outline thickness is in framebuffer pixels and does not grow with the subject, so the big subject uses a thicker line (hero armor 6 px); the item frame shot keeps its 2 px.
+Outline thickness is in framebuffer pixels and does not grow with the subject. Since 2.1.0 the hero shots and the item frame shot use the built-in default thickness (7.5 px).
 
 Expected subject sizes on the 1920 x 1080 capture (from the generator, not measured; the first full run measured the real capture at about 0.885 of the formula):
 
@@ -203,14 +203,15 @@ settings screen. Every shot lists a profile; write the whole profile (deep merge
 | `SOFT(v)` | `{"outline": {"softness": v}}` |
 | `TINT(hex)` | `{"glint": {<each of the four layers>: {"tint": {"mode": "STATIC", "colors": [hex]}}}}` |
 | `GL(p)` | `{"glint": {"enabled": true, "item": {"texture": "preset:p", "scale": 0.13, "strength": 1.0}, "armor": {"texture": "preset:p", "scale": 0.22, "strength": 1.0}, "entity": {"texture": "preset:p", "scale": 0.22, "strength": 1.0}, "gui": {"texture": "preset:p"}}}` (all four layers; `sparkle` uses scale 0.1 on every tuned layer; the gui layer gets scale 0.13 and strength 1.0 only in `shaders_iris_gui`, where the GUI glint is on the picture) |
-| `GUION` | `{"outline": {"targets": {"gui": true}}}` |
-| `ARMOR_ON` | `{"outline": {"targets": {"armor": true}}}` (worn armor and the elytra are outlined only with this; the default is `false`. Item frames are not the armor target, they follow `itemFrame`) |
+| `GUION` | `{"outline": {"targets": {"gui": true}}}` (since 2.1.0 the built-in default is `true` as well; BASE sets it `false`, so the shots that show the inventory switch it on) |
+| `ARMOR_ON` | `{"outline": {"targets": {"armor": true}}}` (worn armor and the elytra are outlined with this on; since 2.1.0 the built-in default is also `true`, and BASE does not follow the defaults, so the shots keep it explicit. Item frames are not the armor target, they follow `itemFrame`) |
 
 **Glint scale.** The capture pack's block atlas is 8192 x 4096, so at the default scale 1.0 an item sprite shows only a few texels of
 the 128 px preset pattern and the glint reads as a flat colour wash. Every in-world shot with a preset glint therefore uses `GL(p)` as written
-above (scale 0.13 item, 0.22 armor and entity, 0.1 sparkle, strength 1.0, the maximum): `hero_armor`, `hero_firstperson` and the four Sodium and Iris
-shots. The vanilla baselines (the item frame shot and the other target shots) keep vanilla settings, and so does `config_glint`, which shows the
-settings screen with the default values. The studio renders carry their own look settings (section 4).
+above (scale 0.13 item, 0.22 armor and entity, 0.1 sparkle, strength 1.0, the maximum): the four Sodium and Iris
+shots (`hero_armor` and `hero_firstperson` did until 2.1.0). The vanilla baselines (the other target shots) keep vanilla settings; since 2.1.0 the
+eight shots of the note in section 3 (among them `hero_armor`, `hero_firstperson` and `config_glint`) use the built-in default config instead. The studio
+renders carry their own look settings (section 4).
 
 Colours (deeper than in the first version, because pale colours vanish on white): violet `#A050F0` (default, last stop of the logo gradient), amber `#FF8A1F`,
 ice `#1AA6DC`, gold `#F0A500`, red `#FF4D4D`; logo gradient `GRAD_LOGO` = mint `#1FC77A`, blue `#3D6BFF`, violet `#A050F0`. The default enchantment colours of the stand's
@@ -220,6 +221,10 @@ Changing `gapFix` needs a resource reload (F3 + T, wait until it is done).
 
 ## 3. In-world captures (14)
 
+Since 2.1.0 eight of these shots (`outline_static`, `hero_armor`, `hero_firstperson`, `target_third_person`, `target_dropped`, `target_gui`, `config_outline`,
+`config_glint`) are taken with the mod's built-in default config (owner defaults, no `glintsmith.json` profile overrides) by the `gallerydef` capture script, run
+2026-10-19. The other in-world captures keep their BASE profiles. Where a row below still names BASE or a macro, it applies to those other shots only.
+
 All camera lines assume the rooms above. "Crop" is where the card looks (source pixels, centred unless given); it only
 has to be roughly right, the lead moves the crop in `cards.json` after looking at the capture.
 
@@ -227,11 +232,11 @@ has to be roughly right, the lead moves the crop in `cards.json` after looking a
 
 One frame at X 13, Y 102 holding `minecraft:netherite_sword` with sharpness 5, unbreaking 3, mending 1, in room A with the room A panels behind the wall.
 Spectator, FOV 30, `tp 13.5 100.88 10.59 180 0`, d 9.54, the frame centred on the screen (the sword is about 95 px high, the 0.75 block frame 160 px).
-Glint is vanilla (`glint.enabled = false`). The card crops 154 x 160 native, centred on the item frame (the other frames at the left edge x < 100 are out of the crop).
+The glint is the default one (neutral with the rainbow tint, since 2.1.0). The card crops 154 x 160 native, centred on the item frame (the other frames at the left edge x < 100 are out of the crop).
 
 | File | Config |
 | --- | --- |
-| `outline_static.png` | BASE (violet `#A050F0`, 2 px). Used by the Item frames cell of `card_targets` |
+| `outline_static.png` | the mod's built-in default config (2.1.0 owner defaults: outline static `#E6B2FF`, 7.5 px, 25 % opacity, on for armor and GUI; neutral glint with the rainbow tint at strength 0.9 on all four layers), no profile; re-shot 2026-10-19. Used by the Item frames cell of `card_targets` |
 
 ### Hero shots (2)
 
@@ -240,12 +245,12 @@ The hero shots of `card_targets`. Rig: "Hero shots rig" in section 0 (FOV 30, wh
 
 | File | In frame | Scene, camera | Config |
 | --- | --- | --- | --- |
-| `hero_armor.png` | the armor stand's netherite helmet and chestplate, head and chest centred, white behind, about 720 px from helmet top to chestplate bottom (67 percent). The card crops `[585,100,750,800]` (head to the top of the leggings; the stand continues below the picture) | room H: the stand at (12.5, 100, 79.2) facing north (`Rotation:[180f,0f]`, otherwise the summon of section 1) in front of the south wall panel. Spectator, `tp 12.5 99.705 75.7 0 0` (the camera looks south), d 3.50 | BASE + `GL("rainbow")` + `T(6)` + `RAINBOW()` + `ARMOR_ON` |
-| `hero_firstperson.png` | first person, the netherite sword in the right hand, blade pointing up and left across the picture, whole blade in frame, hand at the lower right, the white wall behind. The card crops `[98,0,1822,1080]` (the sword is cut by the right edge of the capture itself) | room H, **creative, hand visible**, F1, **FOV 70** (the hand is drawn with a fixed FOV of 70, so the option is put back to 70 first). `/item replace entity @s weapon.mainhand with minecraft:netherite_sword[ench]`, `tp 12.5 100 74.7 0 10` (about 5.3 blocks from the south wall, the camera looks south at the south wall panel) | BASE + `GL("rainbow")` + `T(3)` + `RAINBOW()` |
+| `hero_armor.png` | the armor stand's netherite helmet and chestplate, head and chest centred, white behind, about 720 px from helmet top to chestplate bottom (67 percent). The card crops `[585,100,750,800]` (head to the top of the leggings; the stand continues below the picture) | room H: the stand at (12.5, 100, 79.2) facing north (`Rotation:[180f,0f]`, otherwise the summon of section 1) in front of the south wall panel. Spectator, `tp 12.5 99.705 75.7 0 0` (the camera looks south), d 3.50 | the mod's built-in default config (2.1.0 owner defaults: outline static `#E6B2FF`, 7.5 px, 25 % opacity, on for armor and GUI; neutral glint with the rainbow tint at strength 0.9 on all four layers), no profile; re-shot 2026-10-19 |
+| `hero_firstperson.png` | first person, the netherite sword in the right hand, blade pointing up and left across the picture, whole blade in frame, hand at the lower right, the white wall behind. The card crops `[98,0,1822,1080]` (the sword is cut by the right edge of the capture itself) | room H, **creative, hand visible**, F1, **FOV 70** (the hand is drawn with a fixed FOV of 70, so the option is put back to 70 first). `/item replace entity @s weapon.mainhand with minecraft:netherite_sword[ench]`, `tp 12.5 100 74.7 0 10` (about 5.3 blocks from the south wall, the camera looks south at the south wall panel) | the mod's built-in default config (2.1.0 owner defaults: outline static `#E6B2FF`, 7.5 px, 25 % opacity, on for armor and GUI; neutral glint with the rainbow tint at strength 0.9 on all four layers), no profile; re-shot 2026-10-19 |
 
 ### Targets (3, plus `outline_static.png` and the two hero shots above)
 
-BASE + `T(3)` for all of them (the GUI one is BASE + `GUION` with the default thickness 2). All three are wide shots at FOV 70 in the quartz room B with no panel. The card is a layout of five cells plus the inventory at native size (see `cards.json`). The first person and armor cells of this card are the hero shots `hero_firstperson.png` and `hero_armor.png`, the item frames cell is `outline_static.png`.
+The built-in default config for all of them (`target_gui` and the armor and item frame cells included; since 2.1.0 the GUI and armor targets are on by default, so no `GUION` is needed). All three are wide shots at FOV 70 in the quartz room B with no panel. The card is a layout of five cells plus the inventory at native size (see `cards.json`). The first person and armor cells of this card are the hero shots `hero_firstperson.png` and `hero_armor.png`, the item frames cell is `outline_static.png`.
 
 | File | Scene, camera, mode | Notes |
 | --- | --- | --- |
@@ -270,8 +275,8 @@ middle 904 x 600 of the capture; if the screen is larger, tell the lead.
 | --- | --- | --- |
 | `rules_tab.png` | Rules tab, the four rules below visible, none selected | BASE + the four rules |
 | `rule_edit.png` | the editor of rule 1 (press Edit): name, items `#minecraft:swords`, the outline override with the red colour and thickness 3 visible | BASE + the four rules |
-| `config_outline.png` | Outline tab, top of the page, nothing hovered; since 2.0.0 the screen also shows the live preview panel (the held netherite sword with the outline). Taken in the 2.0.0 in-game check run of 2026-10-18 (`v2_screen_outline.png`, 1920 x 1080), not in the capture pack session | BASE (the 2.0.0 check run's own config: static `#FF2BE0`, 8.5 px) |
-| `config_glint.png` | Glint tab, layer Item, texture `preset:fire` selected, live preview panel showing the sword with the fire glint and the outline. Taken in the 2.0.0 in-game check run of 2026-10-18 (`v2_screen_glint.png`, 1920 x 1080), not in the capture pack session | the 2.0.0 check run's config: `preset:fire` for the item layer, default scale and strength (the screen shows the values) |
+| `config_outline.png` | Outline tab, top of the page, nothing hovered; since 2.0.0 the screen also shows the live preview panel (the held netherite sword with the outline). Re-shot 2026-10-19 by the `gallerydef` capture script (1920 x 1080); it shows the 2.1.0 built-in default config (static `#E6B2FF`, 7.5 px, outline on for armor and GUI) | the mod's built-in default config (2.1.0 owner defaults: outline static `#E6B2FF`, 7.5 px, 25 % opacity, on for armor and GUI; neutral glint with the rainbow tint at strength 0.9 on all four layers), no profile |
+| `config_glint.png` | Glint tab, layer Item, the default neutral texture with the rainbow tint at strength 90 %, live preview panel showing the sword with the default glint and the outline. Re-shot 2026-10-19 by the `gallerydef` capture script (1920 x 1080); it shows the 2.1.0 built-in default config | the mod's built-in default config (2.1.0 owner defaults: outline static `#E6B2FF`, 7.5 px, 25 % opacity, on for armor and GUI; neutral glint with the rainbow tint at strength 0.9 on all four layers), no profile (the screen shows the values) |
 
 The four rules (`"rules"` value):
 
@@ -303,7 +308,7 @@ All four are wide shots at FOV 70 in the quartz room B with **no backdrop panel*
 
 These come from the dev-only studio (`docs/STUDIO.md`), not from screenshots. Run `./gradlew runStudio -Pscene=<scene>` once per scene; each writes
 `art/captures/studio/<scene>/` (git-ignored). **The names, sizes and shots below are the contract** the gallery builds from: `py -B art/studio/studio.py check` validates the
-folders, `py -B art/gallery/build.py --list` shows which ones are still missing, and `py -B art/studio/synth_studio.py DIR --contract` writes synthetic stand-ins of all nine
+folders, `py -B art/gallery/build.py --list` shows which ones are still missing, and `py -B art/studio/synth_studio.py DIR --contract` writes synthetic stand-ins of all eleven
 scenes (to test the layout; see `art/README.md`).
 
 Every frame is a pair `NNNN_k.png` (over black) and `NNNN_w.png` (over white), `width * supersample` by `height * supersample` pixels, and the scene's
@@ -311,30 +316,32 @@ Every frame is a pair `NNNN_k.png` (over black) and `NNNN_w.png` (over white), `
 therefore stand **clear of the frame edges** (the card builders fit the whole frame, so a subject cut by the edge stays cut) and be lit by the studio's key and fill
 light, with no ground or background of its own.
 
-### Turntables (3)
+### Turntables (3, plus `logo_anim_a`)
 
 A turntable is every frame of every look, in order, `name` null. A GIF plays them at the scene's fps and loops, so one revolution per look.
 
 | Scene | Size | Content | GIF made from it |
 | --- | --- | --- | --- |
-| `hero_sword` | 512 x 512 | one enchanted netherite sword, 3/4 pitch, 5 to 6 looks (vanilla, an outline only, rainbow glint and outline, fire glint and pulse, nebula glint and gradient, inferno glint and soft glow), 90 frames per look at 30 fps (one turn per look), a caption per look | `showcase.gif` (384 px wide with the caption bar), at most 2,000,000 bytes |
+| `hero_sword` | 512 x 512 | one enchanted netherite sword, 3/4 pitch, 5 to 6 looks (vanilla, the default look of 2.1.0 (`"base": "defaults"`: the mod's own built-in config, nothing else), rainbow glint and outline, fire glint and pulse, nebula glint and gradient, inferno glint and soft glow), 75 frames per look at 30 fps (one turn per look), a caption per look | `showcase.gif` (384 px wide with the caption bar), at most 2,000,000 bytes |
 | `lineup` | 1200 x 400 | six items in a row (sword, pickaxe, trident, shield, chestplate, bow), each with its own glint and outline, swinging +-35 degrees of yaw (not a full turn) over 120 frames, one look, caption "Every item its own look" | `lineup.gif` (810 x 270 picture with the caption bar, at most 2,000,000 bytes) |
-| `armor_stand` | 480 x 600 | a stand in full enchanted netherite armor holding the sword, the armor outline target on, 3 to 4 looks (vanilla, armor outline, rainbow glint and outline, inferno glint and soft glow), a caption per look | `armor.gif` (320 x 400 picture with the caption bar, at most 2,000,000 bytes) |
+| `armor_stand` | 480 x 600 | a stand in full enchanted netherite armor holding the sword, the armor outline target on, 3 to 4 looks (vanilla, the default look of 2.1.0 (`"base": "defaults"`), rainbow glint and outline, inferno glint and soft glow), a caption per look | `armor.gif` (320 x 400 picture with the caption bar, at most 2,000,000 bytes) |
 | `logo_anim_a` | 256 x 256, supersample 4 | the pose of `concept_a`, not turning, 165 frames at 20 fps: fire glint at speed 10 and a violet / magenta / blue gradient outline, both repeating after exactly 8.25 s (a seamless loop) | `logo_animated.gif` (256 px, no caption, at most 2,000,000 bytes), made by `art/logo.py` |
 
 A GIF that does not fit its budget steps its frame rate down and then its picture size down (`art/studio/pipeline.py`); the build says which step it took.
 
-### Still scenes (4)
+### Still scenes (7)
 
 A still scene has **one frame (one K / W pair) per shot**; the frame's `name` in `scene.json` is the shot name (`studio.py still SCENE SHOT` and `scene.find_frame`
 resolve it), and `look` and `caption` may repeat the name. Every shot of a scene has the same size.
 
 | Scene | Size | Shots (frame `name`) | Used by |
 | --- | --- | --- | --- |
-| `stills_hero` | 1024 x 1024 | `banner_hero`: the netherite sword (rainbow glint, rainbow outline), 3/4 view, the whole sword with at least 8 percent margin; `logo`: the old logo still (aurora glint, violet outline), no longer used | `banner.png` (the banner picture) |
+| `stills_hero` | 1024 x 1024 | `banner_hero`: the netherite sword in the default look of 2.1.0 (`"base": "defaults"`), 3/4 view, the whole sword with at least 8 percent margin; `logo`: the old logo still (aurora glint, violet outline), no longer used | `banner.png` (the banner picture) |
 | `logo_concepts` | 512 x 512 | `concept_a`: the golden blade, an enchanted golden sword on the diagonal (fire glint, violet outline), yaw 20, pitch 8, filling about 90 % of the frame, a big silhouette that must read at 32 px; `concept_b` (crossed gold and diamond swords, fire and frost) and `concept_c` (diamond sword on an anvil): the logo concepts not chosen, for reference | `art/logo.py` (logo 512, icon 128, logo 32) |
 | `stills_wide` | 1200 x 400 | `universal_vanilla`: six vanilla items in a row (sword, bow, trident, shield, elytra, chestplate), outlined; `universal_modded`: six items of mods (`cataclysm:black_steel_targe`, `eternal_starlight:glistering_morning_star`, `advancednetherite:netherite_diamond_ingot`, `immersive_armors:warrior_helmet`, `immersive_armors:warrior_chestplate` and one more of the pack), outlined, `[glint]` | `card_universal.png` (two rows; the builder trims the empty rows above and below each row and sets both rows at the same scale, so the items may sit in the middle band of the frame) |
-| `stills_tiles` | 512 x 512 | fourteen glint shots `glint_vanilla`, `glint_neutral` (with a tint), the seven clean presets `glint_rainbow`, `glint_aurora`, `glint_fire`, `glint_frost`, `glint_sparkle`, `glint_gold`, `glint_void` and the five rich presets `glint_inferno`, `glint_nebula`, `glint_starlight`, `glint_opal`, `glint_storm` (the same item, outline off, `glint_vanilla` is the vanilla glint) and ten outline styles `outline_vanilla` (nothing of the mod), `outline_static` (violet, 3 px on the card; see below), `outline_rainbow`, `outline_pulse`, `outline_gradient`, `outline_enchant` (the colours of the item's enchantments), `outline_thick_1`, `outline_thick_3`, `outline_thick_6`, `outline_soft_80` (softness 0.8). The outline shots are rendered from a farther camera (`view_height` 3.6, the sword 185 px high in the 512 px frame) and their thickness is set in matte pixels so that the outline measures about 3 card pixels (1, 3 and 6 for the thickness tiles) when the 235 x 213 centre crop is set at 176 x 160 on `card_outline_styles.png` (scale 0.749: a studio thickness of 4 gives 3 card px, 1.34 gives 1, 8 gives 6; the config caps the thickness at 16 render pixels, i.e. 8 matte pixels at supersample 2, which is why the sword is small in the frame). The glint shots use the tuned `GL(p)` scale of section 2 (a pattern, not a wash). One item for all twenty-four, same camera, centred, at least 12 percent margin on every side | `card_glint_presets.png` (14 tiles), `card_outline_styles.png` (10 tiles); each tile is shown at 150 px, so the subject must be large in the frame and the outline thick enough to read at that size |
+| `stills_tiles` | 512 x 512 | fourteen glint shots `glint_vanilla`, `glint_neutral` (with the default tint: rainbow, strength 0.9), the seven clean presets `glint_rainbow`, `glint_aurora`, `glint_fire`, `glint_frost`, `glint_sparkle`, `glint_gold`, `glint_void` and the five rich presets `glint_inferno`, `glint_nebula`, `glint_starlight`, `glint_opal`, `glint_storm` (the same item, outline off, `glint_vanilla` is the vanilla glint) and ten outline styles `outline_vanilla` (nothing of the mod), `outline_static` (the default colour `#E6B2FF`, 3 px on the card; see below), `outline_rainbow`, `outline_pulse`, `outline_gradient`, `outline_enchant` (the colours of the item's enchantments), `outline_thick_1`, `outline_thick_3`, `outline_thick_6`, `outline_soft_80` (softness 0.8). The outline shots are rendered from a farther camera (`view_height` 3.6, the sword 185 px high in the 512 px frame) and their thickness is set in matte pixels so that the outline measures about 3 card pixels (1, 3 and 6 for the thickness tiles) when the 235 x 213 centre crop is set at 176 x 160 on `card_outline_styles.png` (scale 0.749: a studio thickness of 4 gives 3 card px, 1.34 gives 1, 8 gives 6; the config caps the thickness at 16 render pixels, i.e. 8 matte pixels at supersample 2, which is why the sword is small in the frame). The glint shots use the tuned `GL(p)` scale of section 2 (a pattern, not a wash). One item for all twenty-four, same camera, centred, at least 12 percent margin on every side | `card_glint_presets.png` (14 tiles), `card_outline_styles.png` (10 tiles); each tile is shown at 150 px, so the subject must be large in the frame and the outline thick enough to read at that size |
+| `stills_default` | 1024 x 1024 | `default_vanilla` (nothing of the mod) and `default_look` (the mod's built-in defaults of 2.1.0, `"base": "defaults"` with no override: a pale violet outline `#E6B2FF`, 7.5 px, opacity 25 %, proportional, and the neutral glint with the rainbow tint at strength 0.9, scale 1), the stills_hero sword and camera (yaw 28, pitch 22), the same clock time 7.1 s in both (a violet tint) | `card_default_look.png` (left and middle) |
+| `stills_default_armor` | 480 x 600 | `default_armor`: the armor stand of `armor_stand` in full enchanted netherite armor with the enchanted sword, the default look of 2.1.0 (`"base": "defaults"`), yaw 20, the same clock time as `stills_default` | `card_default_look.png` (right) |
 | `stills_gap` | 800 x 800 | `gap_sword_off`, `gap_sword_on` (a diamond sword), `gap_modded_off`, `gap_modded_on` (an enchanted netherite sword and an enchanted `immersive_armors:warrior_chestplate`): outline off, vanilla glint on (`glint: true`), the same clock time in every shot, the gap fix off versus auto, the same oblique camera (yaw 30, pitch 45, perspective, supersample 1), a macro in which the cracks are visible | `card_gap_fix.png` (four 150 x 66 matte pixel crops, enlarged 3x by nearest neighbour with the element's `crop` + `up`) |
 
 The order of the frames inside a still scene does not matter (the shot name is looked up), but the indexes must run 1..N without gaps.
@@ -343,9 +350,9 @@ The order of the frames inside a still scene does not matter (the shot name is l
 
 1. Rooms built, stand and frames summoned, rig options set, GUI scale 2 (in-world captures).
 2. Capture the 14 in-world shots (no gap fix switch is needed any more).
-3. Render the studio scenes: `./gradlew runStudio -Pscene=hero_sword` and the same for `lineup`, `armor_stand`, `stills_hero`, `stills_wide`, `stills_tiles`, `stills_gap`, `logo_concepts`, `logo_anim_a`.
+3. Render the studio scenes: `./gradlew runStudio -Pscene=hero_sword` and the same for `lineup`, `armor_stand`, `stills_hero`, `stills_wide`, `stills_tiles`, `stills_gap`, `stills_default`, `stills_default_armor`, `logo_concepts`, `logo_anim_a`.
    Then `py -B art/studio/studio.py check` (every scene ok) and `py -B art/gallery/build.py --list` (nothing MISSING).
 4. `py -B art/logo.py` (logo, icon, animated logo), `py -B art/gallery/build.py --strict` (cards and the four GIFs; the GIFs take minutes), and look at each image; move crops in `cards.json` where the subject is off.
 5. `py -B art/verify.py --full`, `py -B docs/curseforge/preview.py`.
 
-Counts: 14 in-world captures (hero 2, item frame 1, targets 3, rules 2, config 2, Sodium/Iris 4) and 7 studio scenes (3 turntables, 4 still scenes with 2 + 2 + 24 + 4 = 32 named shots).
+Counts: 14 in-world captures (hero 2, item frame 1, targets 3, rules 2, config 2, Sodium/Iris 4) and 11 studio scenes (4 turntables, 7 still scenes with 2 + 3 + 2 + 24 + 4 + 2 + 1 = 38 named shots).

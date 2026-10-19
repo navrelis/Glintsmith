@@ -16,7 +16,8 @@ docs/STUDIO.md and art/README.md): the turntables hero_sword (512 x 512, 6 looks
 +-35 degree yaw swing) and armor_stand (480 x 600, 4 looks) with `--frames` frames in all (default 12; the real ones
 have 90 per look), and the still scenes stills_hero (1024 x 1024: banner_hero, logo), stills_wide (1200 x 400:
 universal_vanilla, universal_modded), stills_tiles (512 x 512: 14 glint_* and 10 outline_* shots) and stills_gap
-(800 x 800: gap_sword_off / _on, gap_modded_off / _on), and the two logo scenes (art/logo.py): logo_concepts (512 x 512
+(800 x 800: gap_sword_off / _on, gap_modded_off / _on), the two default look scenes stills_default (1024 x 1024:
+default_vanilla, default_look) and stills_default_armor (480 x 600: default_armor), and the two logo scenes (art/logo.py): logo_concepts (512 x 512
 stills: concept_a, concept_b, concept_c) and logo_anim_a (a 256 x 256 turntable of `--frames` frames that does not turn: a
 fixed pose with the glint stripe sweeping).  A still scene has one frame (one K / W pair) per shot; the frame's `name` is
 the shot name.
@@ -29,7 +30,7 @@ For the matte test the black render holds the premultiplied colour (K = c * a) a
 exactly what the real studio produces, so the glow is a true semi-transparent edge, not a fake.
 
     make_scene(root, ...)     -> path of the scene folder (one generic turntable)
-    make_contract(root, ...)  -> {scene id: folder} for the nine scenes above
+    make_contract(root, ...)  -> {scene id: folder} for the eleven scenes above
 """
 import argparse
 import json
@@ -283,6 +284,7 @@ CONTRACT = {
     "hero_sword": ("turntable", 512, 512), "lineup": ("turntable", 1200, 400), "armor_stand": ("turntable", 480, 600),
     "stills_hero": ("still", 1024, 1024), "stills_wide": ("still", 1200, 400), "stills_tiles": ("still", 512, 512),
     "stills_gap": ("still", 800, 800), "logo_concepts": ("still", 512, 512), "logo_anim_a": ("turntable", 256, 256),
+    "stills_default": ("still", 1024, 1024), "stills_default_armor": ("still", 480, 600),
 }
 SHOTS = {
     "stills_hero": ["banner_hero", "logo"],
@@ -293,6 +295,8 @@ SHOTS = {
                      "outline_gradient", "outline_enchant", "outline_thick_1", "outline_thick_3", "outline_thick_6", "outline_soft_80"],
     "stills_gap": ["gap_sword_off", "gap_sword_on", "gap_modded_off", "gap_modded_on"],
     "logo_concepts": ["concept_a", "concept_b", "concept_c"],
+    "stills_default": ["default_vanilla", "default_look"],
+    "stills_default_armor": ["default_armor"],
 }
 
 # glint presets and outline styles of the tiles scene: (name, glow colour, glow strength, ink px, ink colour)
@@ -318,7 +322,7 @@ def _stills(root, scene, width, height, S, shots, workers):
 
 
 def make_contract(root, frames=12, supersample=2, workers=1, only=None):
-    """Write the nine scenes of the gallery contract into root/studio/ (root must not be art/captures).  The turntables
+    """Write the eleven scenes of the gallery contract into root/studio/ (root must not be art/captures).  The turntables
     get `frames` frames each (the real ones: hero_sword 6 x 90, lineup 120, armor_stand 4 x 120), the stills one frame per shot.
     Returns {scene id: folder}.  `only` is a list of scene ids to write."""
     S = supersample
@@ -374,6 +378,15 @@ def make_contract(root, frames=12, supersample=2, workers=1, only=None):
             for state in ("off", "on"):
                 shots.append(("gap_%s_%s" % (item, state), dict(base, gaps=state == "off", subjects=[(0.5, 0.5, 0.37, 0, tint)])))
         out["stills_gap"] = _stills(root, "stills_gap", 800, 800, S, shots, workers)
+    if want("stills_default"):
+        base = {"theta": math.radians(34), "stripe_t": 0.45, "subjects": [(0.5, 0.5, 0.38, 0, (1, 1, 1))]}
+        out["stills_default"] = _stills(root, "stills_default", 1024, 1024, S, [
+            ("default_vanilla", dict(base, glow=GLOWS["rainbow"], strength=0.2, ink=0)),
+            ("default_look", dict(base, glow=GLOWS["rainbow"], strength=0.4, ink=5, ink_col=(230, 178, 255)))], workers)
+    if want("stills_default_armor"):
+        out["stills_default_armor"] = _stills(root, "stills_default_armor", 480, 600, S, [
+            ("default_armor", {"theta": math.radians(20), "glow": GLOWS["rainbow"], "stripe_t": 0.45, "strength": 0.4, "ink": 3,
+                               "ink_col": (230, 178, 255), "subjects": [(0.5, 0.5, 0.40, 0, (0.9, 0.95, 1.05))]})], workers)
     if want("logo_concepts"):
         shots = []
         for name, glow, theta, subjects in (
@@ -411,7 +424,7 @@ def main(argv=None):
     ap.add_argument("--supersample", type=int, default=2)
     ap.add_argument("--fps", type=int, default=30)
     ap.add_argument("--workers", type=int, default=1)
-    ap.add_argument("--contract", action="store_true", help="write the nine scenes of the gallery contract instead of one turntable")
+    ap.add_argument("--contract", action="store_true", help="write the eleven scenes of the gallery contract instead of one turntable")
     ap.add_argument("--only", nargs="*", help="with --contract: only these scene ids")
     args = ap.parse_args(argv)
     if args.supersample < 1 or args.frames is not None and args.frames < 1:

@@ -49,10 +49,9 @@
 	"looks": [
 		{ "id": "vanilla", "caption": "Vanilla", "vanilla": true },
 		{
-			"id": "armor_outline",
-			"caption": "Armor outline",
-			"outline": { "color": "#B05CFF", "thickness": 3 },
-			"gap_fix": "auto"
+			"id": "default_look",
+			"caption": "Default look",
+			"base": "defaults"
 		},
 		{
 			"id": "rainbow",

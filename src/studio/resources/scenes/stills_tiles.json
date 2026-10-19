@@ -30,7 +30,12 @@
 		{ "vanilla": true, "caption": "Vanilla glint", "id": "glint_vanilla" },
 		{
 			"outline": { "enabled": false },
-			"glint": { "texture": "preset:neutral", "scale": 0.12 },
+			"glint": {
+				"texture": "preset:neutral",
+				"tint": { "mode": "rainbow", "colors": ["#D088FC"], "speed": 1.0 },
+				"strength": 0.9,
+				"scale": 0.12
+			},
 			"gap_fix": "auto",
 			"caption": "Neutral glint",
 			"id": "glint_neutral"
@@ -123,7 +128,7 @@
 		{
 			"glint": { "enabled": false },
 			"gap_fix": "auto",
-			"outline": { "color": "#B05CFF", "thickness": 4 },
+			"outline": { "color": "#E6B2FF", "thickness": 4 },
 			"id": "outline_static",
 			"caption": "outline_static"
 		},
@@ -206,7 +211,7 @@
 	],
 	"shots": [
 		{ "name": "glint_vanilla", "look": "glint_vanilla", "yaw": 25, "time": 1.0 },
-		{ "name": "glint_neutral", "look": "glint_neutral", "yaw": 25, "time": 1.37 },
+		{ "name": "glint_neutral", "look": "glint_neutral", "yaw": 25, "time": 2.1 },
 		{ "name": "glint_rainbow", "look": "glint_rainbow", "yaw": 25, "time": 1.74 },
 		{ "name": "glint_aurora", "look": "glint_aurora", "yaw": 25, "time": 2.11 },
 		{ "name": "glint_fire", "look": "glint_fire", "yaw": 25, "time": 2.48 },

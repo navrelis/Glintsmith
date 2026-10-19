@@ -44,6 +44,8 @@ Glintsmith works on what the game really draws, so there are no item whitelists 
 
 **A look from the first start.** A fresh config comes with a look already set: a static light purple outline (thickness 7.5 px, opacity 25 %) on held, dropped and framed items, worn armor and items in the GUI, and the neutral glint with a light purple rainbow tint on all four layers (items, armor, entities and the GUI). Existing config files keep their values. The Reset tab button puts a tab back to these values; to get the vanilla glint back, turn off "Custom glint" on the Glint tab or set the texture of a layer to vanilla.
 
+>>> PASTE IMAGE: card_default_look.png | A look from the first start <<<
+
 >>> PASTE IMAGE: card_config.png | Everything in one screen <<<
 
 ## Sodium and Iris

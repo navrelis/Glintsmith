@@ -25,7 +25,7 @@
 6b. Studio (art/studio/): matte round trip of a black / white pair (alpha and colour within 1, exact empty / opaque pixels,
    premultiplied supersampling), a synthetic turntable end to end (check, GIF with the expected frames, size, delays, delta
    boxes, loop, budget and the step-down, identical bytes for any number of workers), stills, the "studio" card element
-   (crop, trim, labels) and its missing-scene behaviour, the synthetic contract (nine scenes, names and sizes), the CLI
+   (crop, trim, labels) and its missing-scene behaviour, the synthetic contract (eleven scenes, names and sizes), the CLI
    exit codes (also synth_studio's --size).
 7. Standard library only for every script under art/, and no __pycache__ anywhere below art/.
 
@@ -211,7 +211,8 @@ def test_manifest(manifest):
     studio_cards = {"card_universal.png": ["universal_vanilla", "universal_modded"],
                     "card_glint_presets.png": [n for n in synth_studio.SHOTS["stills_tiles"] if n.startswith("glint_")],
                     "card_outline_styles.png": [n for n in synth_studio.SHOTS["stills_tiles"] if n.startswith("outline_")],
-                    "card_gap_fix.png": synth_studio.SHOTS["stills_gap"]}
+                    "card_gap_fix.png": synth_studio.SHOTS["stills_gap"],
+                    "card_default_look.png": ["default_vanilla", "default_look", "default_armor"]}
     for name, shots in sorted(studio_cards.items()):
         got = [e["frame"] for c in manifest["cards"] if c["out"] == name for e in c["elements"] if e["type"] == "studio"]
         check(got == shots, "%s shows the studio shots %s (%d)" % (name, shots[0] + " ... " + shots[-1] if len(shots) > 2 else ", ".join(shots), len(got)))

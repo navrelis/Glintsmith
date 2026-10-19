@@ -19,12 +19,13 @@ turntables and stills of the dev-only studio (`docs/STUDIO.md`) and in-game scre
 | File | What it shows |
 |---|---|
 | `banner.png` | Title banner: a studio render of the sword, name, tagline and three chips |
-| `showcase.gif` | The studio turntable of one enchanted netherite sword, six looks of 2.5 s each: vanilla, static purple outline, rainbow glint with rainbow outline, fire glint with pulse outline, nebula glint with gradient outline, inferno glint with soft glow; captioned, 384 px, at most 2,000,000 bytes |
+| `showcase.gif` | The studio turntable of one enchanted netherite sword, six looks of 2.5 s each: vanilla, the default look of 2.1.0, rainbow glint with rainbow outline, fire glint with pulse outline, nebula glint with gradient outline, inferno glint with soft glow; captioned, 384 px, at most 2,000,000 bytes |
 | `lineup.gif` | Six items in a row, each with its own glint and outline, swinging, captioned, at most 2,000,000 bytes. Next to `card_universal.png` |
 | `card_universal.png` | Two rows of studio renders: vanilla items and items of mods, all outlined |
 | `card_outline_styles.png` | The five colour modes, three thicknesses and a soft glow (studio stills) |
-| `card_targets.png` | The places an outline is drawn: hand, dropped items, frames, plus the optional worn armor and GUI targets (off by default) |
-| `armor.gif` | An armor stand in outlined, glinting netherite armor turning through its looks, captioned, at most 2,000,000 bytes. Next to `card_targets.png` |
+| `card_default_look.png` | The default look of 2.1.0: a vanilla sword, the same sword in the mod's built-in defaults and the armor stand in them (studio stills), with the values as chips |
+| `card_targets.png` | The places an outline is drawn: hand, third person, armor, dropped items, frames and the inventory (all on by default, each with its own switch) |
+| `armor.gif` | An armor stand in netherite armor turning through its looks (vanilla, the default look of 2.1.0, ...), captioned, at most 2,000,000 bytes. Next to `card_targets.png` |
 | `card_glint_presets.png` | The vanilla glint, neutral and the twelve generated presets (seven clean, five rich) on the same item, 14 tiles in a 5 x 3 grid, 1000 x 822 (studio stills) |
 | `card_gap_fix.png` | An enchanted vanilla sword and a modded chestplate, each with the fix off and on, as 3x detail crops where the cracks show (studio stills) |
 | `card_rules.png` | The Rules tab and the rule editor |

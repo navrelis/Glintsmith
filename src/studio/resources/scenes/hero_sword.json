@@ -32,10 +32,9 @@
 	"looks": [
 		{ "id": "vanilla", "caption": "Vanilla", "vanilla": true },
 		{
-			"id": "purple_outline",
-			"caption": "Static purple outline",
-			"outline": { "color": "#B05CFF", "thickness": 3 },
-			"gap_fix": "auto"
+			"id": "default_look",
+			"caption": "Default look",
+			"base": "defaults"
 		},
 		{
 			"id": "rainbow",

@@ -18,7 +18,7 @@ It is a separate Gradle source set and a separate mod (`glintsmith_studio`). The
 ```
 
 * `-Pscene` is a JSON file (relative to the repository root or absolute) or the name of a scene in
-  `src/studio/resources/scenes/` (`hero_sword`, `lineup`, `armor_stand`, `stills_hero`, `stills_wide`, `stills_tiles`, `stills_gap`, `logo_concepts`, `logo_anim_a`). Gradle passes it to the game as
+  `src/studio/resources/scenes/` (`hero_sword`, `lineup`, `armor_stand`, `stills_hero`, `stills_default`, `stills_default_armor`, `stills_wide`, `stills_tiles`, `stills_gap`, `logo_concepts`, `logo_anim_a`). Gradle passes it to the game as
   `-Dglintsmith.studio.scene=...`. Without it the studio mod stays idle and the dev client is a normal client.
 * The game runs in `run-studio/` (git-ignored) with its own options, config and saves. It never touches a player's game
   directory, and the in-memory looks never write `run-studio/config/glintsmith.json`.
@@ -232,6 +232,10 @@ key (values shown are the defaults where a key is optional):
       "vanilla": true                  // outline off, glint vanilla, gap fix off
     },
     {
+      "id": "defaults", "caption": "Glintsmith defaults",
+      "base": "defaults"               // start from the mod's real built-in defaults instead of the studio baseline (see below)
+    },
+    {
       "id": "rainbow", "caption": "Rainbow glint + rainbow outline",
       "outline": {                     // merged into config.outline (glintsmith.json format)
         "enabled": true,
@@ -270,6 +274,18 @@ supersample itself), distance fade off, and no rules. Merge order: `vanilla`, `o
 `gap_fix`, `rules`, `config`. A colour may be a plain hex string; enum values (`mode`, `condition`) may be lower case.
 An invalid look (unknown texture, bad rule pattern) fails the run before the first frame.
 
+`"base": "defaults"` (default `"studio"`, the baseline above, byte-for-byte as before) starts the look from the mod's real
+built-in defaults instead: a fresh `new GlintsmithConfig()`, sanitised, with its rules (the Totem and the enchanted book
+example), its `proportional` outline, `scaleWithResolution`, targets (`other` off) and durability alert, and nothing of the
+studio baseline applied. The look's other keys (`vanilla`, `outline`, `glint`, `glint_layers`, `gap_fix`, `rules`,
+`config`) are then merged over the defaults in the same order. Because the defaults must go through the game's own
+path, the outline thickness is **not** multiplied by the supersample factor in such a look: with `proportional` on (the
+default) a thickness is in pixels on the first-person held item at 1080 px and scales with the item's size on screen
+in the render target (which is already supersample times larger than the output), so 7.5 on the 1.7-block-high view
+of `stills_hero` at supersample 2 is about 5.6 output pixels. The defaults change between mod versions, and so do the
+renders made from this base. Use it only for pictures that must show the current default look; `"base": "studio"` stays the
+choice for everything that must not move.
+
 Per-subject looks (`"look"` on a subject) are applied right before that subject is drawn and the frame's look right
 after it, within the same frame; their gap fix is always the frame look's (a gap fix change cannot happen in the middle
 of a frame). `lineup.json` uses this: one frame look, six subject looks.
@@ -297,14 +313,16 @@ a pair use the same view, so the pair can be shown as before / after (or flipped
 
 | Scene | Content |
 |---|---|
-| `hero_sword` | Netherite sword upright, 3/4 pitch, yaw swing of +-55 degrees (the sword never goes edge-on), six looks (vanilla, static purple outline, rainbow glint + rainbow outline, fire glint + pulse outline, nebula glint + gradient outline, inferno glint + soft glow), glint scale 0.12. 512x512, supersample 2, 30 fps, 2.5 s per look: 450 frames. |
+| `hero_sword` | Netherite sword upright, 3/4 pitch, yaw swing of +-55 degrees (the sword never goes edge-on), six looks (vanilla, the default look (`"base": "defaults"`), rainbow glint + rainbow outline, fire glint + pulse outline, nebula glint + gradient outline, inferno glint + soft glow), glint scale 0.12. 512x512, supersample 2, 30 fps, 2.5 s per look: 450 frames. |
 | `lineup` | Netherite sword, diamond pickaxe, trident, shield (pivoted), netherite chestplate (item) and bow in a row (spacing 0.95, view height 2.0, items about 70 % of the frame height), each with its own look (rainbow, inferno, storm, opal, starlight, void), +-35 degree yaw swing. 1200x400, one swing over 4 s: 120 frames. |
-| `armor_stand` | Armor stand in full enchanted netherite armor holding the sword, armor outline target on, armor glint scale 0.1, view height 3.4 (the stand is about 60 % of the height, the sword stays inside the frame all round). 480x600, four looks of 4 s (vanilla, armor outline, rainbow, inferno glint + soft glow): 480 frames. |
-| `stills_hero` | 1024x1024 stills: `banner_hero` (rainbow glint + rainbow outline, 3/4 view) and `logo` (aurora glint + purple outline, front view; the old logo, no longer used). |
+| `armor_stand` | Armor stand in full enchanted netherite armor holding the sword, armor outline target on, armor glint scale 0.1, view height 3.4 (the stand is about 60 % of the height, the sword stays inside the frame all round). 480x600, four looks of 4 s (vanilla, the default look (`"base": "defaults"`), rainbow, inferno glint + soft glow): 480 frames. |
+| `stills_hero` | 1024x1024 stills: `banner_hero` (the default look, `"base": "defaults"`, 3/4 view, clock time 2.1 + 5 s = 7.1 s, a violet tint) and `logo` (aurora glint + purple outline, front view; the old logo, no longer used). |
 | `logo_concepts` | 512x512 stills, outline thickness 8 (16 render pixels, the maximum) and the custom gap fix (UV shrink 1.0) in every look: `concept_a`, the logo (golden sword on the diagonal, yaw 20, pitch 8, fire glint scale 0.12, violet outline `#9B4DFF`); `concept_b` (crossed golden and diamond swords, fire glint + orange outline and frost glint + blue outline, the front sword turned 90 degrees in Z instead of mirrored so no back face shows) and `concept_c` (diamond sword with rainbow glint lying on an anvil with a 60 % vanilla glint, both in the `none` display context, pitch 30): the concepts not chosen. |
 | `logo_anim_a` | 256x256, supersample 4 (outline thickness 4 = 16 render pixels), the pose of `concept_a` with `spin` false: 165 frames at 20 fps, fire glint at speed 10 and a gradient outline (violet, magenta, blue at speed 0.5454545), `time_offset` 0. At the default glint speed option (0.5) the glint scroll repeats after 82.5 s / speed and the gradient after 4.5 s / speed, so both repeat after exactly 8.25 s: a seamless loop for `logo_animated.gif` (art/logo.py). |
+| `stills_default` | 1024x1024, the stills_hero camera and enchanted netherite sword, one clock time (`time` 2.1 + `time_offset` 5 = 7.1 s: the rainbow glint tint hue is frac(7.1 / 4) = 0.775, a violet): `default_vanilla` and `default_look` (`"base": "defaults"` and nothing else: the mod's default look as it is). |
+| `stills_default_armor` | 480x600 (a scene has one size, so it is separate from `stills_default`), the camera and armor stand of `armor_stand`: `default_armor`, yaw 20, `"base": "defaults"`, same clock time as `stills_default`. |
 | `stills_wide` | 1200x400 stills with one look on every item (aurora glint + gradient outline): `universal_vanilla` (diamond sword, bow, trident, shield, elytra) and `universal_modded` (`advancednetherite:netherite_diamond_ingot`, `eternal_starlight:glistering_morning_star`, `immersive_armors:warrior_helmet`, `immersive_armors:warrior_chestplate`; needs `studio-mods/`; the four modded items sit at explicit `pos` x = -1.65, -0.55, 0.55, 1.65 so they fill the width). |
-| `stills_tiles` | 512x512 tiles of one enchanted netherite sword: `glint_vanilla`, `glint_neutral`, `glint_rainbow`, `glint_aurora`, `glint_fire`, `glint_frost`, `glint_sparkle`, `glint_gold`, `glint_void`, `glint_inferno`, `glint_nebula`, `glint_starlight`, `glint_opal`, `glint_storm`, `outline_vanilla`, `outline_static`, `outline_rainbow`, `outline_pulse`, `outline_gradient`, `outline_enchant`, `outline_thick_1`, `outline_thick_3`, `outline_thick_6`, `outline_soft_80`. Glint tiles have no outline, outline tiles keep the vanilla glint. The outline tiles are shot from a farther camera (`view_height` 3.6 per shot) so that the largest outline the config allows (16 render pixels, 8 matte pixels) still measures 6 px on a card tile. |
+| `stills_tiles` | 512x512 tiles of one enchanted netherite sword: `glint_vanilla`, `glint_neutral` (the default tint: rainbow, strength 0.9; clock time 2.1 + 5 s, a violet), `glint_rainbow`, `glint_aurora`, `glint_fire`, `glint_frost`, `glint_sparkle`, `glint_gold`, `glint_void`, `glint_inferno`, `glint_nebula`, `glint_starlight`, `glint_opal`, `glint_storm`, `outline_vanilla`, `outline_static` (`#E6B2FF`), `outline_rainbow`, `outline_pulse`, `outline_gradient`, `outline_enchant`, `outline_thick_1`, `outline_thick_3`, `outline_thick_6`, `outline_soft_80`. Glint tiles have no outline, outline tiles keep the vanilla glint. The outline tiles are shot from a farther camera (`view_height` 3.6 per shot) so that the largest outline the config allows (16 render pixels, 8 matte pixels) still measures 6 px on a card tile. |
 | `stills_gap` | 800x800, supersample 1, perspective close-ups at a grazing angle: `gap_sword_off`, `gap_sword_on` (netherite sword), `gap_modded_off`, `gap_modded_on` (`immersive_armors:warrior_chestplate`), both items enchanted (vanilla glint), yaw 30, pitch 45. The cracks are one pixel hairlines: show the stills at 1:1 or crop and enlarge a detail. |
 
 ## Files
