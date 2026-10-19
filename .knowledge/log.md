@@ -218,3 +218,19 @@
 - 2026-10-19 s20b: /handoff -> handoff-2026-10-19-s20-page-images.md (all R2 done and pushed; only defcheck open).
 - 2026-10-19 s21 | A1 mc/1.21.1 common+fabric split | Sonnet L | accepted, bb35845 + 5afff93 (hub files dropped from branch)
 - 2026-10-19 s21 | I1, R1 (Sonnet), D1 (Opus), A2, A3 (Sonnet) delegated
+- 2026-10-19 s21 | I1 vivid page images | Sonnet L | accepted d090505, pushed dev+main; I2 lead upload 4 attachments + relink, verified
+- 2026-10-19 s21 | A2 NeoForge 1.21.1 | Sonnet L | accepted 72ba3df (title screen clean, mixins applied; AT for CompositeRenderType)
+- 2026-10-19 s21 | A4 smoke harness Fabric | Sonnet L | accepted de8cc89 (PASS x4); step 2 NeoForge sent
+- 2026-10-19 s21 | A3 Forge 1.21.1 | Sonnet L | accepted c1ba4a1 (MixinExtras jar-in-jar, AT for RenderStateShard states)
+- 2026-10-19 s21 | D1 modern render design | Opus L | accepted (spec for 1.21.3+ port sessions)
+- 2026-10-19 s21 | port sessions 1.21.3 (Opus) + 1.20.6 (Sonnet) proposed as cards (app allows starting sessions only in an owner turn)
+- 2026-10-19 s21 | A4 NeoForge smoke | Sonnet | accepted c73ba30; smoke found NeoForge armor overload bug (no worn-armor outline), fixed in neoforge glue; step 3 sent (armor glint overload, target audit per loader, per-layer glint presets, Forge smoke, exported-jar smoke)
+- 2026-10-19 s21 | R1 vanilla source cache | Sonnet L | accepted (19\/19 decompiled, 438 MB in scratchpad mcsrc)
+- 2026-10-19 s21 | port sessions 1.21.3 (local_eb4ba52f, worktree fervent-fermi-0c770f) and 1.20.6 (local_041979b1, worktree zealous-franklin-11deb7, branch mc/1.20.6) hit the Handoffer 300k limit; Handoffer continuations run as local_82b750a7 / local_b388adbb (cwd = main checkout; told to work only in their worktree and report back by SendMessage)
+- 2026-10-19 s21 | 1.20.6 continuation (local_b388adbb) ack: mc/1.20.6 8d95d20 toolchain, 492689b common port, merged mc/1.21.1; tests + NeoForge running
+- 2026-10-19 s21 | A4 step 3 (Forge smoke, exported smoke, per-layer presets, target audit) | Sonnet | accepted 713de69; mc/1.21.1 pushed to origin; port sessions told to merge
+- 2026-10-19 s21 | 1.20.6: Fabric 502 green + dev smoke PASS; found worn chestplate without outline (smoke only measured helmet) -> A4b per-piece armor check (Sonnet S) started on mc/1.21.1
+- 2026-10-19 s21 | A4b per-piece armor smoke check | Sonnet S | accepted dd20c30 (negative test fails chestplate), pushed; sessions told. Known flake: Fabric exported runtime remap ZipException once
+- 2026-10-19 s21 | 1.20.6: merged dd20c30; chestplate report was a misread (outline present, 103-110 px); build-all green (502/262/262), Fabric dev smoke PASS; Forge smoke + javap audit running
+- 2026-10-19 s21 | 1.21.3 (branch claude/fervent-fermi-0c770f): toolchain/common/hooks/smoke/tests (Fabric 508)/NeoForge/Forge committed; Fabric+NeoForge dev smoke PASS; audit OK; merging 713de69+dd20c30 next
+- 2026-10-19 s21 | PC rebooted ~11:55Z (overload); lead state verified: eloquent-wing on its branch, mc/1.21.1 clean at dd20c30 = origin; port continuations resume (1.20.6: local_e9e96451, 1.21.3: local_82b750a7); owner resource rules recorded in requirements.md

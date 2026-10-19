@@ -71,3 +71,10 @@ Owner: "you can't really see the difference in the pictures in curseforge" and "
 8. Testing: build + unit tests per branch; every jar launched automatically in its own dev client (never the owner's instances), test world, screenshots of enchanted sword in hand / inventory / dropped / item frame, lead views each set; Sodium/Iris/Embeddium launch checks on one jar per era; studio stays on 1.21.1 only.
 9. Release pre-approved: push all branches to navrelis/Glintsmith, upload all jars to CurseForge 1751215 (versions/loaders tags, Fabric API relation), update description version table/summary/comparison row. No Modrinth.
 10. Parallelism: up to 4 Sonnet + 2 Opus, each in its own worktree.
+
+## Resource rules (owner, relayed after the 11:55Z reboot on 2026-10-19; apply to the lead, every session and every subagent)
+1. Before any Gradle build, test run or Minecraft client: count Java processes (`(Get-Process java,javaw -ErrorAction SilentlyContinue).Count`); if 8 or more, wait 60 s and re-check; start only below 8.
+2. At most ONE Gradle invocation and ONE game client at a time per session (subagents included); loaders built and smoked in sequence.
+3. At most 2 subagents alive at once per session; a subagent running Gradle follows rule 1.
+4. After a build batch in a worktree: `./gradlew --stop` there; kill smoke/game clients as soon as their screenshots are taken.
+5. After a restart nothing is assumed running; re-verify on disk.

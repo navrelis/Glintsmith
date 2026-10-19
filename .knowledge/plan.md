@@ -127,17 +127,17 @@ Families: 1.18.1 (1.18-1.18.1), 1.18.2, 1.19.2 (1.19-1.19.2), 1.19.3, 1.19.4, 1.
 
 | # | Task | Definition of done | Deps | Model | Size | Status |
 |---|------|--------------------|------|-------|------|--------|
-| I1 | Vivid page images | showcase/armor GIFs Vanilla + >=4 vivid looks (opacity 1.0), banner vivid, card_default_look 3x zoom; GIFs <=2,000,000 B; art checks + build green | - | Sonnet | L | in progress |
-| I2 | CurseForge image upload | new attachments linked in the live description, verified after reload | I1 | Lead | - | open |
+| I1 | Vivid page images | showcase/armor GIFs Vanilla + >=4 vivid looks (opacity 1.0), banner vivid, card_default_look 3x zoom; GIFs <=2,000,000 B; art checks + build green | - | Sonnet | L | done d090505 (lead viewed showcase/armor frames, banner, card) |
+| I2 | CurseForge image upload | new attachments linked in the live description, verified after reload | I1 | Lead | - | done: attachments showcase 2076/388, armor 2076/391, banner 2076/392, card_default_look 2076/393 linked, verified after reload, CDN sizes = repo; checklist row in RL9 docs |
 | A1 | mc/1.21.1 layout: common/ + fabric/ | Platform service + GlintsmithClient hooks, fabric build 502 green, jar glintsmith-2.2.0+1.21.1-fabric.jar, studio works, common loader-neutral check | - | Sonnet | L | done bb35845 (lead read glue diff, build 502 green) |
-| A2 | mc/1.21.1 NeoForge | neoforge/ MDG build, glue, config screen, jar builds, smoke | A1 | Sonnet | L | in progress |
-| A3 | mc/1.21.1 Forge | forge/ FG7 build, glue, jar builds, smoke | A1 | Sonnet | L | in progress |
-| A4 | Client smoke harness | dev-only smoke per loader: world, enchanted sword hand/inventory/dropped/frame screenshots, auto-exit; script | A1 (A2/A3 for their loaders) | Sonnet | L | open |
-| R1 | Vanilla source cache | decompiled sources 19 versions in scratchpad mcsrc | - | Sonnet | L | in progress |
-| D1 | Modern render port design | design doc 1.21.3-26.3 per subsystem with hook points | - | Opus | L | in progress |
+| A2 | mc/1.21.1 NeoForge | neoforge/ MDG build, glue, config screen, jar builds, smoke | A1 | Sonnet | L | done 72ba3df (lead read hooks, build 262 green; world hooks fire-tested in A4 smoke) |
+| A3 | mc/1.21.1 Forge | forge/ FG7 build, glue, jar builds, smoke | A1 | Sonnet | L | done c1ba4a1 (lead read glue + jarjar metadata + AT, build 262 green); jar-in-jar exercised only by the exported-jar smoke (A4 step 3) |
+| A4 | Client smoke harness | dev-only smoke per loader: world, enchanted sword hand/inventory/dropped/frame screenshots, auto-exit; script | A1 (A2/A3 for their loaders) | Sonnet | L | done 713de69 (dev + exported smoke PASS x2 on fabric/neoforge/forge; lead viewed forge-exported 03, neoforge-exported 01; mc/1.21.1 pushed) |
+| R1 | Vanilla source cache | decompiled sources 19 versions in scratchpad mcsrc | - | Sonnet | L | done (19 versions, scratchpad mcsrc, INDEX.md) |
+| D1 | Modern render port design | design doc 1.21.3-26.3 per subsystem with hook points | - | Opus | L | done (931-line spec in scratchpad design/D1-modern-render.md; lead skimmed structure + effort table) |
 | P-up | Ports 1.21.3 → 26.3 (one session per branch, sequential chain) | branch builds 3 loaders, tests, smoke screenshots reviewed | A1-A4, D1 | Opus | L each | open |
 | P-down | Ports 1.20.6 → 1.18.1 (one session per branch, sequential chain) | same | A1-A4 | Sonnet | L each | open |
 | H1 | Hub on main + scripts + docs | main = hub (docs, changelog, build-all/collect scripts), support matrix | ports | Sonnet | L | open |
 | RL9 | 2.2.0 release | all jars smoke-green, tags, CurseForge upload of every jar, description update, push | all | Lead + Sonnet | - | open |
 
-Usage session 21: Sonnet research S1, mapping S1, I1 L2, A1 L2, R1 L2, A2 L2, A3 L2; Opus D1 L2 -> Sonnet 12, Opus 2 (14 % Opus this session).
+Usage session 21: Sonnet research S1, mapping S1, I1 L2, A1 L2, R1 L2, A2 L2, A3 L2, A4 L2; Opus D1 L2 -> Sonnet 14, Opus 2 (13 % Opus this session).
