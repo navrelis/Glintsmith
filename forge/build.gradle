@@ -30,6 +30,27 @@ sourceSets {
 	test {
 		java.srcDir "${commonDir}/src/test/java"
 	}
+	// Dev-only in-game smoke test (docs/TESTING.md): the loader-neutral runner from ../common/src/smoke plus the Forge
+	// wiring in src/smoke, as its own mod (glintsmith_smoke, META-INF/mods.toml: every classpath folder with a mods.toml
+	// is a mod in the Forge dev runtime). Only loaded by runSmoke, never packaged.
+	smoke {
+		java.srcDir "${commonDir}/src/smoke/java"
+		compileClasspath += main.output
+		runtimeClasspath += main.output
+	}
+	// Empty source set of the runSmokeExported run: only Minecraft and Forge, every mod (Glintsmith with MixinExtras inside
+	// its jar, the smoke mod) comes from run-smoke-exported/mods.
+	// (Named after "main" alphabetically: ForgeGradle takes the access transformer from the first source set; "exported" broke it.)
+	released {
+	}
+}
+
+// The smoke test compiles and runs against everything main does; ForgeGradle then also creates the smoke variants of the
+// runs (runSmokeClient, runReleasedClient).
+configurations {
+	smokeImplementation.extendsFrom implementation
+	smokeRuntimeOnly.extendsFrom runtimeOnly
+	releasedImplementation.extendsFrom implementation
 }
 
 // The three shared mixin configs (common) and the Forge-only one (src/main/resources).
@@ -50,16 +71,37 @@ minecraft {
 	runs {
 		configureEach {
 			workingDir = layout.projectDirectory.dir('run')
-			// A dev run loads classes from folders, so there is no jar manifest: the mixin configs go in as arguments
-			// (the jar names them in its MixinConfigs manifest attribute, see jar below).
-			mixinConfigs.each { args "--mixin.config=${it}" }
-			// gradlew runClient -PmixinExport: writes every mixed class to run/.mixin.out, to check what was injected.
-			if (project.hasProperty('mixinExport')) {
-				systemProperty 'mixin.debug.export', 'true'
-			}
 		}
 
 		register('client') {
+			// A dev run loads classes from folders, so there is no jar manifest: the mixin configs go in as arguments (the jar
+			// names them in its MixinConfigs manifest attribute, see jar below). Only the runs on dev classes get them: the
+			// run of the released jar must find them through the manifest.
+			with(sourceSets.main) {
+				mixinConfigs.each { args "--mixin.config=${it}" }
+				// gradlew runClient -PmixinExport: writes every mixed class to run/.mixin.out, to check what was injected.
+				if (project.hasProperty('mixinExport')) {
+					systemProperty 'mixin.debug.export', 'true'
+				}
+			}
+			// runSmokeClient (alias runSmoke): a real client creates a fresh superflat world, takes the screenshots, writes
+			// run-smoke/smoke-result.json and exits.
+			with(sourceSets.smoke) {
+				workingDir = layout.projectDirectory.dir('run-smoke')
+				systemProperty 'glintsmith.smoke.minecraft', minecraft_version
+				systemProperty 'glintsmith.smoke.version', mod_version
+				mixinConfigs.each { args "--mixin.config=${it}" }
+				// The smoke mod's mixins (SmokeClientStartMixin, SmokeWindowMixin)
+				args '--mixin.config=glintsmith_smoke.mixins.json'
+				args '--width', '1280', '--height', '720'
+			}
+			// runReleasedClient (alias runSmokeExported): the same, but only the jars of run-smoke-exported/mods are loaded.
+			with(sourceSets.released) {
+				workingDir = layout.projectDirectory.dir('run-smoke-exported')
+				systemProperty 'glintsmith.smoke.minecraft', minecraft_version
+				systemProperty 'glintsmith.smoke.version', mod_version
+				args '--width', '1280', '--height', '720'
+			}
 		}
 	}
 }
@@ -162,8 +204,95 @@ tasks.register('checkCommonIsLoaderNeutral') {
 	}
 }
 
+// The smoke test is compiled with every build so it cannot rot; it is never packaged.
 tasks.named('check') {
-	dependsOn tasks.named('checkCommonIsLoaderNeutral')
+	dependsOn tasks.named('checkCommonIsLoaderNeutral'), tasks.named('smokeClasses')
+}
+
+// The smoke runs start from a clean run folder (no old result, screenshots or worlds) with the fixed smoke config, and fail
+// unless the game wrote a result that says every step passed. `prepare` puts the mods of the run in place.
+def smokeConfig = file("${commonDir}/src/smoke/resources/glintsmith-smoke.json")
+def configureSmokeRun = { Task task, String dirName, Closure prepare ->
+	def runDir = file(dirName)
+	task.inputs.file smokeConfig
+	task.timeout = java.time.Duration.ofMinutes(9)
+	// The result file decides; the exit code is checked after the result was read
+	task.ignoreExitValue = true
+	// The bookkeeping closures below use script objects at execution time
+	task.notCompatibleWithConfigurationCache('smoke run bookkeeping')
+	task.doFirst {
+		['smoke-result.json', 'screenshots', 'saves', 'logs/latest.log', 'config/glintsmith.json'].each {
+			def target = new File(runDir, it)
+			if (target.directory) { target.deleteDir() } else { target.delete() }
+		}
+		new File(runDir, 'config').mkdirs()
+		java.nio.file.Files.copy(smokeConfig.toPath(), new File(runDir, 'config/glintsmith.json').toPath())
+		// No early display window: the game creates its window itself, without taking the focus (SmokeWindowMixin).
+		// Other settings of the file are kept.
+		File fmlToml = new File(runDir, 'config/fml.toml')
+		List<String> lines = fmlToml.file ? fmlToml.readLines('UTF-8').findAll { !(it.trim() ==~ /earlyWindowControl\s*=.*/) } : []
+		lines.add('earlyWindowControl = false')
+		fmlToml.setText(lines.join('\n') + '\n', 'UTF-8')
+		prepare(runDir)
+	}
+	task.doLast {
+		def result = new File(runDir, 'smoke-result.json')
+		if (!result.isFile()) {
+			throw new GradleException("The smoke run wrote no result (${result}); see ${runDir}/logs/latest.log")
+		}
+		def json = new groovy.json.JsonSlurper().parse(result)
+		(json.steps ?: []).each { logger.lifecycle("  ${it.ok ? 'ok  ' : 'FAIL'} ${it.name}${it.error ? ': ' + it.error : ''}") }
+		if (!json.passed) {
+			throw new GradleException("Smoke run FAILED${json.fatal ? ': ' + json.fatal : ''} (${result})")
+		}
+		def exit = task.executionResult.get().exitValue
+		if (exit != 0) {
+			throw new GradleException("Every smoke step passed but the game exited with code ${exit}")
+		}
+		logger.lifecycle("Smoke run passed in ${json.durationMs} ms: ${runDir}")
+	}
+}
+
+tasks.matching { it.name == 'runSmokeClient' }.configureEach {
+	configureSmokeRun(it, 'run-smoke') { }
+}
+tasks.register('runSmoke') {
+	group = 'Slime Launcher'
+	description = 'Runs the in-game smoke test (runSmokeClient).'
+	dependsOn 'runSmokeClient'
+}
+
+// The smoke mod as a jar (smoke classes and metadata only), for the exported run.
+def smokeJar = tasks.register('smokeJar', Jar) {
+	// Not in build/libs: only the released jars are there
+	destinationDirectory = layout.buildDirectory.dir("smoke-libs")
+	archiveBaseName = 'glintsmith-smoke'
+	archiveVersion = "${mod_version}+${minecraft_version}-forge"
+	from sourceSets.smoke.output
+	manifest {
+		attributes 'MixinConfigs': 'glintsmith_smoke.mixins.json'
+	}
+}
+
+// runSmokeExported: the same test, but the game loads the RELEASED jar (build/libs, with MixinExtras inside as jar-in-jar,
+// the MixinConfigs manifest attribute and the access transformer) and the smoke mod jar from the mods folder of
+// run-smoke-exported instead of the dev classes.
+def releasedJars = [tasks.named('jar').get().archiveFile.get().asFile, smokeJar.get().archiveFile.get().asFile]
+tasks.matching { it.name == 'runReleasedClient' }.configureEach {
+	dependsOn tasks.named('jar'), smokeJar
+	configureSmokeRun(it, 'run-smoke-exported') { File runDir ->
+		def mods = new File(runDir, 'mods')
+		mods.deleteDir()
+		mods.mkdirs()
+		releasedJars.each {
+			java.nio.file.Files.copy(it.toPath(), new File(mods, it.name).toPath())
+		}
+	}
+}
+tasks.register('runSmokeExported') {
+	group = 'Slime Launcher'
+	description = 'Runs the in-game smoke test with the released jar (runReleasedClient).'
+	dependsOn 'runReleasedClient'
 }
 
 // Jar in jar: Forge 52 does not ship MixinExtras (checked: neither the Forge installer libraries nor the userdev

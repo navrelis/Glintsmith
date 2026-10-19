@@ -53,6 +53,9 @@ sourceSets {
 		compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
 		runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
 	}
+	// Empty source set of the runSmokeExported run: only Minecraft and NeoForge, every mod comes from run-smoke-exported/mods.
+	exportedStub {
+	}
 }
 
 neoForge {
@@ -67,6 +70,7 @@ neoForge {
 	// their classpath too. They run as plain JUnit 5, not inside the game.
 	addModdingDependenciesTo sourceSets.test
 	addModdingDependenciesTo sourceSets.smoke
+	addModdingDependenciesTo sourceSets.exportedStub
 
 	mods {
 		"${mod_id}" {
@@ -95,6 +99,18 @@ neoForge {
 			gameDirectory = file('run-smoke')
 			sourceSet = sourceSets.smoke
 			loadedMods = [mods."${mod_id}", mods."glintsmith_smoke"]
+			systemProperty 'glintsmith.smoke.minecraft', minecraft_version
+			systemProperty 'glintsmith.smoke.version', mod_version
+			programArguments.addAll '--width', '1280', '--height', '720'
+		}
+
+		// Client that loads only the jars in run-smoke-exported/mods (the released jar and the smoke mod jar); nothing from this
+		// project. See runSmokeExported below.
+		smokeExported {
+			client()
+			sourceSet = sourceSets.exportedStub
+			loadedMods = []
+			gameDirectory = file('run-smoke-exported')
 			systemProperty 'glintsmith.smoke.minecraft', minecraft_version
 			systemProperty 'glintsmith.smoke.version', mod_version
 			programArguments.addAll '--width', '1280', '--height', '720'
@@ -164,16 +180,16 @@ tasks.named("check") {
 	dependsOn tasks.named("smokeClasses"), tasks.named("checkCommonIsLoaderNeutral")
 }
 
-// runSmoke starts from a clean run folder (no old result, screenshots or worlds) with the fixed smoke config, and fails
-// unless the game wrote a result that says every step passed.
-tasks.named("runSmoke") {
-	def runDir = file("run-smoke")
-	def smokeConfig = file("${commonDir}/src/smoke/resources/glintsmith-smoke.json")
-	inputs.file smokeConfig
-	timeout = java.time.Duration.ofMinutes(9)
+// The smoke runs start from a clean run folder (no old result, screenshots or worlds) with the fixed smoke config, and fail
+// unless the game wrote a result that says every step passed. `prepare` puts the mods of the run in place.
+def smokeConfig = file("${commonDir}/src/smoke/resources/glintsmith-smoke.json")
+def configureSmokeRun = { Task task, String dirName, Closure prepare ->
+	def runDir = file(dirName)
+	task.inputs.file smokeConfig
+	task.timeout = java.time.Duration.ofMinutes(9)
 	// The result file decides; the exit code is checked after the result was read
-	ignoreExitValue = true
-	doFirst {
+	task.ignoreExitValue = true
+	task.doFirst {
 		["smoke-result.json", "screenshots", "saves", "logs/latest.log", "config/glintsmith.json"].each {
 			delete new File(runDir, it)
 		}
@@ -194,8 +210,9 @@ earlyWindowSkipGLVersions = []
 earlyWindowSquir = false
 """
 		java.nio.file.Files.copy(smokeConfig.toPath(), new File(runDir, "config/glintsmith.json").toPath())
+		prepare(runDir)
 	}
-	doLast {
+	task.doLast {
 		def result = new File(runDir, "smoke-result.json")
 		if (!result.isFile()) {
 			throw new GradleException("The smoke run wrote no result (${result}); see ${runDir}/logs/latest.log")
@@ -205,11 +222,39 @@ earlyWindowSquir = false
 		if (!json.passed) {
 			throw new GradleException("Smoke run FAILED${json.fatal ? ': ' + json.fatal : ''} (${result})")
 		}
-		def exit = executionResult.get().exitValue
+		def exit = task.executionResult.get().exitValue
 		if (exit != 0) {
 			throw new GradleException("Every smoke step passed but the game exited with code ${exit}")
 		}
 		logger.lifecycle("Smoke run passed in ${json.durationMs} ms: ${runDir}")
+	}
+}
+
+tasks.named("runSmoke") {
+	configureSmokeRun(it, "run-smoke") { }
+}
+
+// The smoke mod as a jar (smoke classes and metadata only), for the exported run.
+def smokeJar = tasks.register("smokeJar", Jar) {
+	// Not in build/libs: only the released jars are there
+	destinationDirectory = layout.buildDirectory.dir("smoke-libs")
+	archiveBaseName = "glintsmith-smoke"
+	archiveVersion = "${mod_version}+${minecraft_version}-neoforge"
+	from sourceSets.smoke.output
+}
+
+// runSmokeExported: the same test, but the game loads the RELEASED jar (build/libs) and the smoke mod jar from the mods
+// folder of run-smoke-exported instead of the dev classes, so the access transformer, the mod metadata and the mixin configs
+// of the real jar are exercised.
+tasks.named("runSmokeExported") {
+	dependsOn tasks.named("jar"), smokeJar
+	configureSmokeRun(it, "run-smoke-exported") { File runDir ->
+		def mods = new File(runDir, "mods")
+		mods.deleteDir()
+		mods.mkdirs()
+		[tasks.named("jar").get().archiveFile.get().asFile, smokeJar.get().archiveFile.get().asFile].each {
+			java.nio.file.Files.copy(it.toPath(), new File(mods, it.name).toPath())
+		}
 	}
 }
 

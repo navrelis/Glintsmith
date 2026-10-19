@@ -101,3 +101,39 @@ mod's lifecycle mixin; NeoForge has no client started event) and `SmokeWindowMix
 The screenshot check also requires outline pixels at the helmet in `03_third_person_front` (`armorOutlinePixels`): it caught that
 NeoForge patches `HumanoidArmorLayer` so that vanilla's `renderArmorPiece` is no longer called (see
 `HumanoidArmorLayerNeoForgeMixin`).
+
+### Forge
+
+`forge/src/smoke/` has the same three classes as NeoForge (`SmokeMod` with `TickEvent.ClientTickEvent.Post`,
+`SmokeClientStartMixin`, `SmokeWindowMixin`) plus `META-INF/mods.toml` (in the Forge dev runtime every classpath folder with a
+mods.toml is a mod) and `pack.mcmeta`. Notes:
+
+* The window mixin is an `@Redirect` of `ImmediateWindowHandler.setupMinecraftWindow` (Forge's Mixin refuses an `@Inject` into the
+  `Window` constructor there); the run task writes `earlyWindowControl = false` into `config/fml.toml`, like on NeoForge.
+* The dev run gets its mixin configs as `--mixin.config=` arguments, set only for the runs on dev classes (`with(sourceSets.main)`
+  and `with(sourceSets.smoke)` in `forge/build.gradle`), so the exported run proves the `MixinConfigs` manifest attribute.
+* ForgeGradle 7 takes the access transformer from the first source set in alphabetical order: a source set named before `main`
+  (`exported` did) breaks the compile of `main`. The source set of the exported run is called `released`, the run
+  `runReleasedClient` (`runSmokeExported` is its alias).
+* The smoke tasks are not compatible with the configuration cache (Gradle prints a note).
+
+### Exported run (`-Exported`)
+
+```powershell
+pwsh scripts/smoke.ps1 -Loader fabric,neoforge,forge -Exported
+```
+
+runs `runSmokeExported` instead: the game loads only the jars in `<loader>/run-smoke-exported/mods` (the task rebuilds the released
+jar, `jar` or `remapJar`, and the smoke mod jar `build/smoke-libs/glintsmith-smoke-*.jar`, and copies them there) with an empty
+dev classpath (the `exportedStub` / `released` source set: Minecraft and the loader only). That exercises what the dev run cannot:
+the jar's mod metadata and mixin configs (`MixinConfigs` manifest on Forge), the access transformer, jar-in-jar (MixinExtras inside
+the Forge jar), and the Fabric remapping and refmap (the smoke mod jar is remapped like a release; the Fabric API jar of the
+mods folder comes from the Gradle cache). Everything else is as in the dev run; results go to
+`<OutDir>/<minecraft version>-<loader>-exported/`.
+
+### Glint layers
+
+The smoke config gives every glint layer its own preset and tint so a picture shows whether the layers are routed correctly:
+items `preset:rainbow` (no tint), armor `preset:fire` with a red tint, entities (shield, trident) `preset:frost` with a blue tint, GUI
+`preset:aurora` with a yellow tint. The result file records the helmet colour of step 03 as information; the glint is a sparse
+animation, so judge routing on the pictures (the shield is blue, worn armor gets red spots).

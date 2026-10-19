@@ -63,6 +63,12 @@ sourceSets {
 		compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
 		runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
 	}
+	// Empty source set of the runSmokeExported run: Minecraft and Fabric Loader only, so every mod (Glintsmith, the smoke mod,
+	// Fabric API) comes from run-smoke-exported/mods. This project and its remapped mod dependencies are left out.
+	exportedStub {
+		def excluded = main.output + files({ configurations.modRuntimeClasspathMainMapped })
+		runtimeClasspath = main.runtimeClasspath.filter { file -> file.name.startsWith('fabric-loader-') || !excluded.contains(file) }
+	}
 }
 
 loom {
@@ -112,6 +118,18 @@ loom {
 			name = "Glintsmith Smoke"
 			source sourceSets.smoke
 			runDir "run-smoke"
+			ideConfigGenerated false
+			property "glintsmith.smoke.minecraft", minecraft_version
+			property "glintsmith.smoke.version", mod_version
+			programArgs "--width", "1280", "--height", "720"
+		}
+
+		// Client that loads only the jars in run-smoke-exported/mods (released jars); see runSmokeExported below.
+		smokeExported {
+			client()
+			name = "Glintsmith Smoke (exported jars)"
+			source sourceSets.exportedStub
+			runDir "run-smoke-exported"
 			ideConfigGenerated false
 			property "glintsmith.smoke.minecraft", minecraft_version
 			property "glintsmith.smoke.version", mod_version
@@ -184,23 +202,24 @@ tasks.named("check") {
 	dependsOn tasks.named("studioClasses"), tasks.named("smokeClasses"), tasks.named("checkCommonIsLoaderNeutral")
 }
 
-// runSmoke starts from a clean run folder (no old result, screenshots or worlds) with the fixed smoke config, and fails
-// unless the game wrote a result that says every step passed.
-tasks.named("runSmoke") {
-	def runDir = file("run-smoke")
-	def smokeConfig = file("${commonDir}/src/smoke/resources/glintsmith-smoke.json")
-	inputs.file smokeConfig
-	timeout = java.time.Duration.ofMinutes(9)
+// The smoke runs start from a clean run folder (no old result, screenshots or worlds) with the fixed smoke config, and fail
+// unless the game wrote a result that says every step passed. `prepare` puts the mods of the run in place.
+def smokeConfig = file("${commonDir}/src/smoke/resources/glintsmith-smoke.json")
+def configureSmokeRun = { Task task, String dirName, Closure prepare ->
+	def runDir = file(dirName)
+	task.inputs.file smokeConfig
+	task.timeout = java.time.Duration.ofMinutes(9)
 	// The result file decides; the exit code is checked after the result was read
-	ignoreExitValue = true
-	doFirst {
+	task.ignoreExitValue = true
+	task.doFirst {
 		["smoke-result.json", "screenshots", "saves", "logs/latest.log", "config/glintsmith.json"].each {
 			delete new File(runDir, it)
 		}
 		new File(runDir, "config").mkdirs()
 		java.nio.file.Files.copy(smokeConfig.toPath(), new File(runDir, "config/glintsmith.json").toPath())
+		prepare(runDir)
 	}
-	doLast {
+	task.doLast {
 		def result = new File(runDir, "smoke-result.json")
 		if (!result.isFile()) {
 			throw new GradleException("The smoke run wrote no result (${result}); see ${runDir}/logs/latest.log")
@@ -210,11 +229,59 @@ tasks.named("runSmoke") {
 		if (!json.passed) {
 			throw new GradleException("Smoke run FAILED${json.fatal ? ': ' + json.fatal : ''} (${result})")
 		}
-		def exit = executionResult.get().exitValue
+		def exit = task.executionResult.get().exitValue
 		if (exit != 0) {
 			throw new GradleException("Every smoke step passed but the game exited with code ${exit}")
 		}
 		logger.lifecycle("Smoke run passed in ${json.durationMs} ms: ${runDir}")
+	}
+}
+
+tasks.named("runSmoke") {
+	configureSmokeRun(it, "run-smoke") { }
+}
+
+// The smoke mod as a jar (smoke classes and metadata only), remapped to intermediary like a released mod, for the exported run.
+def smokeJar = tasks.register("smokeJar", Jar) {
+	// Not in build/libs: only the released jars are there
+	destinationDirectory = layout.buildDirectory.dir("smoke-libs")
+	archiveBaseName = "glintsmith-smoke"
+	archiveVersion = "${mod_version}+${minecraft_version}-fabric"
+	archiveClassifier = "dev"
+	from sourceSets.smoke.output
+}
+def remapSmokeJar = tasks.register("remapSmokeJar", net.fabricmc.loom.task.RemapJarTask) {
+	destinationDirectory = layout.buildDirectory.dir("smoke-libs")
+	dependsOn smokeJar
+	inputFile = smokeJar.flatMap { it.archiveFile }
+	archiveBaseName = "glintsmith-smoke"
+	archiveVersion = "${mod_version}+${minecraft_version}-fabric"
+}
+
+// The production Fabric API jar (not remapped, not on any classpath): the exported run needs it in its mods folder.
+configurations {
+	smokeExportedMods {
+		canBeConsumed = false
+		transitive = false
+	}
+}
+dependencies {
+	smokeExportedMods "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+// runSmokeExported: the same test, but the game loads the RELEASED jar (build/libs) and the smoke mod jar from the mods
+// folder of run-smoke-exported instead of the dev classes, so the jar contents (fabric.mod.json, refmap, remapping to
+// intermediary and back, mixin configs) are exercised.
+tasks.named("runSmokeExported") {
+	dependsOn tasks.named("remapJar"), remapSmokeJar
+	def mods = configurations.smokeExportedMods
+	configureSmokeRun(it, "run-smoke-exported") { File runDir ->
+		def modsDir = new File(runDir, "mods")
+		modsDir.deleteDir()
+		modsDir.mkdirs()
+		([tasks.named("remapJar").get().archiveFile.get().asFile, remapSmokeJar.get().archiveFile.get().asFile] + mods.files).each {
+			java.nio.file.Files.copy(it.toPath(), new File(modsDir, it.name).toPath())
+		}
 	}
 }
 

@@ -61,3 +61,4 @@ studio-mods/
 
 # glintsmith smoke test (dev-only in-game test): run folder of each loader
 run-smoke/
+run-smoke-exported/

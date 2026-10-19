@@ -47,7 +47,8 @@
     },
     "armor": {
       "enabled": true,
-      "texture": "preset:rainbow",
+      "texture": "preset:fire",
+      "tint": { "mode": "STATIC", "colors": ["#FF2020"], "speed": 1.0, "saturation": 1.0, "brightness": 1.0 },
       "speed": 1.0,
       "scale": 1.0,
       "strength": 1.0,
@@ -55,7 +56,8 @@
     },
     "entity": {
       "enabled": true,
-      "texture": "preset:rainbow",
+      "texture": "preset:frost",
+      "tint": { "mode": "STATIC", "colors": ["#2060FF"], "speed": 1.0, "saturation": 1.0, "brightness": 1.0 },
       "speed": 1.0,
       "scale": 1.0,
       "strength": 1.0,
@@ -63,7 +65,8 @@
     },
     "gui": {
       "enabled": true,
-      "texture": "preset:rainbow",
+      "texture": "preset:aurora",
+      "tint": { "mode": "STATIC", "colors": ["#FFE020"], "speed": 1.0, "saturation": 1.0, "brightness": 1.0 },
       "speed": 1.0,
       "scale": 1.0,
       "strength": 1.0,

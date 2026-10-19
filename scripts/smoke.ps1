@@ -24,6 +24,11 @@
 .PARAMETER TimeoutMinutes
 	Per loader; the game has its own watchdog, this one also covers a Gradle that hangs. Default 10.
 
+.PARAMETER Exported
+	Runs `runSmokeExported` instead: the game loads the RELEASED jar (build/libs) plus the smoke mod jar from a mods folder
+	(`<loader>/run-smoke-exported`) instead of the dev classes, so the jar contents (access transformer, mod metadata, mixin
+	configs, jar-in-jar, Fabric remapping) are exercised. Results go to <OutDir>/<minecraft>-<loader>-exported/.
+
 .EXAMPLE
 	pwsh scripts/smoke.ps1 -Loader fabric
 #>
@@ -31,7 +36,8 @@
 param(
 	[string[]]$Loader = @('fabric'),
 	[string]$OutDir,
-	[int]$TimeoutMinutes = 10
+	[int]$TimeoutMinutes = 10,
+	[switch]$Exported
 )
 
 $ErrorActionPreference = 'Stop'
@@ -67,7 +73,9 @@ function Test-Loader([string]$Name) {
 	$dir = Join-Path $root $Name
 	$checks = [System.Collections.Generic.List[object]]::new()
 	$mc = Get-MinecraftVersion
-	$runDir = Join-Path $dir 'run-smoke'
+	$runDirName = if ($Exported) { 'run-smoke-exported' } else { 'run-smoke' }
+	$gradleTask = if ($Exported) { 'runSmokeExported' } else { 'runSmoke' }
+	$runDir = Join-Path $dir $runDirName
 	$resultFile = Join-Path $runDir 'smoke-result.json'
 	$stamp = [System.Diagnostics.Stopwatch]::StartNew()
 
@@ -77,16 +85,16 @@ function Test-Loader([string]$Name) {
 	}
 
 	# --- run -----------------------------------------------------------------------------------------------------------
-	$gradleLog = Join-Path $OutDir "$Name-gradle.log"
-	Write-Host "[$Name] gradlew runSmoke ..."
-	$p = Start-Process -FilePath (Join-Path $dir 'gradlew.bat') -ArgumentList @('runSmoke', '--console=plain') `
+	$gradleLog = Join-Path $OutDir "$Name$(if ($Exported) { '-exported' })-gradle.log"
+	Write-Host "[$Name] gradlew $gradleTask ..."
+	$p = Start-Process -FilePath (Join-Path $dir 'gradlew.bat') -ArgumentList @($gradleTask, '--console=plain') `
 		-WorkingDirectory $dir -PassThru -NoNewWindow -RedirectStandardOutput $gradleLog -RedirectStandardError "$gradleLog.err"
 	$null = $p.Handle # keeps the exit code readable after WaitForExit
 	if (-not $p.WaitForExit($TimeoutMinutes * 60000)) {
 		& taskkill.exe /PID $p.Id /T /F | Out-Null
-		$checks.Add((New-Check 'gradle runSmoke' $false "no exit after $TimeoutMinutes minutes (killed; a game process may still be running)"))
+		$checks.Add((New-Check "gradle $gradleTask" $false "no exit after $TimeoutMinutes minutes (killed; a game process may still be running)"))
 	} else {
-		$checks.Add((New-Check 'gradle runSmoke' ($p.ExitCode -eq 0) "exit code $($p.ExitCode)"))
+		$checks.Add((New-Check "gradle $gradleTask" ($p.ExitCode -eq 0) "exit code $($p.ExitCode)"))
 	}
 	$elapsed = [int]$stamp.Elapsed.TotalSeconds
 
@@ -125,6 +133,15 @@ function Test-Loader([string]$Name) {
 	}
 	$checks.Add((New-Check 'screenshots' ($shotProblems.Count -eq 0) $(if ($shotProblems.Count) { $shotProblems -join '; ' } else { "6 PNGs, outline pixels $($shotInfo -join ' ')" })))
 
+	# Routing of the glint layers: the armor layer of the smoke config is a red preset, so the helmet must not stay diamond teal.
+	# Information only: the glint is a sparse animation, so a fixed spot of the helmet is not a reliable colour test.
+	$step3 = if ($result) { @($result.steps | Where-Object { $_.name -eq '03_third_person_front' })[0] } else { $null }
+	if ($step3 -and $step3.helmetMeanRgb -and $result.config.glintArmorTexture) {
+		$rgb = @($step3.helmetMeanRgb)
+		$detail = "helmet mean RGB $($rgb -join ',') (armor glint $($result.config.glintArmorTexture), red tint)"
+		$checks.Add((New-Check 'armor glint colour (info)' $true $detail))
+	}
+
 	# --- log -----------------------------------------------------------------------------------------------------------
 	$logFile = Join-Path $runDir 'logs/latest.log'
 	if (-not (Test-Path $logFile)) {
@@ -147,7 +164,7 @@ function Test-Loader([string]$Name) {
 	}
 
 	# --- collect -------------------------------------------------------------------------------------------------------
-	$target = Join-Path $OutDir "$mc-$Name"
+	$target = Join-Path $OutDir "$mc-$Name$(if ($Exported) { '-exported' })"
 	if (Test-Path $target) { Remove-Item -Recurse -Force $target }
 	New-Item -ItemType Directory -Force -Path $target | Out-Null
 	if (Test-Path (Join-Path $runDir 'screenshots')) { Copy-Item -Path (Join-Path $runDir 'screenshots/*') -Destination $target }

@@ -1,0 +1,18 @@
+# The smoke test mod (docs/TESTING.md). Only loaded by runSmoke, never packaged.
+modLoader="javafml"
+loaderVersion="[52,)"
+license="MIT"
+
+[[mods]]
+modId="glintsmith_smoke"
+version="1.0.0-dev"
+displayName="Glintsmith Smoke Test"
+authors="navrelis"
+description='''Dev-only in-game smoke test: loads a world, takes screenshots of the mod and exits. Never shipped.'''
+
+[[dependencies.glintsmith_smoke]]
+modId="glintsmith"
+mandatory=true
+versionRange="[0,)"
+ordering="AFTER"
+side="CLIENT"

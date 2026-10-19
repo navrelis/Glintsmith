@@ -214,6 +214,9 @@ public final class SmokeRunner {
 		info.addProperty("outlineThickness", config.outline.thickness);
 		info.addProperty("outlineOpacity", config.outline.opacity);
 		info.addProperty("glintItemTexture", String.valueOf(config.glint.item.texture));
+		info.addProperty("glintArmorTexture", String.valueOf(config.glint.armor.texture));
+		info.addProperty("glintEntityTexture", String.valueOf(config.glint.entity.texture));
+		info.addProperty("glintGuiTexture", String.valueOf(config.glint.gui.texture));
 		JsonArray warnings = new JsonArray();
 		manager.warnings().forEach(warnings::add);
 		info.add("warnings", warnings);
@@ -447,6 +450,24 @@ public final class SmokeRunner {
 				int w = image.getWidth();
 				int h = image.getHeight();
 				info.addProperty("armorOutlinePixels", countOutline(image, (int) (w * 0.44), (int) (h * 0.40), (int) (w * 0.56), (int) (h * 0.46)));
+				// Mean colour of the helmet top (outline pixels left out): the ARMOR glint layer tints it
+				long[] sum = new long[4];
+				for (int y = (int) (h * 0.44); y < (int) (h * 0.47); y++) {
+					for (int x = (int) (w * 0.47); x < (int) (w * 0.53); x++) {
+						int abgr = image.getPixelRGBA(x, y);
+						if (!isOutlineColor(abgr)) {
+							sum[0] += abgr & 0xFF;
+							sum[1] += (abgr >> 8) & 0xFF;
+							sum[2] += (abgr >> 16) & 0xFF;
+							sum[3]++;
+						}
+					}
+				}
+				JsonArray rgb = new JsonArray();
+				for (int i = 0; i < 3; i++) {
+					rgb.add(sum[3] == 0 ? 0 : Math.round(sum[i] / (double) sum[3]));
+				}
+				info.add("helmetMeanRgb", rgb);
 			}
 		}
 		return info;
