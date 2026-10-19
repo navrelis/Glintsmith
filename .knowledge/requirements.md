@@ -58,3 +58,16 @@ Sources studied (reference only, clones live in the session scratchpad, never in
 - No 2.0.1 CurseForge release yet; main untouched.
 - Coordinate with all other Glintsmith sessions so nothing collides.
 - 2026-10-18 (later): owner: release 2.0.1 now: bump the version, in-game check, merge to main, tag, upload to CurseForge. Also: delete unneeded branches/worktrees (owner ran the cleanup commands himself).
+
+## Session 21 owner task (2026-10-19): page images + multi-version port
+Owner: "you can't really see the difference in the pictures in curseforge" and "port this to all versions from 26.3 down to 1.18.x for Fabric, NeoForge and Forge; use worktrees and many subagents to finish it fast". Owner accepted every lead default ("Use all your defaults. Go ahead and finish it, including the push and the CurseForge upload."):
+1. Images: showcase/armor GIFs cycle several vivid looks again (full-opacity outlines in several colours, fire/frost/rainbow etc. glints), banner vivid; card_default_look gets a ~3x zoomed close-up so the faint default outline shows. Mod defaults unchanged. Upload to CurseForge 1751215 + relink description.
+2. Versions: one jar per family, every release 1.18 to 26.3 covered: 1.18-1.18.1, 1.18.2, 1.19-1.19.2, 1.19.3, 1.19.4, 1.20-1.20.1, 1.20.2, 1.20.3-4, 1.20.5-6, 1.21-1.21.1, 1.21.2-3, 1.21.4, 1.21.5, 1.21.6-8, 1.21.9-10, 1.21.11, 26.1.x, 26.2, 26.3 (19 families).
+3. Loaders: Fabric everywhere; Forge wherever Forge exists; NeoForge from 1.20.2 (Forge 1.20.1 jar also marked NeoForge 1.20.1).
+4. Layout like the owner's multi-version projects (Sophisticated Building / Unified Xaero Worldmap): branch mc/<version> per family, worktrees under versions/<mc>, loader-neutral shared code; main becomes the hub at release; main/dev stay 2.1.0 until then.
+5. Build-only tools allowed (Stonecutter/Architectury Loom/FG/MDG as in those projects); no new runtime deps; Fabric API required on Fabric only.
+6. Full feature parity on every jar; Forge/NeoForge config screen from the Mods list; Sodium/Iris compat where they exist; Embeddium/Oculus no crash + world outlines off under shader packs; anything impossible hidden + documented.
+7. Version 2.2.0 everywhere, jars glintsmith-2.2.0+<mc>-<loader>.jar; 1.21.1 Fabric behaves like 2.1.0.
+8. Testing: build + unit tests per branch; every jar launched automatically in its own dev client (never the owner's instances), test world, screenshots of enchanted sword in hand / inventory / dropped / item frame, lead views each set; Sodium/Iris/Embeddium launch checks on one jar per era; studio stays on 1.21.1 only.
+9. Release pre-approved: push all branches to navrelis/Glintsmith, upload all jars to CurseForge 1751215 (versions/loaders tags, Fabric API relation), update description version table/summary/comparison row. No Modrinth.
+10. Parallelism: up to 4 Sonnet + 2 Opus, each in its own worktree.

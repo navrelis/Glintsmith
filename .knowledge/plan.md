@@ -121,3 +121,23 @@ Session 17: + Sonnet RL2 correction (in its S), RL6 checklist values S 0.5 -> So
 Session 18: Opus B4 S 1 (side session); Sonnet checklist tick S 1, 2.0.2 bump S 1, VERSIONING S 1 (+1 corr), checklist SHA S 1, D1 L 2, D2 S 1 -> about 29 % Opus.
 Session 19: D1 finish Sonnet S 1 (+corr), D2 restart Sonnet S 1, RL8a bump Sonnet S 1, RL8b checklist Sonnet S 0.5 -> about 28 % Opus.
 Session 20: R2a Sonnet L 2, R2b Sonnet S 1, R2c Sonnet S 1, R2d Sonnet S 1 + drop S 1, checklist row S 0.5 -> about 27 % Opus.
+
+# Plan session 21 (2026-10-19): page images + multi-version port (2.2.0)
+Families: 1.18.1 (1.18-1.18.1), 1.18.2, 1.19.2 (1.19-1.19.2), 1.19.3, 1.19.4, 1.20.1, 1.20.2, 1.20.4, 1.20.6, 1.21.1, 1.21.3, 1.21.4, 1.21.5, 1.21.8, 1.21.10, 1.21.11, 26.1.2, 26.2, 26.3. Branch mc/<family>, worktree .claude/worktrees/mc-<family>.
+
+| # | Task | Definition of done | Deps | Model | Size | Status |
+|---|------|--------------------|------|-------|------|--------|
+| I1 | Vivid page images | showcase/armor GIFs Vanilla + >=4 vivid looks (opacity 1.0), banner vivid, card_default_look 3x zoom; GIFs <=2,000,000 B; art checks + build green | - | Sonnet | L | in progress |
+| I2 | CurseForge image upload | new attachments linked in the live description, verified after reload | I1 | Lead | - | open |
+| A1 | mc/1.21.1 layout: common/ + fabric/ | Platform service + GlintsmithClient hooks, fabric build 502 green, jar glintsmith-2.2.0+1.21.1-fabric.jar, studio works, common loader-neutral check | - | Sonnet | L | done bb35845 (lead read glue diff, build 502 green) |
+| A2 | mc/1.21.1 NeoForge | neoforge/ MDG build, glue, config screen, jar builds, smoke | A1 | Sonnet | L | in progress |
+| A3 | mc/1.21.1 Forge | forge/ FG7 build, glue, jar builds, smoke | A1 | Sonnet | L | in progress |
+| A4 | Client smoke harness | dev-only smoke per loader: world, enchanted sword hand/inventory/dropped/frame screenshots, auto-exit; script | A1 (A2/A3 for their loaders) | Sonnet | L | open |
+| R1 | Vanilla source cache | decompiled sources 19 versions in scratchpad mcsrc | - | Sonnet | L | in progress |
+| D1 | Modern render port design | design doc 1.21.3-26.3 per subsystem with hook points | - | Opus | L | in progress |
+| P-up | Ports 1.21.3 → 26.3 (one session per branch, sequential chain) | branch builds 3 loaders, tests, smoke screenshots reviewed | A1-A4, D1 | Opus | L each | open |
+| P-down | Ports 1.20.6 → 1.18.1 (one session per branch, sequential chain) | same | A1-A4 | Sonnet | L each | open |
+| H1 | Hub on main + scripts + docs | main = hub (docs, changelog, build-all/collect scripts), support matrix | ports | Sonnet | L | open |
+| RL9 | 2.2.0 release | all jars smoke-green, tags, CurseForge upload of every jar, description update, push | all | Lead + Sonnet | - | open |
+
+Usage session 21: Sonnet research S1, mapping S1, I1 L2, A1 L2, R1 L2, A2 L2, A3 L2; Opus D1 L2 -> Sonnet 12, Opus 2 (14 % Opus this session).

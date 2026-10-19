@@ -61,3 +61,6 @@
 - s18: owner config as built-in defaults -> 2.1.0 (MINOR): a fresh install looks different, saved configs keep their values, nothing breaks.
 - s19: owner chose to release 2.1.0 without the in-game defcheck (owner message in chat); defaults are pinned by DefaultConfigTest; defcheck script stays ready for a later run.
 - s20: page images that show 'the default look' use the real defaults unchanged (studio base defaults, in-game owner-defaults.json), even though the 25 % outline is faint: it is the look a fresh install gets.
+- s21: Multi-version layout = Sophisticated Building pattern (per branch: common/ + standalone fabric/ neoforge/ forge/ Gradle builds, Platform service via ServiceLoader), not Stonecutter: Glintsmith's version differences are render-engine deep, branch divergence is clearer than comment preprocessing; SB already has build-verified toolchains for most families.
+- s21: Worktrees for mc/* branches live under .claude/worktrees/mc-<family> (git-ignored), not versions/ in the main checkout (main checkout is never edited).
+- s21: Port work per version branch runs in separate Claude sessions (owner asked "worktrees and new AI sessions"), each in its own worktree; foundation tasks (A1-A4, R1, D1) stay subagents of the lead session because every port depends on them.
