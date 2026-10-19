@@ -441,8 +441,34 @@ public final class SmokeRunner {
 			info.addProperty("width", image.getWidth());
 			info.addProperty("height", image.getHeight());
 			analyse(image, info);
+			if (name.startsWith("03_")) {
+				// The helmet of the worn armor stands alone against the wall: outline pixels around the top of the head.
+				// Fixed camera and window size, so a fixed box.
+				int w = image.getWidth();
+				int h = image.getHeight();
+				info.addProperty("armorOutlinePixels", countOutline(image, (int) (w * 0.44), (int) (h * 0.40), (int) (w * 0.56), (int) (h * 0.46)));
+			}
 		}
 		return info;
+	}
+
+	private static boolean isOutlineColor(int abgr) {
+		int r = abgr & 0xFF;
+		int g = (abgr >> 8) & 0xFF;
+		int b = (abgr >> 16) & 0xFF;
+		return Math.abs(r - OUTLINE_R) <= 60 && Math.abs(g - OUTLINE_G) <= 35 && Math.abs(b - OUTLINE_B) <= 60;
+	}
+
+	private static long countOutline(NativeImage image, int x0, int y0, int x1, int y1) {
+		long count = 0;
+		for (int y = y0; y < y1; y++) {
+			for (int x = x0; x < x1; x++) {
+				if (isOutlineColor(image.getPixelRGBA(x, y))) {
+					count++;
+				}
+			}
+		}
+		return count;
 	}
 
 	/** Cheap statistics so a blank or outline-less picture is caught without looking at it. */
@@ -460,7 +486,7 @@ public final class SmokeRunner {
 				if (colors.size() < 100_000) {
 					colors.add(abgr & 0xFFFFFF);
 				}
-				if (Math.abs(r - OUTLINE_R) <= 60 && Math.abs(g - OUTLINE_G) <= 35 && Math.abs(b - OUTLINE_B) <= 60) {
+				if (isOutlineColor(abgr)) {
 					outlinePixels++;
 				}
 				luma += 0.2126 * r + 0.7152 * g + 0.0722 * b;

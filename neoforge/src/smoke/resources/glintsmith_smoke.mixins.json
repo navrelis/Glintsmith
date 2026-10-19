@@ -1,0 +1,13 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "navrelis.glintsmith.smoke.neoforge.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"SmokeClientStartMixin",
+		"SmokeWindowMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

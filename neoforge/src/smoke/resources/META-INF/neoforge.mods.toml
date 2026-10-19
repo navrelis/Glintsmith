@@ -1,0 +1,20 @@
+modLoader="javafml"
+loaderVersion="[1,)"
+license="MIT"
+
+[[mods]]
+modId="glintsmith_smoke"
+version="1.0.0-dev"
+displayName="Glintsmith Smoke Test"
+authors="navrelis"
+description='''Dev-only in-game smoke test: loads a world, takes screenshots of the mod and exits. Never shipped.'''
+
+[[mixins]]
+config="glintsmith_smoke.mixins.json"
+
+[[dependencies.glintsmith_smoke]]
+modId="glintsmith"
+type="required"
+versionRange="[0,)"
+ordering="AFTER"
+side="CLIENT"

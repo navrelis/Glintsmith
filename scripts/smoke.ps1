@@ -48,6 +48,7 @@ $loaders = @($Loader | ForEach-Object { $_ -split '[,\s]+' } | Where-Object { $_
 $shots = '01_first_person', '02_inventory', '03_third_person_front', '04_glintsmith_screen', '05_dropped_closeup', '06_item_frame_closeup'
 $minDistinctColors = 200
 $minOutlinePixels = 50
+$minArmorOutlinePixels = 10
 
 function New-Check([string]$Name, [bool]$Ok, [string]$Detail = '') {
 	[pscustomobject]@{ Name = $Name; Ok = $Ok; Detail = $Detail }
@@ -119,6 +120,7 @@ function Test-Loader([string]$Name) {
 		if (-not $step -or $null -eq $step.distinctColors) { $shotProblems += "$shot has no statistics in the result"; continue }
 		if ($step.distinctColors -lt $minDistinctColors) { $shotProblems += "$shot looks blank ($($step.distinctColors) colours)" }
 		if ($step.outlinePixels -lt $minOutlinePixels) { $shotProblems += "$shot has no outline ($($step.outlinePixels) px of the outline colour)" }
+		if ($shot -eq '03_third_person_front' -and [int]$step.armorOutlinePixels -lt $minArmorOutlinePixels) { $shotProblems += "${shot}: the worn armor has no outline ($($step.armorOutlinePixels) px at the helmet)" }
 		$shotInfo += "$($shot.Substring(0, 2)):$($step.outlinePixels)px"
 	}
 	$checks.Add((New-Check 'screenshots' ($shotProblems.Count -eq 0) $(if ($shotProblems.Count) { $shotProblems -join '; ' } else { "6 PNGs, outline pixels $($shotInfo -join ' ')" })))
@@ -129,13 +131,15 @@ function Test-Loader([string]$Name) {
 		$checks.Add((New-Check 'log' $false "$logFile missing"))
 	} else {
 		$lines = Get-Content -Path $logFile
-		$errors = @($lines | Where-Object { $_ -match '(\bERROR\b|Exception)' -and $_ -match '(?i)(glintsmith|navrelis)' })
+		# Paths contain the repository folder name (which may contain "glintsmith"): leave them out when looking for the mod's name
+		$mentionsMod = { param($line) ($line -replace '\S*[\\/]\S*', '') -match '(?i)(glintsmith|navrelis)' }
+		$errors = @($lines | Where-Object { $_ -match '(\bERROR\b|Exception)' -and (& $mentionsMod $_) })
 		$checks.Add((New-Check 'log: errors' ($errors.Count -eq 0) $(if ($errors.Count) { "$($errors.Count) line(s), first: $($errors[0])" } else { 'no ERROR/Exception line mentions glintsmith' })))
 
 		$hookWarn = @($lines | Where-Object { $_ -match 'Some outline hooks were not applied' })
 		$checks.Add((New-Check 'log: outline hook self-check' ($hookWarn.Count -eq 0) $(if ($hookWarn.Count) { $hookWarn[0] } else { 'all outline hooks applied (no warning)' })))
 
-		$warns = @($lines | Where-Object { $_ -match '\bWARN\b' -and $_ -match '(?i)glintsmith' -and $_ -notmatch 'Some outline hooks were not applied' })
+		$warns = @($lines | Where-Object { $_ -match '\bWARN\b' -and (& $mentionsMod $_) -and $_ -notmatch 'Some outline hooks were not applied' })
 		$checks.Add((New-Check 'log: warnings' ($warns.Count -eq 0) $(if ($warns.Count) { "$($warns.Count) line(s), first: $($warns[0])" } else { 'no Glintsmith warning' })))
 
 		$mixin = @($lines | Where-Object { $_ -match '(?i)(Mixin apply for mod|Mixin transformation of|InvalidInjectionException|MixinTransformerError|MixinApplyError|Critical injection failure|InjectionError|Mixin .* failed|@Mixin target .* was not found)' })

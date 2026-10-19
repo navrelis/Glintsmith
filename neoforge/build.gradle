@@ -46,6 +46,13 @@ sourceSets {
 	test {
 		java.srcDir "${commonDir}/src/test/java"
 	}
+	// Dev-only in-game smoke test (docs/TESTING.md): the loader-neutral runner from ../common/src/smoke plus the NeoForge
+	// wiring in src/smoke, as its own mod (glintsmith_smoke). Never packaged.
+	smoke {
+		java.srcDir "${commonDir}/src/smoke/java"
+		compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
+		runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
+	}
 }
 
 neoForge {
@@ -59,10 +66,14 @@ neoForge {
 	// The common tests load Minecraft and mod classes (class references, the mixin plugin), so they need Minecraft on
 	// their classpath too. They run as plain JUnit 5, not inside the game.
 	addModdingDependenciesTo sourceSets.test
+	addModdingDependenciesTo sourceSets.smoke
 
 	mods {
 		"${mod_id}" {
 			sourceSet sourceSets.main
+		}
+		"glintsmith_smoke" {
+			sourceSet sourceSets.smoke
 		}
 	}
 
@@ -75,6 +86,18 @@ neoForge {
 			// Where the client log of a manual check is written; also gives the mixin trace on request.
 			jvmArguments.add '-Dmixin.debug.verbose=true'
 			logLevel = org.slf4j.event.Level.DEBUG
+		}
+
+		// ./gradlew runSmoke (or scripts/smoke.ps1): loads a test world, takes screenshots, writes
+		// run-smoke/smoke-result.json and exits. See docs/TESTING.md.
+		smoke {
+			client()
+			gameDirectory = file('run-smoke')
+			sourceSet = sourceSets.smoke
+			loadedMods = [mods."${mod_id}", mods."glintsmith_smoke"]
+			systemProperty 'glintsmith.smoke.minecraft', minecraft_version
+			systemProperty 'glintsmith.smoke.version', mod_version
+			programArguments.addAll '--width', '1280', '--height', '720'
 		}
 	}
 }
@@ -136,8 +159,58 @@ tasks.register("checkCommonIsLoaderNeutral") {
 	}
 }
 
+// The smoke test is compiled with every build so it cannot rot; it is never packaged.
 tasks.named("check") {
-	dependsOn tasks.named("checkCommonIsLoaderNeutral")
+	dependsOn tasks.named("smokeClasses"), tasks.named("checkCommonIsLoaderNeutral")
+}
+
+// runSmoke starts from a clean run folder (no old result, screenshots or worlds) with the fixed smoke config, and fails
+// unless the game wrote a result that says every step passed.
+tasks.named("runSmoke") {
+	def runDir = file("run-smoke")
+	def smokeConfig = file("${commonDir}/src/smoke/resources/glintsmith-smoke.json")
+	inputs.file smokeConfig
+	timeout = java.time.Duration.ofMinutes(9)
+	// The result file decides; the exit code is checked after the result was read
+	ignoreExitValue = true
+	doFirst {
+		["smoke-result.json", "screenshots", "saves", "logs/latest.log", "config/glintsmith.json"].each {
+			delete new File(runDir, it)
+		}
+		new File(runDir, "config").mkdirs()
+		// No early display window: the game creates its window itself, without taking the focus (SmokeWindowMixin)
+		new File(runDir, "config/fml.toml").text = """earlyWindowControl = false
+disableConfigWatcher = false
+maxThreads = -1
+versionCheck = false
+defaultConfigPath = "defaultconfigs"
+disableOptimizedDFU = true
+earlyWindowProvider = "fmlearlywindow"
+earlyWindowWidth = 854
+earlyWindowHeight = 480
+earlyWindowFBScale = 1
+earlyWindowMaximized = false
+earlyWindowSkipGLVersions = []
+earlyWindowSquir = false
+"""
+		java.nio.file.Files.copy(smokeConfig.toPath(), new File(runDir, "config/glintsmith.json").toPath())
+	}
+	doLast {
+		def result = new File(runDir, "smoke-result.json")
+		if (!result.isFile()) {
+			throw new GradleException("The smoke run wrote no result (${result}); see ${runDir}/logs/latest.log")
+		}
+		def json = new groovy.json.JsonSlurper().parse(result)
+		(json.steps ?: []).each { logger.lifecycle("  ${it.ok ? 'ok  ' : 'FAIL'} ${it.name}${it.error ? ': ' + it.error : ''}") }
+		if (!json.passed) {
+			throw new GradleException("Smoke run FAILED${json.fatal ? ': ' + json.fatal : ''} (${result})")
+		}
+		def exit = executionResult.get().exitValue
+		if (exit != 0) {
+			throw new GradleException("Every smoke step passed but the game exited with code ${exit}")
+		}
+		logger.lifecycle("Smoke run passed in ${json.durationMs} ms: ${runDir}")
+	}
 }
 
 // Resolved while configuring: the licence file is named after the mod id.

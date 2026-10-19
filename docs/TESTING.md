@@ -84,3 +84,20 @@ client tick; an optional window mixin; a `smoke` source set (`common/src/smoke/j
 main one; a client run `smoke` with run folder `run-smoke`, program args `--width 1280 --height 720` and system properties
 `glintsmith.smoke.minecraft` and `glintsmith.smoke.version`; and the `runSmoke` task logic of `fabric/build.gradle` (clean the run
 folder, copy the config, check the result). The script only needs the `runSmoke` task and `<loader>/run-smoke/`.
+
+### NeoForge
+
+`neoforge/src/smoke/` is the wrapper: `SmokeMod` (`@Mod(dist = CLIENT)`, `ClientTickEvent.Post` calls `SmokeRunner.tick`),
+`SmokeClientStartMixin` (calls `SmokeRunner.init()` and `configureOptions` at the same point in `Minecraft.run` as the main
+mod's lifecycle mixin; NeoForge has no client started event) and `SmokeWindowMixin`. Differences from Fabric:
+
+* FML's early display window creates the game window before the game starts, so a window hint cannot reach it. The run task
+  writes `run-smoke/config/fml.toml` with `earlyWindowControl = false`; then `ImmediateWindowHandler.setupMinecraftWindow`
+  (which replaces `glfwCreateWindow` in `Window.<init>`) creates the window with the hints the mixin sets right before it.
+* `runSmoke` is the ModDevGradle run `smoke` (run folder `run-smoke`, mods `glintsmith` and `glintsmith_smoke`).
+* A mixin that fails to apply to a required config does not end up in `latest.log` but on stderr (see the Gradle log copied next
+  to the result).
+
+The screenshot check also requires outline pixels at the helmet in `03_third_person_front` (`armorOutlinePixels`): it caught that
+NeoForge patches `HumanoidArmorLayer` so that vanilla's `renderArmorPiece` is no longer called (see
+`HumanoidArmorLayerNeoForgeMixin`).

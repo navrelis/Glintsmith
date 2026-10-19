@@ -4,6 +4,7 @@
 	"package": "navrelis.glintsmith.neoforge.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
+		"HumanoidArmorLayerNeoForgeMixin",
 		"LevelRendererHooksMixin",
 		"MinecraftLifecycleMixin"
 	],
