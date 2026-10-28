@@ -28,6 +28,7 @@
     "opacity": 0.25,
     "disableWithShaders": false,
     "handWithShaderPack": true,
+    "worldWithShaderPack": true,
     "proportional": true,
     "minThickness": 1.0,
     "scaleWithResolution": true,
@@ -37,6 +38,7 @@
   "glint": {
     "enabled": true,
     "atlasIndependentScale": true,
+    "customWithShaderPack": true,
     "item": {
       "enabled": true,
       "texture": "preset:neutral",

@@ -99,8 +99,12 @@ class PreviewNotesTest {
 	}
 
 	@Test
-	void shaderPackKeepsTheVanillaGlint() {
+	void shaderPackKeepsTheVanillaGlintOnlyWithTheSwitchOff() {
 		GlintsmithConfig snap = withGlintRule();
+		assertTrue(snap.glint.customWithShaderPack, "on by default");
+		assertEquals(List.of(), keys(snap, ENCHANTED, false, true, false, false, false),
+			"the custom glint is drawn under a pack, no note");
+		snap.glint.customWithShaderPack = false;
 		assertEquals(List.of(PreviewNotes.SHADER_GLINT), keys(snap, ENCHANTED, false, true, false, false, false));
 		assertEquals(List.of(), keys(snap, ENCHANTED, false, false, false, false, false));
 		snap.glint.enabled = false;
@@ -122,11 +126,13 @@ class PreviewNotesTest {
 	void allNotesAreOrderedByPriority() {
 		GlintsmithConfig snap = withGlintRule();
 		snap.outline.disableWithShaders = true;
+		snap.glint.customWithShaderPack = false;
 		assertEquals(List.of(PreviewNotes.UNAVAILABLE, PreviewNotes.SHADER_HAND_OFF, PreviewNotes.SHADER_GLINT,
 			PreviewNotes.NO_WORLD, PreviewNotes.EMPTY_HAND), keys(snap, ENCHANTED, false, true, true, true, true));
 
 		GlintsmithConfig off = withGlintRule();
 		off.outline.enabled = false;
+		off.glint.customWithShaderPack = false;
 		assertEquals(List.of(PreviewNotes.UNAVAILABLE, PreviewNotes.OUTLINES_OFF, PreviewNotes.SHADER_GLINT,
 			PreviewNotes.NO_WORLD, PreviewNotes.EMPTY_HAND), keys(off, ENCHANTED, true, true, true, true, true));
 	}

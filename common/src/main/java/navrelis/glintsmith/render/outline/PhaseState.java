@@ -36,6 +36,18 @@ final class PhaseState {
 	float projZ;
 	float projW;
 	boolean hasProjection;
+	/**
+	 * World phase under a shader pack: the mask is drawn before Iris renders the hand and composited after the pack's
+	 * final pass (set when the phase opens).
+	 */
+	boolean deferred;
+	/**
+	 * The matrices in effect at the first capture of a {@link #deferred} phase, which its mask is drawn with (the
+	 * point where it is drawn may run under other matrices). Valid if {@link #hasMatrices}.
+	 */
+	final Matrix4f projection = new Matrix4f();
+	final Matrix4f modelView = new Matrix4f();
+	boolean hasMatrices;
 
 	PhaseState(OutlinePhase phase, boolean depthTested) {
 		this.phase = phase;
@@ -43,11 +55,17 @@ final class PhaseState {
 	}
 
 	/**
-	 * Takes the projection snapshot for the screen bounds if this is the first capture since the last reset.
+	 * Takes the projection snapshot for the screen bounds if this is the first capture since the last reset (and, for
+	 * a {@link #deferred} phase, the matrices the mask is drawn with).
 	 */
 	void prepareCapture() {
 		if (!bounds.hasSnapshot()) {
 			bounds.snapshot(RenderSystem.getProjectionMatrix(), RenderSystem.getModelViewMatrix());
+			if (deferred) {
+				projection.set(RenderSystem.getProjectionMatrix());
+				modelView.set(RenderSystem.getModelViewMatrix());
+				hasMatrices = true;
+			}
 		}
 	}
 
@@ -103,6 +121,7 @@ final class PhaseState {
 		bounds.reset();
 		hasGeometry = false;
 		hasProjection = false;
+		hasMatrices = false;
 		maskSource.trimIfFull();
 		occluderSource.trimIfFull();
 	}

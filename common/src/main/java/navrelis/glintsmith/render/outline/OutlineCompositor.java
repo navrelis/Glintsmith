@@ -3,9 +3,12 @@ package navrelis.glintsmith.render.outline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import navrelis.glintsmith.render.outline.compat.IrisCompat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.DynamicTexture;
+import org.joml.Matrix4f;
+import org.joml.Matrix4fStack;
 import org.lwjgl.opengl.GL11;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +20,10 @@ import org.slf4j.LoggerFactory;
  * into the EDT target, then the vertical pass that blends the outline onto the main target. All passes are clipped to the bounds of the mask grown by the
  * search radius. The GL state is saved before and restored after, also on errors, which are rethrown for the
  * caller's failsafe.
+ * <p>
+ * World outlines under a shader pack draw their mask into a target of their own in the middle of the level render
+ * ({@link #drawDeferredWorldMask}) and composite after the pack's final pass against Iris's depth texture
+ * ({@link #resolveDeferredWorld}).
  * <p>
  * Render thread only.
  */
@@ -45,6 +52,11 @@ final class OutlineCompositor {
 	private static final GlState STATE = new GlState();
 	private static final StyleTexture STYLE_TEXTURE = new StyleTexture();
 	private static final int[] REGION = new int[4];
+	/** The RenderSystem matrices while the deferred world mask is drawn with the phase's own. */
+	private static final Matrix4f SAVED_PROJECTION = new Matrix4f();
+	private static final Matrix4f SAVED_MODEL_VIEW = new Matrix4f();
+	private static int packDepthId = -1;
+	private static Integer packDepthBoxed;
 	private static boolean depthCopyChecked;
 	private static boolean depthCopyBroken;
 	private static boolean forceFailure = Boolean.getBoolean("glintsmith.debug.failOutline");
@@ -87,11 +99,12 @@ final class OutlineCompositor {
 			if (!region(phase, width, height)) {
 				return;
 			}
-			drawn = drawMask(phase, depth, width, height, true, true);
+			drawn = drawMask(phase, OutlineTargets.mask(), depth, width, height, true, true);
 			if (drawn) {
 				float far = Minecraft.getInstance().gameRenderer.getDepthFar();
-				passes(phase, main, width, height, useDepth, fadeStart, fadeEnd, OutlineDepth.projectionZ(NEAR_PLANE, far),
-					OutlineDepth.projectionW(NEAR_PLANE, far));
+				passes(phase, main, OutlineTargets.mask(), OutlineTargets.maskDepthTexture(),
+					useDepth ? OutlineDepth.USE_DEPTH_SCENE : OutlineDepth.USE_DEPTH_OFF, width, height, fadeStart, fadeEnd,
+					OutlineDepth.projectionZ(NEAR_PLANE, far), OutlineDepth.projectionW(NEAR_PLANE, far));
 			}
 		} finally {
 			STATE.restore();
@@ -129,7 +142,7 @@ final class OutlineCompositor {
 			checkForcedFailure();
 			OutlineTargets.ensureSize(width, height);
 			phase.captureProjection(RenderSystem.getProjectionMatrix());
-			drawn = drawMask(phase, clear ? MaskDepth.CLEAR : MaskDepth.NONE, width, height, false, clear);
+			drawn = drawMask(phase, OutlineTargets.mask(), clear ? MaskDepth.CLEAR : MaskDepth.NONE, width, height, false, clear);
 		} finally {
 			STATE.restore();
 			if (!drawn) {
@@ -166,12 +179,125 @@ final class OutlineCompositor {
 				float far = Minecraft.getInstance().gameRenderer.getDepthFar();
 				float projZ = phase.hasProjection ? phase.projZ : OutlineDepth.projectionZ(NEAR_PLANE, far);
 				float projW = phase.hasProjection ? phase.projW : OutlineDepth.projectionW(NEAR_PLANE, far);
-				passes(phase, main, width, height, true, 0.0f, 0.0f, projZ, projW);
+				passes(phase, main, mask, OutlineTargets.maskDepthTexture(), OutlineDepth.USE_DEPTH_SCENE, width, height, 0.0f,
+					0.0f, projZ, projW);
 			}
 		} finally {
 			STATE.restore();
 			phase.discard();
 		}
+	}
+
+	/**
+	 * World outlines under a shader pack, step 1 (the level is still being rendered): draws the world mask into the
+	 * world mask target with the matrices of the phase's first capture, and keeps the depth terms of that projection.
+	 * The bounds and styles stay for {@link #resolveDeferredWorld}. The mask depth is only the item's own (the scene
+	 * depth comes from Iris at the composite).
+	 *
+	 * @return false if nothing could be drawn (the phase was discarded)
+	 */
+	static boolean drawDeferredWorldMask(PhaseState phase) {
+		if (!phase.hasGeometry || phase.bounds.isEmpty() || !phase.hasMatrices || !OutlineShaders.available()) {
+			phase.discard();
+			return false;
+		}
+		RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
+		int width = main.width;
+		int height = main.height;
+		if (width <= 0 || height <= 0) {
+			phase.discard();
+			return false;
+		}
+		boolean drawn = false;
+		// The mask types take their matrices from RenderSystem at the draw. Set the captured ones in place, in the
+		// model-view stack too (layering shards such as the armor's view offset rebuild the model-view matrix from the
+		// stack), without allocating, and put the current ones back right after.
+		Matrix4fStack stack = RenderSystem.getModelViewStack();
+		SAVED_PROJECTION.set(RenderSystem.getProjectionMatrix());
+		SAVED_MODEL_VIEW.set(RenderSystem.getModelViewMatrix());
+		boolean pushed = false;
+		IrisCompat.beginOwnDraw();
+		STATE.save();
+		try {
+			OutlineTargets.ensureWorldMaskSize(width, height);
+			if (region(phase, width, height)) {
+				stack.pushMatrix();
+				pushed = true;
+				stack.set(phase.modelView);
+				RenderSystem.getModelViewMatrix().set(phase.modelView);
+				RenderSystem.getProjectionMatrix().set(phase.projection);
+				phase.captureProjection(phase.projection);
+				OutlineTargets.drawToWorldMask(true);
+				drawn = drawMask(phase, OutlineTargets.worldMask(), MaskDepth.CLEAR, width, height, true, true);
+			}
+		} finally {
+			OutlineTargets.drawToWorldMask(false);
+			if (pushed) {
+				stack.popMatrix();
+			}
+			RenderSystem.getProjectionMatrix().set(SAVED_PROJECTION);
+			RenderSystem.getModelViewMatrix().set(SAVED_MODEL_VIEW);
+			STATE.restore();
+			IrisCompat.endOwnDraw();
+			if (!drawn) {
+				phase.discardGeometry();
+				phase.reset();
+			}
+		}
+		return drawn;
+	}
+
+	/**
+	 * World outlines under a shader pack, step 2 (after the pack's final pass): runs both passes over the world mask
+	 * drawn by {@link #drawDeferredWorldMask} against Iris's {@code depthtex1}, then resets the phase. Discards the
+	 * phase if that texture is not available this frame.
+	 *
+	 * @param fadeStart distance fade start in blocks (0 and 0 = off)
+	 * @param fadeEnd distance fade end in blocks
+	 */
+	static void resolveDeferredWorld(PhaseState phase, float fadeStart, float fadeEnd) {
+		if (phase.bounds.isEmpty() || !OutlineShaders.available()) {
+			phase.discard();
+			return;
+		}
+		RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
+		int width = main.width;
+		int height = main.height;
+		RenderTarget mask = OutlineTargets.worldMask();
+		if (width <= 0 || height <= 0 || mask == null || mask.width != width || mask.height != height) {
+			phase.discard();
+			return;
+		}
+		int sceneDepth = IrisCompat.packSceneDepthTexture(width, height);
+		if (sceneDepth < 0) {
+			phase.discard();
+			return;
+		}
+		STATE.save();
+		try {
+			OutlineTargets.ensureWorldMaskSize(width, height);
+			if (region(phase, width, height)) {
+				GlStateManager._enableScissorTest();
+				GlStateManager._scissorBox(REGION[0], REGION[1], REGION[2] - REGION[0] + 1, REGION[3] - REGION[1] + 1);
+				float far = Minecraft.getInstance().gameRenderer.getDepthFar();
+				float projZ = phase.hasProjection ? phase.projZ : OutlineDepth.projectionZ(NEAR_PLANE, far);
+				float projW = phase.hasProjection ? phase.projW : OutlineDepth.projectionW(NEAR_PLANE, far);
+				passes(phase, main, mask, packDepthTexture(sceneDepth), OutlineDepth.USE_DEPTH_PACK, width, height, fadeStart,
+					fadeEnd, projZ, projW);
+			}
+		} finally {
+			STATE.restore();
+			phase.discard();
+		}
+	}
+
+	/** The boxed id of Iris's depth texture, boxed again only when the id changes. */
+	private static Integer packDepthTexture(int id) {
+		if (packDepthBoxed == null || packDepthId != id) {
+			packDepthId = id;
+			packDepthBoxed = id;
+		}
+		return packDepthBoxed;
 	}
 
 	private static void checkForcedFailure() {
@@ -206,9 +332,8 @@ final class OutlineCompositor {
 	 * @param clearColor clear the mask colour first (false when adding to a mask drawn earlier this frame)
 	 * @return whether the mask was drawn
 	 */
-	private static boolean drawMask(PhaseState phase, MaskDepth depth, int width, int height, boolean scissored,
-		boolean clearColor) {
-		RenderTarget mask = OutlineTargets.mask();
+	private static boolean drawMask(PhaseState phase, RenderTarget mask, MaskDepth depth, int width, int height,
+		boolean scissored, boolean clearColor) {
 		mask.bindWrite(false);
 		GlStateManager._viewport(0, 0, width, height);
 		if (scissored) {
@@ -279,14 +404,16 @@ final class OutlineCompositor {
 	/**
 	 * Pass H into the EDT target, then pass V blended onto the main target. Expects the scissor box to be set.
 	 *
+	 * @param mask the mask target the phase was drawn into
+	 * @param depthTexture the scene depth the depth rules read
+	 * @param useDepth {@code UseDepth} of both passes ({@link OutlineDepth#USE_DEPTH_OFF}, {@code _SCENE} or {@code _PACK})
 	 * @param projZ z term {@code m22} of the projection the depth was drawn with ({@link OutlineDepth#linear})
 	 * @param projW z term {@code m32} of that projection
 	 */
-	private static void passes(PhaseState phase, RenderTarget main, int width, int height, boolean useDepth,
-		float fadeStart, float fadeEnd, float projZ, float projW) {
+	private static void passes(PhaseState phase, RenderTarget main, RenderTarget mask, Integer depthTexture, int useDepth,
+		int width, int height, float fadeStart, float fadeEnd, float projZ, float projW) {
 		ShaderInstance edtShader = OutlineShaders.edt();
 		ShaderInstance compositeShader = OutlineShaders.composite();
-		RenderTarget mask = OutlineTargets.mask();
 		RenderTarget edt = OutlineTargets.edt();
 		if (edtShader == null || compositeShader == null || mask == null || edt == null) {
 			return;
@@ -304,12 +431,11 @@ final class OutlineCompositor {
 
 		edt.bindWrite(false);
 		GlStateManager._viewport(0, 0, width, height);
-		Integer depthTexture = OutlineTargets.maskDepthTexture();
 		edtShader.setSampler("MaskSampler", mask);
 		edtShader.setSampler("DepthSampler", depthTexture);
 		edtShader.safeGetUniform("Radius").set(radius);
 		edtShader.safeGetUniform("Region").set(x0, y0, x1, y1);
-		edtShader.safeGetUniform("UseDepth").set(useDepth ? 1 : 0);
+		edtShader.safeGetUniform("UseDepth").set(useDepth);
 		edtShader.safeGetUniform("SeedEpsilon").set(OutlineDepth.SEED_EPSILON);
 		FullscreenQuad.draw(edtShader);
 
@@ -322,7 +448,7 @@ final class OutlineCompositor {
 		compositeShader.setSampler("StyleSampler", styles);
 		compositeShader.safeGetUniform("Radius").set(radius);
 		compositeShader.safeGetUniform("Region").set(x0, y0, x1, y1);
-		compositeShader.safeGetUniform("UseDepth").set(useDepth ? 1 : 0);
+		compositeShader.safeGetUniform("UseDepth").set(useDepth);
 		compositeShader.safeGetUniform("DepthProj").set(projZ, projW);
 		compositeShader.safeGetUniform("DepthTolerance").set(frontTolerance(phase.phase));
 		compositeShader.safeGetUniform("CoverTolerance").set(OutlineDepth.COVER_TOLERANCE);

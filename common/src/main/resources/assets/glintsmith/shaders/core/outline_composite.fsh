@@ -4,6 +4,9 @@
 // seed, hides the outline where scene geometry is in front of the item and blends it onto the target.
 // The mask holds every item pixel, visible or hidden, with the item's own depth in G, B, A; DepthSampler is the
 // scene depth. The depth rules are mirrored in OutlineDepth (Java) and tested there.
+// UseDepth 2 (world outlines under a shader pack, OutlineDepth.USE_DEPTH_PACK): DepthSampler is Iris's depthtex1. The
+// inside check uses the jitter-tolerant scene depth of the EDT pass, and the seed distance is the item's own depth from
+// the mask (the pack may draw the item after depthtex1 is copied).
 
 uniform sampler2D MaskSampler;
 uniform sampler2D EdtSampler;
@@ -31,12 +34,25 @@ float unpackDepth(vec3 gba) {
 	return float((b.x << 16) | (b.y << 8) | b.z) / 16777215.0;
 }
 
+// Scene depth for the seed rule at q, the same as in outline_edt.fsh (OutlineDepth.jitterTolerantScene in mode 2).
+float sceneDepth(ivec2 q) {
+	float z = texelFetch(DepthSampler, q, 0).r;
+	if (UseDepth == 2) {
+		ivec2 hi = textureSize(DepthSampler, 0) - 1;
+		z = max(z, texelFetch(DepthSampler, clamp(q + ivec2(-1, 0), ivec2(0), hi), 0).r);
+		z = max(z, texelFetch(DepthSampler, clamp(q + ivec2(1, 0), ivec2(0), hi), 0).r);
+		z = max(z, texelFetch(DepthSampler, clamp(q + ivec2(0, -1), ivec2(0), hi), 0).r);
+		z = max(z, texelFetch(DepthSampler, clamp(q + ivec2(0, 1), ivec2(0), hi), 0).r);
+	}
+	return z;
+}
+
 void main() {
 	ivec2 p = ivec2(gl_FragCoord.xy);
 	vec4 m = texelFetch(MaskSampler, p, 0);
 	bool onHiddenItem = false;
 	if (m.r > 0.0) {
-		if (UseDepth != 1 || texelFetch(DepthSampler, p, 0).r >= unpackDepth(m.gba) - SeedEpsilon) {
+		if (UseDepth == 0 || sceneDepth(p) >= unpackDepth(m.gba) - SeedEpsilon) {
 			discard; // inside the visible silhouette: no outline
 		}
 		onHiddenItem = true; // the item continues behind an occluder here
@@ -83,11 +99,14 @@ void main() {
 	float inner = thickness * (1.0 - softness);
 	float outer = thickness * (1.0 + softness) + 0.5;
 	float a = (1.0 - smoothstep(inner, outer, d)) * col.a;
-	if (UseDepth == 1) {
+	if (UseDepth != 0) {
 		float zp = linearDepth(texelFetch(DepthSampler, p, 0).r);
-		float zs = linearDepth(texelFetch(DepthSampler, seed, 0).r);
-		// zs is the item's depth: seeds are visible item pixels. On a hidden item pixel the occluder must be clearly
-		// behind the seed, elsewhere it must not be clearly in front of it.
+		// zs is the item's depth (OutlineDepth.seedDistance): the scene depth at the seed, which is the item there since
+		// seeds are visible item pixels, or under a shader pack the item depth from the mask.
+		float zs = linearDepth(UseDepth == 2 ? unpackDepth(texelFetch(MaskSampler, seed, 0).gba)
+			: texelFetch(DepthSampler, seed, 0).r);
+		// On a hidden item pixel the occluder must be clearly behind the seed, elsewhere it must not be clearly in
+		// front of it.
 		float relative = zs * 0.02;
 		if (onHiddenItem ? zp < zs + max(CoverTolerance, relative) : zp < zs - max(DepthTolerance, relative)) {
 			discard; // something is in front of the item here

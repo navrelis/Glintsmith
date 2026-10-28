@@ -119,6 +119,30 @@ class OutlineShaderResourcesTest {
 	}
 
 	@Test
+	void bothPassesHaveTheShaderPackModeOfOutlineDepth() throws IOException {
+		String edt = read(resolve("glintsmith_outline_edt.fsh"));
+		String composite = read(resolve("glintsmith_outline_composite.fsh"));
+		assertEquals(0, OutlineDepth.USE_DEPTH_OFF);
+		assertEquals(1, OutlineDepth.USE_DEPTH_SCENE);
+		assertEquals(2, OutlineDepth.USE_DEPTH_PACK);
+		// The jitter-tolerant scene depth (OutlineDepth.jitterTolerantScene), the same in both passes.
+		String neighbourhood = "if (UseDepth == 2) {\n"
+			+ "\t\tivec2 hi = textureSize(DepthSampler, 0) - 1;\n"
+			+ "\t\tz = max(z, texelFetch(DepthSampler, clamp(q + ivec2(-1, 0), ivec2(0), hi), 0).r);\n"
+			+ "\t\tz = max(z, texelFetch(DepthSampler, clamp(q + ivec2(1, 0), ivec2(0), hi), 0).r);\n"
+			+ "\t\tz = max(z, texelFetch(DepthSampler, clamp(q + ivec2(0, -1), ivec2(0), hi), 0).r);\n"
+			+ "\t\tz = max(z, texelFetch(DepthSampler, clamp(q + ivec2(0, 1), ivec2(0), hi), 0).r);\n";
+		assertTrue(edt.replace("\r\n", "\n").contains(neighbourhood), "edt neighbourhood");
+		assertTrue(composite.replace("\r\n", "\n").contains(neighbourhood), "composite neighbourhood");
+		assertTrue(edt.contains("UseDepth != 0 && sceneDepth(q) < unpackDepth(m.gba) - SeedEpsilon"), "edt seed rule in modes 1 and 2");
+		assertTrue(composite.contains("UseDepth == 0 || sceneDepth(p) >= unpackDepth(m.gba) - SeedEpsilon"), "inside check");
+		// OutlineDepth.seedDistance: the item's own depth under a pack, the scene depth otherwise.
+		assertTrue(composite.contains("float zs = linearDepth(UseDepth == 2 ? unpackDepth(texelFetch(MaskSampler, seed, 0).gba)"));
+		assertTrue(composite.contains(": texelFetch(DepthSampler, seed, 0).r);"));
+		assertTrue(composite.contains("if (UseDepth != 0) {"), "the depth rules run in modes 1 and 2");
+	}
+
+	@Test
 	void maskCutoutMatchesVanilla() throws IOException {
 		// Vanilla's item and entity shaders discard alpha < 0.1; a lower mask threshold would seed faint texels.
 		String mask = read(resolve("glintsmith_mask.fsh"));

@@ -105,6 +105,8 @@ public final class OutlineTab extends ConfigTab {
 			Ui.toggle(Ui.HALF, "glintsmith.outline.shaders", outline.disableWithShaders, v -> outline.disableWithShaders = v),
 			Ui.toggle(Ui.HALF, "glintsmith.outline.hand_with_shader_pack", outline.handWithShaderPack,
 				v -> outline.handWithShaderPack = v));
+		list.addRow(Ui.toggle(Ui.HALF, "glintsmith.outline.world_with_shader_pack", outline.worldWithShaderPack,
+			v -> outline.worldWithShaderPack = v));
 
 		DurabilityAlert alert = config.durabilityAlert;
 		list.addHeading(Ui.t("glintsmith.outline.durability"));

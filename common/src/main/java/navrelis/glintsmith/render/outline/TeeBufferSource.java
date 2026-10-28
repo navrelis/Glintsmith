@@ -121,7 +121,7 @@ final class TeeBufferSource extends MultiBufferSource.BufferSource {
 			}
 			TeeVertexConsumer tee = consumers[count];
 			if (tee == null) {
-				tee = new TeeVertexConsumer();
+				tee = TeeVertexConsumer.create();
 				consumers[count] = tee;
 			}
 			count++;

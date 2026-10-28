@@ -54,6 +54,7 @@ class ConfigTest {
 		assertFalse(c.outline.onlyLocalPlayer);
 		assertFalse(c.outline.disableWithShaders);
 		assertTrue(c.outline.handWithShaderPack);
+		assertTrue(c.outline.worldWithShaderPack);
 		assertTrue(c.outline.scaleWithResolution);
 		assertTrue(c.outline.proportional);
 		assertEquals(1.0f, c.outline.minThickness);
@@ -736,6 +737,19 @@ class ConfigTest {
 	}
 
 	@Test
+	void worldWithShaderPackRoundTripsAndDefaultsToOnForOlderFiles() {
+		GlintsmithConfig c = new GlintsmithConfig();
+		c.outline.worldWithShaderPack = false;
+		String json = ConfigManager.toJson(c.sanitize());
+		assertTrue(json.contains("\"worldWithShaderPack\": false"), json);
+		assertFalse(ConfigManager.fromJson(json).sanitize().outline.worldWithShaderPack);
+		assertFalse(c.copy().outline.worldWithShaderPack);
+		GlintsmithConfig older = ConfigManager.fromJson("{\"outline\": {\"handWithShaderPack\": false}}").sanitize();
+		assertTrue(older.outline.worldWithShaderPack, "files from before the switch keep world outlines under packs on");
+		assertFalse(older.outline.handWithShaderPack);
+	}
+
+	@Test
 	void aNullTargetThicknessSectionBecomesAnEmptyOne() {
 		GlintsmithConfig c = ConfigManager.fromJson("{\"outline\": {\"targetThickness\": null, \"thickness\": 4}}").sanitize();
 		assertNotNull(c.outline.targetThickness);
@@ -799,6 +813,22 @@ class ConfigTest {
 		assertFalse(back.glint.atlasIndependentScale);
 		assertFalse(c.copy().glint.atlasIndependentScale);
 		assertFalse(ConfigManager.fromJson("{\"glint\": {\"atlasIndependentScale\": false}}").sanitize().glint.atlasIndependentScale);
+	}
+
+	@Test
+	void customWithShaderPackRoundTripsAndDefaultsToOnForOlderFiles() {
+		assertTrue(new GlintsmithConfig().sanitize().glint.customWithShaderPack);
+		assertTrue(new GlintsmithConfig.Glint().customWithShaderPack);
+		GlintsmithConfig c = new GlintsmithConfig();
+		c.glint.customWithShaderPack = false;
+		String json = ConfigManager.toJson(c.sanitize());
+		assertTrue(json.contains("\"customWithShaderPack\": false"), json);
+		assertFalse(ConfigManager.fromJson(json).sanitize().glint.customWithShaderPack);
+		assertFalse(c.copy().glint.customWithShaderPack);
+		GlintsmithConfig older = ConfigManager.fromJson("{\"glint\": {\"atlasIndependentScale\": false}}").sanitize();
+		assertTrue(older.glint.customWithShaderPack, "files from before the switch keep custom glints under packs on");
+		assertFalse(older.glint.atlasIndependentScale);
+		assertTrue(ConfigManager.fromJson("{}").sanitize().glint.customWithShaderPack);
 	}
 
 	@Test

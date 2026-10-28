@@ -99,6 +99,71 @@ class TeeCaptureTest {
 	}
 
 	@Test
+	void rawVerticesOfSodiumsWriterPathLandInTheMaskLikePerVertexCalls() {
+		// Sodium's VertexBufferWriter.push hands over whole vertices as memory (here in NEW_ENTITY, as its item and
+		// model fast paths do); copyToMask must read position and UV like the per-vertex path.
+		TeePool pool = new TeePool();
+		TeeBufferSource tee = pool.acquire(source, phase, 5);
+		RenderType type = RenderType.entityCutoutNoCull(TEXTURE);
+		TeeVertexConsumer consumer = (TeeVertexConsumer) tee.getBuffer(type);
+		com.mojang.blaze3d.vertex.VertexFormat format = com.mojang.blaze3d.vertex.DefaultVertexFormat.NEW_ENTITY;
+		int stride = format.getVertexSize();
+		int position = format.getOffset(com.mojang.blaze3d.vertex.VertexFormatElement.POSITION);
+		int uv = format.getOffset(com.mojang.blaze3d.vertex.VertexFormatElement.UV0);
+		ByteBuffer raw = ByteBuffer.allocateDirect(4 * stride).order(ByteOrder.nativeOrder());
+		float[][] corners = { { -0.5f, -0.5f }, { 0.5f, -0.5f }, { 0.5f, 0.5f }, { -0.5f, 0.5f } };
+		for (int v = 0; v < 4; v++) {
+			raw.putFloat(v * stride + position, corners[v][0]);
+			raw.putFloat(v * stride + position + 4, corners[v][1]);
+			raw.putFloat(v * stride + position + 8, 0.0f);
+			raw.putFloat(v * stride + uv, 0.25f + v * 0.1f);
+			raw.putFloat(v * stride + uv + 4, 0.75f);
+		}
+		consumer.copyToMask(org.lwjgl.system.MemoryUtil.memAddress(raw), 4, format);
+		assertTrue(phase.hasGeometry);
+		int[] region = new int[4];
+		assertTrue(phase.bounds.toPixels(100, 100, 0, region), "the pushed vertices widen the screen bounds");
+		assertEquals(25, region[0]);
+		assertEquals(75, region[2]);
+		pool.release(tee);
+
+		ByteBuffer vertices = drainMask(type);
+		assertEquals(4 * MASK_VERTEX_SIZE, vertices.remaining());
+		for (int v = 0; v < 4; v++) {
+			int base = v * MASK_VERTEX_SIZE;
+			assertEquals(corners[v][0], vertices.getFloat(base), "x of vertex " + v);
+			assertEquals(corners[v][1], vertices.getFloat(base + 4), "y of vertex " + v);
+			assertEquals(0.25f + v * 0.1f, vertices.getFloat(base + UV_OFFSET), 1.0e-6f, "u of vertex " + v);
+			assertEquals(5, vertices.get(base + COLOR_OFFSET) & 0xFF, "red channel holds the style index");
+		}
+		assertEquals(0, source.recorder(type).bulkVertices, "copyToMask never writes the real buffer (the caller pushes it)");
+		assertFalse(OutlineFailsafe.tripped());
+	}
+
+	@Test
+	void replayingRawVerticesGivesTheBytesOfTheBulkCalls() {
+		// The Sodium writer path hands vertices to a real consumer without a fast path through replay: the result must
+		// be what the per-vertex bulk calls write (vanilla's putBulkData), byte for byte.
+		com.mojang.blaze3d.vertex.VertexFormat format = com.mojang.blaze3d.vertex.DefaultVertexFormat.NEW_ENTITY;
+		try (ByteBufferBuilder first = new ByteBufferBuilder(1024); ByteBufferBuilder second = new ByteBufferBuilder(1024)) {
+			BufferBuilder direct = new BufferBuilder(first, com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS, format);
+			for (int v = 0; v < 4; v++) {
+				direct.addVertex(v * 0.5f, -v * 0.25f, 3.0f + v, 0x80FF4020 + v, 0.1f * v, 0.9f - 0.1f * v,
+					0x000A0003 + v, 0x00F000A0 - v, 0.0f, -1.0f, v == 2 ? 1.0f : 0.0f);
+			}
+			try (MeshData directMesh = direct.buildOrThrow()) {
+				ByteBuffer expected = directMesh.vertexBuffer();
+				BufferBuilder replayed = new BufferBuilder(second, com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS, format);
+				TeeVertexConsumer.replay(replayed, org.lwjgl.system.MemoryUtil.memAddress(expected), 4, format);
+				try (MeshData replayedMesh = replayed.buildOrThrow()) {
+					assertEquals(expected, replayedMesh.vertexBuffer());
+				}
+			}
+		}
+		assertEquals(0xFF112233, TeeVertexConsumer.argbOfAbgr(0xFF332211));
+	}
+
+	@Test
 	void glintAndUnmaskableTypesPassStraightThrough() {
 		TeeBufferSource tee = new TeePool().acquire(source, phase, 1);
 		assertSame(source.recorder(RenderType.glint()), tee.getBuffer(RenderType.glint()));

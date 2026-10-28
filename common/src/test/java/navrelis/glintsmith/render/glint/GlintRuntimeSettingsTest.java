@@ -364,4 +364,24 @@ class GlintRuntimeSettingsTest {
 		assertTrue(GlintRuntimeSettings.from(config).anyCustom());
 		assertFalse(GlintRuntimeSettings.from(config).atlasScale());
 	}
+
+	@Test
+	void customWithShaderPackFollowsTheConfigAndNeverMakesTheGlintCustom() {
+		GlintsmithConfig config = defaults();
+		GlintRuntimeSettings on = GlintRuntimeSettings.from(config);
+		assertTrue(on.customWithShaderPack(), "on by default");
+		assertFalse(on.anyCustom(), "the switch alone keeps everything vanilla");
+		assertTrue(GlintRuntimeSettings.VANILLA.customWithShaderPack());
+		assertTrue(GlintRuntimeSettings.from(null).customWithShaderPack());
+
+		config.glint.customWithShaderPack = false;
+		GlintRuntimeSettings off = GlintRuntimeSettings.from(config);
+		assertFalse(off.customWithShaderPack());
+		assertFalse(off.anyCustom());
+
+		config.glint.item.texture = "preset:rainbow";
+		GlintRuntimeSettings custom = GlintRuntimeSettings.from(config);
+		assertTrue(custom.anyCustom());
+		assertFalse(custom.customWithShaderPack(), "the switch is independent of the looks");
+	}
 }

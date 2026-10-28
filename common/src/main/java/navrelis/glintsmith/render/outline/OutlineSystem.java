@@ -93,6 +93,10 @@ public final class OutlineSystem {
 	private static MultiBufferSource.BufferSource mainSource;
 	private static boolean inFullFlush;
 	private static boolean shaderPack;
+	/** Under a shader pack: whether world outlines can use Iris's depth this frame (IrisCompat.packDepthUsable). */
+	private static boolean packWorldDepth;
+	/** Under a shader pack: the world mask is drawn and waits for {@link #onLevelRendered()}. */
+	private static boolean worldPending;
 	private static boolean packNoticeLogged;
 	private static long frame;
 	private static boolean frameHook;
@@ -288,6 +292,11 @@ public final class OutlineSystem {
 	 *         {@link OccluderBufferSource} over it that also records the hand geometry as occluders
 	 */
 	public static MultiBufferSource.BufferSource beginHands(MultiBufferSource.BufferSource source) {
+		if (shaderPack) {
+			// Iris draws the hand inside the level render. A world phase still open here would capture the hand items
+			// (normally closed already at the translucent terrain, see onBeforeTranslucent).
+			finishDeferredWorld();
+		}
 		PhaseState phase = hand;
 		if (phase == null || !ready()) {
 			return source;
@@ -523,7 +532,7 @@ public final class OutlineSystem {
 			return;
 		}
 		PhaseState phase = world;
-		if (phase == null || !phase.open) {
+		if (phase == null || !phase.open || phase.deferred) {
 			return;
 		}
 		try {
@@ -554,6 +563,7 @@ public final class OutlineSystem {
 		try {
 			IrisCompat.refreshPerFrame();
 			shaderPack = IrisCompat.shaderPackInUse();
+			packWorldDepth = shaderPack && IrisCompat.packDepthUsable();
 			inFullFlush = false;
 			OutlineTargets.tickFrame();
 			logShaderPackNotice();
@@ -585,6 +595,7 @@ public final class OutlineSystem {
 			if (preview != null) {
 				preview.discard();
 			}
+			worldPending = false;
 			handPending = false;
 			hand.discard();
 			inFullFlush = false;
@@ -594,10 +605,17 @@ public final class OutlineSystem {
 	}
 
 	/**
-	 * RETURN of {@code GameRenderer.renderLevel}: the deferred hand composite under a shader pack, onto the final
-	 * image.
+	 * RETURN of {@code GameRenderer.renderLevel}: the deferred composites under a shader pack, onto the final image.
+	 * World first, then the hand, so first-person outlines lie on top as they do without a pack.
 	 */
 	public static void onLevelRendered() {
+		PhaseState w = world;
+		if (w != null && w.open && w.deferred) {
+			finishDeferredWorld(); // no hook closed the world phase this frame (no hand drawn, LAST missing)
+		}
+		if (worldPending) {
+			resolveDeferredWorld();
+		}
 		if (!handPending) {
 			return;
 		}
@@ -632,11 +650,14 @@ public final class OutlineSystem {
 				close(phase);
 			}
 			phase.discard();
-			if (!settings.worldPhaseAllowed(shaderPack) || OutlineCompositor.depthCopyBroken()) {
+			worldPending = false;
+			// Under a shader pack the scene depth comes from Iris, not from a copy of the main depth.
+			if (!settings.worldPhaseAllowed(shaderPack, packWorldDepth) || (!shaderPack && OutlineCompositor.depthCopyBroken())) {
 				return;
 			}
 			if (consumers instanceof MultiBufferSource.BufferSource source) {
 				mainSource = source;
+				phase.deferred = shaderPack;
 				open(phase);
 			}
 		} catch (Throwable t) {
@@ -644,16 +665,80 @@ public final class OutlineSystem {
 		}
 	}
 
-	/** E2: end of the world render pass: composites the world outlines. */
+	/** E2: end of the world render pass: composites the world outlines (under a shader pack: draws their mask). */
 	public static void onWorldLast() {
 		PhaseState phase = world;
 		if (phase == null || !phase.open || OutlineFailsafe.tripped()) {
+			return;
+		}
+		if (phase.deferred) {
+			finishDeferredWorld();
 			return;
 		}
 		try {
 			compositeWorld(phase);
 		} catch (Throwable t) {
 			OutlineFailsafe.trip("outline world composite", t);
+		}
+	}
+
+	/**
+	 * O8: {@code LevelRenderer.renderLevel}, right before the translucent terrain (the {@code "translucent"} profiler
+	 * section), ahead of Iris's own hooks at that point (it then flushes the entities, copies {@code depthtex2}, draws
+	 * the solid hand and copies {@code depthtex1}). Every world item of the frame has been captured by now. Under a
+	 * shader pack this closes the world phase and draws its mask, before the hand can be captured into it. No-op
+	 * without a pack.
+	 */
+	public static void onBeforeTranslucent() {
+		if (shaderPack) {
+			finishDeferredWorld();
+		}
+	}
+
+	/**
+	 * Closes the world phase of a shader pack and draws its mask; the composite follows in {@link #onLevelRendered()}.
+	 * Any error turns world outlines under shader packs off (one INFO line), not the whole renderer.
+	 */
+	private static void finishDeferredWorld() {
+		PhaseState phase = world;
+		if (phase == null || !phase.open || !phase.deferred) {
+			return;
+		}
+		close(phase);
+		if (OutlineFailsafe.tripped()) {
+			return;
+		}
+		try {
+			worldPending = OutlineCompositor.drawDeferredWorldMask(phase);
+		} catch (Throwable t) {
+			worldPending = false;
+			dropDeferredWorld(phase, "drawing the world mask failed", t);
+		}
+	}
+
+	/** Composites the world mask of a shader pack onto the final image. */
+	private static void resolveDeferredWorld() {
+		worldPending = false;
+		PhaseState phase = world;
+		if (phase == null || OutlineFailsafe.tripped()) {
+			return;
+		}
+		try {
+			OutlineRuntimeSettings s = phase.settings;
+			boolean fade = s.fadeActive();
+			OutlineCompositor.resolveDeferredWorld(phase, fade ? s.fadeStart() : 0.0f, fade ? s.fadeEnd() : 0.0f);
+		} catch (Throwable t) {
+			dropDeferredWorld(phase, "the world composite failed", t);
+		}
+	}
+
+	private static void dropDeferredWorld(PhaseState phase, String reason, Throwable t) {
+		IrisCompat.disablePackDepth(reason, t);
+		packWorldDepth = false;
+		try {
+			phase.discard();
+		} catch (Throwable discardFailed) {
+			OutlineFailsafe.trip("outline world discard (shader pack)", discardFailed);
 		}
 	}
 
@@ -807,6 +892,7 @@ public final class OutlineSystem {
 		}
 		openCount = 0;
 		handPending = false;
+		worldPending = false;
 		mainSource = null;
 		TEES.releaseAll();
 		OCCLUDERS.release();
@@ -822,10 +908,9 @@ public final class OutlineSystem {
 			return;
 		}
 		packNoticeLogged = true;
-		if (s.disableWithShaders()) {
-			LOGGER.info("[Glintsmith] A shader pack is active: outlines are off (disableWithShaders).");
-		} else if (s.anyWorld()) {
-			LOGGER.info("[Glintsmith] A shader pack is active: world outlines are off, first-person and GUI outlines stay on.");
+		String notice = s.shaderPackNotice(packWorldDepth);
+		if (notice != null) {
+			LOGGER.info(notice);
 		}
 	}
 
@@ -887,6 +972,8 @@ public final class OutlineSystem {
 		check(missing, net.minecraft.client.gui.GuiGraphics.class, "glintsmith$outlineGuiItem", "GUI (O5)");
 		check(missing, MultiBufferSource.BufferSource.class, "glintsmith$outlineFlush", "world composite (O6)");
 		check(missing, net.minecraft.client.renderer.GameRenderer.class, "glintsmith$outlineFrame", "frame (O7)");
+		check(missing, net.minecraft.client.renderer.LevelRenderer.class, "glintsmith$outlineBeforeTranslucent",
+			"world outlines under shader packs (O8)");
 		if (!missing.isEmpty()) {
 			LOGGER.warn("[Glintsmith] Some outline hooks were not applied (probably a mod conflict), these outlines will be missing: {}",
 				String.join(", ", missing));

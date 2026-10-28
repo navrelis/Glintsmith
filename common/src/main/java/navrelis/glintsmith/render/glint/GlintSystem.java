@@ -17,6 +17,7 @@ import navrelis.glintsmith.style.RuleEngine;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.SpriteLoader;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -37,7 +38,8 @@ import org.jetbrains.annotations.Nullable;
  * their batch has been drawn.
  * <p>
  * With Iris installed, the world pass requests its glint from Iris's fully buffered source instead of the main one;
- * {@link #substituteBuffered} (G7) swaps the types there, with pinned slots that live until the next frame.
+ * {@link #substituteBuffered} (G7) swaps the types there, with pinned slots that live until the next frame. Under a
+ * shader pack that holds too unless {@code glint.customWithShaderPack} is off.
  * <p>
  * With ImmediatelyFast installed, the main source itself is ImmediatelyFast's {@code BatchableBufferSource}, which
  * overrides {@code getBuffer} and {@code endBatch(RenderType)} without calling the vanilla bodies: G9 runs
@@ -75,8 +77,8 @@ public final class GlintSystem {
 	private static long frame;
 	private static double timeSeconds;
 	/**
-	 * A shader pack was in use at the start of this frame (G7 stays off then). True until G6 has run once: the safe
-	 * side, so G7 never runs under a pack if G6 is missing.
+	 * A shader pack was in use at the start of this frame (G7 then runs only with {@code glint.customWithShaderPack}).
+	 * True until G6 has run once: the safe side, so G7 never runs under a pack if G6 is missing and the switch is off.
 	 */
 	private static boolean shaderPack = true;
 
@@ -199,22 +201,45 @@ public final class GlintSystem {
 	 * frame; G6 frees and unpins them at the next frame start. Slots are not registered in the main source here (Iris
 	 * keeps its own buffers); G5b skips unregistered slots.
 	 * <p>
-	 * Under an active shader pack this hook stays out of the way (the vanilla look, as before), because the slot types
-	 * would then go through Iris's entity wrapping and the pack's glint program; that path is untested.
+	 * Under an active shader pack this hook swaps too while {@code glint.customWithShaderPack} is on (the default): the
+	 * slot types then go through Iris's entity wrapping and the pack's own glint program, which draws them, so how tint
+	 * and strength look depends on the pack. With the switch off the hook stays out of the way (the vanilla look).
+	 * Under a pack the entity renderers hand in types that Iris has already wrapped ({@link IrisWrappedTypes}): those are
+	 * unwrapped, swapped, and wrapped again with the same extra state shard.
 	 *
 	 * @return {@code requested} unless it is a vanilla glint type that has a custom look
 	 */
 	public static RenderType substituteBuffered(RenderType requested) {
 		try {
 			GlintRuntimeSettings s = settings;
-			if (!bufferedSwapAllowed(s.anyCustom(), main != null, shaderPack, GlintFailsafe.tripped())) {
+			if (!bufferedSwapAllowed(s.anyCustom(), main != null, shaderPack, s.customWithShaderPack(),
+				GlintFailsafe.tripped())) {
 				return requested;
 			}
+			RenderType inner = requested;
+			RenderStateShard extra = null;
 			GlintKind kind = GlintKind.of(requested);
+			if (kind == null && IrisWrappedTypes.isWrapper(requested)) {
+				// Under a shader pack Iris's entity wrapper has already put its own layer around the vanilla glint type.
+				RenderType unwrapped = IrisWrappedTypes.unwrap(requested);
+				kind = unwrapped == null ? null : GlintKind.of(unwrapped);
+				if (kind != null) {
+					inner = unwrapped;
+					extra = IrisWrappedTypes.extra(requested);
+				}
+			}
 			if (kind == null || !RenderSystem.isOnRenderThread()) {
 				return requested;
 			}
-			return pick(s, kind, requested, true);
+			RenderType picked = pick(s, kind, inner, true);
+			if (inner == requested) {
+				return picked;
+			}
+			if (picked == inner || extra == null) {
+				return requested;
+			}
+			RenderType rewrapped = IrisWrappedTypes.rewrap(picked, extra);
+			return rewrapped == null ? requested : rewrapped;
 		} catch (Throwable t) {
 			GlintFailsafe.trip("substituteBuffered", t);
 			return requested;
@@ -304,10 +329,12 @@ public final class GlintSystem {
 	 * @param anyCustom  whether any category or rule has a non-vanilla look
 	 * @param started    whether the client has started (main source captured, textures created)
 	 * @param shaderPack whether a shader pack was in use at the start of this frame
+	 * @param customWithShaderPack whether {@code glint.customWithShaderPack} lets the swap run under a shader pack
 	 * @param tripped    whether the glint failsafe has tripped
 	 */
-	static boolean bufferedSwapAllowed(boolean anyCustom, boolean started, boolean shaderPack, boolean tripped) {
-		return anyCustom && started && !shaderPack && !tripped;
+	static boolean bufferedSwapAllowed(boolean anyCustom, boolean started, boolean shaderPack, boolean customWithShaderPack,
+		boolean tripped) {
+		return anyCustom && started && (!shaderPack || customWithShaderPack) && !tripped;
 	}
 
 	/**
@@ -378,7 +405,7 @@ public final class GlintSystem {
 			}
 			frame++;
 			timeSeconds = Util.getMillis() / 1000.0;
-			// False without Iris; true on any Iris API error (the safe side: G7 off).
+			// False without Iris; true on any Iris API error (the safe side: G7 runs only with customWithShaderPack).
 			shaderPack = IrisCompat.queryShaderPack();
 			POOL.releaseStale(frame);
 		} catch (Throwable t) {

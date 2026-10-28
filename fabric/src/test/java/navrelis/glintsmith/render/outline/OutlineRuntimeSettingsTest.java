@@ -38,6 +38,7 @@ class OutlineRuntimeSettingsTest {
 		o.onlyLocalPlayer = true;
 		o.disableWithShaders = true;
 		o.handWithShaderPack = false;
+		o.worldWithShaderPack = false;
 		o.scaleWithResolution = false;
 		o.proportional = false;
 		o.minThickness = 2.5f;
@@ -55,6 +56,9 @@ class OutlineRuntimeSettingsTest {
 		assertTrue(s.onlyLocalPlayer());
 		assertTrue(s.disableWithShaders());
 		assertFalse(s.handWithShaderPack());
+		assertFalse(s.worldWithShaderPack());
+		assertTrue(OutlineRuntimeSettings.from(config()).worldWithShaderPack(), "on by default");
+		assertFalse(OutlineRuntimeSettings.DISABLED.worldWithShaderPack());
 		assertFalse(s.scaleWithResolution());
 		assertFalse(s.proportional());
 		assertEquals(2.5f, s.minThickness());
@@ -148,7 +152,8 @@ class OutlineRuntimeSettingsTest {
 		config.outline.targets.gui = true;
 		OutlineRuntimeSettings s = OutlineRuntimeSettings.from(config);
 		assertTrue(s.worldPhaseAllowed(false));
-		assertFalse(s.worldPhaseAllowed(true), "world outlines are off under a shader pack");
+		assertFalse(s.worldPhaseAllowed(true), "without Iris's depth world outlines are off under a shader pack");
+		assertTrue(s.worldPhaseAllowed(true, true), "with Iris's depth they stay on by default");
 		assertTrue(s.handPhaseAllowed(true), "hand outlines stay on by default");
 		assertTrue(s.guiPhaseAllowed(true), "GUI outlines work under a shader pack");
 
@@ -161,11 +166,62 @@ class OutlineRuntimeSettingsTest {
 		config.outline.disableWithShaders = true;
 		OutlineRuntimeSettings none = OutlineRuntimeSettings.from(config);
 		assertFalse(none.worldPhaseAllowed(true));
+		assertFalse(none.worldPhaseAllowed(true, true), "disableWithShaders wins over the depth");
 		assertFalse(none.handPhaseAllowed(true));
 		assertFalse(none.guiPhaseAllowed(true));
 		assertTrue(none.worldPhaseAllowed(false), "only applies while a pack is active");
+		assertTrue(none.worldPhaseAllowed(false, false));
 		assertTrue(none.handPhaseAllowed(false));
 		assertTrue(none.guiPhaseAllowed(false));
+	}
+
+	@Test
+	void worldWithShaderPackGatesOnlyThePackCase() {
+		GlintsmithConfig config = config();
+		config.outline.worldWithShaderPack = false;
+		OutlineRuntimeSettings s = OutlineRuntimeSettings.from(config);
+		assertFalse(s.worldPhaseAllowed(true, true), "switched off: no world outlines under a pack");
+		assertTrue(s.worldPhaseAllowed(false, false), "without a pack the switch does not matter");
+		assertTrue(s.worldPhaseAllowed(false, true));
+		assertTrue(s.handPhaseAllowed(true), "the hand has its own switch");
+
+		config.outline.worldWithShaderPack = true;
+		OutlineRuntimeSettings on = OutlineRuntimeSettings.from(config);
+		assertTrue(on.worldPhaseAllowed(true, true));
+		assertFalse(on.worldPhaseAllowed(true, false), "Iris's depth missing: off, as before the switch existed");
+
+		config.outline.enabled = false;
+		assertFalse(OutlineRuntimeSettings.from(config).worldPhaseAllowed(true, true));
+		assertFalse(OutlineRuntimeSettings.from(config).worldPhaseAllowed(false, true));
+		config.outline.enabled = true;
+		GlintsmithConfig.Targets t = config.outline.targets;
+		t.thirdPerson = false;
+		t.armor = false;
+		t.dropped = false;
+		t.itemFrame = false;
+		t.other = false;
+		assertFalse(OutlineRuntimeSettings.from(config).worldPhaseAllowed(true, true), "no world target");
+	}
+
+	@Test
+	void shaderPackNoticeTellsWhichOutlinesStayOn() {
+		GlintsmithConfig config = config();
+		OutlineRuntimeSettings s = OutlineRuntimeSettings.from(config);
+		assertEquals("[Glintsmith] A shader pack is active: world outlines use Iris's depth and are drawn after the pack's "
+			+ "final pass, first-person outlines stay on, GUI outlines stay on.", s.shaderPackNotice(true));
+		assertEquals("[Glintsmith] A shader pack is active: world outlines are off (Iris's depth texture is not available), "
+			+ "first-person outlines stay on, GUI outlines stay on.", s.shaderPackNotice(false));
+
+		config.outline.worldWithShaderPack = false;
+		config.outline.handWithShaderPack = false;
+		config.outline.targets.gui = false;
+		assertEquals("[Glintsmith] A shader pack is active: world outlines are off (worldWithShaderPack), first-person "
+			+ "outlines are off (handWithShaderPack).", OutlineRuntimeSettings.from(config).shaderPackNotice(true));
+
+		config.outline.disableWithShaders = true;
+		assertEquals("[Glintsmith] A shader pack is active: outlines are off (disableWithShaders).",
+			OutlineRuntimeSettings.from(config).shaderPackNotice(true));
+		assertEquals(null, OutlineRuntimeSettings.DISABLED.shaderPackNotice(true), "outlines off: nothing to say");
 	}
 
 	@Test

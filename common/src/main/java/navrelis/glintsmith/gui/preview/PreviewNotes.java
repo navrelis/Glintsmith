@@ -63,7 +63,7 @@ public final class PreviewNotes {
 		if (shaderPack && outlineShown && !OutlineRuntimeSettings.from(snap).handPhaseAllowed(true)) {
 			keys.add(SHADER_HAND_OFF);
 		}
-		if (shaderPack && style.glint() != null) {
+		if (shaderPack && !snap.glint.customWithShaderPack && style.glint() != null) {
 			keys.add(SHADER_GLINT);
 		}
 		if (noWorld) {

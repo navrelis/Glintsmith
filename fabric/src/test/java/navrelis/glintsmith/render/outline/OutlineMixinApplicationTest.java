@@ -29,6 +29,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.spongepowered.asm.mixin.MixinEnvironment;
@@ -59,6 +60,7 @@ class OutlineMixinApplicationTest {
 	private static final String GUI_GRAPHICS = "net.minecraft.client.gui.GuiGraphics";
 	private static final String BUFFER_SOURCE = "net.minecraft.client.renderer.MultiBufferSource$BufferSource";
 	private static final String GAME_RENDERER = "net.minecraft.client.renderer.GameRenderer";
+	private static final String LEVEL_RENDERER = "net.minecraft.client.renderer.LevelRenderer";
 	private static final String COMPOSITE_RENDER_TYPE = "net.minecraft.client.renderer.RenderType$CompositeRenderType";
 	private static final String COMPOSITE_STATE = "net.minecraft.client.renderer.RenderType$CompositeState";
 	private static final String EMPTY_TEXTURE_SHARD = "net.minecraft.client.renderer.RenderStateShard$EmptyTextureStateShard";
@@ -67,10 +69,10 @@ class OutlineMixinApplicationTest {
 		"outline.ItemRendererOutlineMixin", "outline.ItemInHandRendererOutlineMixin", "outline.HumanoidArmorLayerOutlineMixin",
 		"outline.ElytraLayerOutlineMixin", "outline.GuiGraphicsOutlineMixin", "outline.BufferSourceOutlineMixin",
 		"outline.GameRendererOutlineMixin", "outline.CompositeRenderTypeAccessor", "outline.CompositeStateAccessor",
-		"outline.EmptyTextureStateShardAccessor"));
+		"outline.EmptyTextureStateShardAccessor", "outline.LevelRendererOutlineMixin"));
 
-	/** O1, O2a, O2b, O3, O4, O5 (WrapMethod); O6 x3, O7a, O7b, O7c (Inject). */
-	private static final int INJECTORS = 12;
+	/** O1, O2a, O2b, O3, O4, O5 (WrapMethod); O6 x3, O7a, O7b, O7c, O8 (Inject). */
+	private static final int INJECTORS = 13;
 
 	// ---- O1 to O5: @WrapMethod
 
@@ -159,6 +161,35 @@ class OutlineMixinApplicationTest {
 		assertTrue(hands >= 0, "unexpected renderLevel body: " + levelCalls);
 		assertTrue(indexOfHandler(levelCalls, "glintsmith$outlineFrameLevel") > hands,
 			"the level hook must run at RETURN, after the hand: " + levelCalls);
+	}
+
+	// ---- O8: @Inject at a constant
+
+	@Test
+	void o8RunsRightBeforeEveryTranslucentSection() throws Exception {
+		ClassNode node = transformed(LEVEL_RENDERER);
+		MethodNode renderLevel = method(node, "renderLevel", "(Lnet/minecraft/client/DeltaTracker;ZLnet/minecraft/client/Camera;"
+			+ "Lnet/minecraft/client/renderer/GameRenderer;Lnet/minecraft/client/renderer/LightTexture;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;)V");
+		assertCallsExistingHandler(node, renderLevel, "glintsmith$outlineBeforeTranslucent");
+		int sections = 0;
+		int hooked = 0;
+		for (AbstractInsnNode insn : renderLevel.instructions) {
+			if (!(insn instanceof LdcInsnNode ldc) || !"translucent".equals(ldc.cst)) {
+				continue;
+			}
+			sections++;
+			// The callback is the last call before the constant (CallbackInfo is built just before it).
+			for (AbstractInsnNode prev = insn.getPrevious(); prev != null; prev = prev.getPrevious()) {
+				if (prev instanceof MethodInsnNode call) {
+					if (call.name.contains("glintsmith$outlineBeforeTranslucent")) {
+						hooked++;
+					}
+					break;
+				}
+			}
+		}
+		assertEquals(2, sections, "1.21.1 has one translucent section in the Fabulous and one in the other branch");
+		assertEquals(sections, hooked, "the hook must run right before each translucent section");
 	}
 
 	// ---- A1 to A3: accessors
@@ -271,7 +302,7 @@ class OutlineMixinApplicationTest {
 				}
 			}
 		}
-		assertEquals(INJECTORS, injectors, "expected O1 to O5 (WrapMethod), O6 x3 and O7 x3 (Inject)");
+		assertEquals(INJECTORS, injectors, "expected O1 to O5 (WrapMethod), O6 x3, O7 x3 and O8 (Inject)");
 	}
 
 	// ---- helpers

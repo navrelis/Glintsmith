@@ -3,6 +3,7 @@ package navrelis.glintsmith.render.outline;
 import navrelis.glintsmith.config.GlintsmithConfig;
 import navrelis.glintsmith.style.Num;
 import navrelis.glintsmith.style.OutlineTarget;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Immutable snapshot of the outline config the renderer needs per frame. This is the only class that reads
@@ -23,6 +24,7 @@ public record OutlineRuntimeSettings(
 	boolean onlyLocalPlayer,
 	boolean disableWithShaders,
 	boolean handWithShaderPack,
+	boolean worldWithShaderPack,
 	boolean scaleWithResolution,
 	boolean proportional,
 	float minThickness,
@@ -31,7 +33,7 @@ public record OutlineRuntimeSettings(
 ) {
 	/** Everything off. Used before the config is read and when it cannot be read. */
 	public static final OutlineRuntimeSettings DISABLED = new OutlineRuntimeSettings(false, false, false, false, false,
-		false, false, false, false, false, false, false, false, OutlineScale.DEFAULT_MIN_THICKNESS, 0.0f, 0.0f);
+		false, false, false, false, false, false, false, false, false, OutlineScale.DEFAULT_MIN_THICKNESS, 0.0f, 0.0f);
 
 	/** Reference framebuffer height for {@code scaleWithResolution}: a thickness is in pixels at this height. */
 	public static final float REFERENCE_HEIGHT = 1080.0f;
@@ -48,8 +50,8 @@ public record OutlineRuntimeSettings(
 		float start = nonNegative(o.fadeStart);
 		float end = nonNegative(o.fadeEnd);
 		return new OutlineRuntimeSettings(o.enabled, t.firstPerson, t.thirdPerson, t.armor, t.dropped, t.itemFrame,
-			t.gui, t.other, o.onlyLocalPlayer, o.disableWithShaders, o.handWithShaderPack, o.scaleWithResolution,
-			o.proportional, Num.clamp(o.minThickness, OutlineScale.MIN_THICKNESS_LOW, OutlineScale.MIN_THICKNESS_HIGH,
+			t.gui, t.other, o.onlyLocalPlayer, o.disableWithShaders, o.handWithShaderPack, o.worldWithShaderPack,
+			o.scaleWithResolution, o.proportional, Num.clamp(o.minThickness, OutlineScale.MIN_THICKNESS_LOW, OutlineScale.MIN_THICKNESS_HIGH,
 				OutlineScale.DEFAULT_MIN_THICKNESS), start, end);
 	}
 
@@ -113,10 +115,58 @@ public record OutlineRuntimeSettings(
 	}
 
 	/**
-	 * @return whether the WORLD phase may open; world outlines are always off while a shader pack is active
+	 * {@link #worldPhaseAllowed(boolean, boolean)} without Iris's depth: under a shader pack the WORLD phase stays
+	 * closed.
 	 */
 	public boolean worldPhaseAllowed(boolean shaderPack) {
-		return enabled && anyWorld() && !shaderPack;
+		return worldPhaseAllowed(shaderPack, false);
+	}
+
+	/**
+	 * @param shaderPack whether a shader pack is in use this frame
+	 * @param packDepth whether world outlines can use Iris's depth under it ({@code IrisCompat.packDepthUsable()})
+	 * @return whether the WORLD phase may open; under a shader pack only with {@code worldWithShaderPack}, without
+	 *         {@code disableWithShaders} and with Iris's depth available
+	 */
+	public boolean worldPhaseAllowed(boolean shaderPack, boolean packDepth) {
+		return enabled && anyWorld() && (!shaderPack || (!disableWithShaders && worldWithShaderPack && packDepth));
+	}
+
+	/**
+	 * The INFO line logged once per shader pack activation: which outlines stay on under the pack and why the others
+	 * are off.
+	 *
+	 * @param packDepth whether world outlines can use Iris's depth ({@code IrisCompat.packDepthUsable()})
+	 * @return the line, or null if outlines are off anyway or no place is enabled
+	 */
+	@Nullable
+	public String shaderPackNotice(boolean packDepth) {
+		if (!enabled) {
+			return null;
+		}
+		if (disableWithShaders) {
+			return "[Glintsmith] A shader pack is active: outlines are off (disableWithShaders).";
+		}
+		StringBuilder line = new StringBuilder();
+		if (anyWorld()) {
+			line.append(!worldWithShaderPack ? "world outlines are off (worldWithShaderPack)"
+				: packDepth ? "world outlines use Iris's depth and are drawn after the pack's final pass"
+				: "world outlines are off (Iris's depth texture is not available)");
+		}
+		if (firstPerson) {
+			appendPart(line, handWithShaderPack ? "first-person outlines stay on" : "first-person outlines are off (handWithShaderPack)");
+		}
+		if (gui) {
+			appendPart(line, "GUI outlines stay on");
+		}
+		return line.isEmpty() ? null : "[Glintsmith] A shader pack is active: " + line + ".";
+	}
+
+	private static void appendPart(StringBuilder line, String part) {
+		if (!line.isEmpty()) {
+			line.append(", ");
+		}
+		line.append(part);
 	}
 
 	/**

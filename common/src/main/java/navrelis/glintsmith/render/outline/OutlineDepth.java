@@ -8,7 +8,8 @@ package navrelis.glintsmith.render.outline;
  * The mask holds every item pixel, visible or not, with the depth of the nearest item surface packed into G, B and A
  * (24 bits, window depth). The mask target's depth attachment holds the scene depth: a copy of the main depth, or for
  * the first-person hand under a shader pack the nearest of the item and the captured hand geometry (arms, sleeves,
- * other held things), which is what the main depth would hold there without the pack. From both:
+ * other held things), which is what the main depth would hold there without the pack. World outlines under a shader
+ * pack read Iris's {@code depthtex1} instead ({@link #USE_DEPTH_PACK}). From both:
  * <ul>
  * <li>an item pixel is a <b>seed</b> only if the item is visible there: the scene is not in front of the item by more
  * than {@link #SEED_EPSILON} (window depth);</li>
@@ -40,6 +41,18 @@ final class OutlineDepth {
 	static final float RELATIVE_TOLERANCE = 0.02f;
 	/** What {@link #linear} returns for a window depth beyond the far end of the projection: nothing is there. */
 	static final float BEYOND_FAR = 1.0e9f;
+
+	/** {@code UseDepth} of the passes: no depth (GUI, preview); every mask pixel is a seed. */
+	static final int USE_DEPTH_OFF = 0;
+	/** {@code UseDepth}: the scene depth is a copy of the main depth or the hand occluders (no shader pack, Iris hand). */
+	static final int USE_DEPTH_SCENE = 1;
+	/**
+	 * {@code UseDepth}: world outlines under a shader pack. The scene depth is Iris's {@code depthtex1}, which the pack
+	 * drew with a sub-pixel TAA offset and which may lack the item itself (translucent entity draws come after it is
+	 * copied). The seed rule therefore takes the farthest scene depth of the pixel and its four neighbours
+	 * ({@link #jitterTolerantScene}), and the seed distance of the occlusion rule is the item's own depth from the mask.
+	 */
+	static final int USE_DEPTH_PACK = 2;
 
 	private OutlineDepth() {
 	}
@@ -75,6 +88,38 @@ final class OutlineDepth {
 	 */
 	static boolean visible(float sceneZ, float itemZ) {
 		return sceneZ >= itemZ - SEED_EPSILON;
+	}
+
+	/**
+	 * {@code sceneDepth} of both passes in {@link #USE_DEPTH_PACK}: the farthest window depth of a pixel and its four
+	 * neighbours. A TAA pack draws the scene shifted by up to half a pixel on each axis while the mask is drawn
+	 * unshifted, so on a sloped item surface the scene depth at a pixel can lie in front of the mask's item depth by
+	 * up to half the depth step to the next pixel. For a planar surface one of the four neighbours is at least that
+	 * far behind, so the maximum is never in front of the unshifted item depth and the item pixel stays a seed. The
+	 * cost: an item pixel right at the edge of an occluder may count as visible (the edge moves by one pixel, about
+	 * as much as the pack's own jitter).
+	 */
+	static float jitterTolerantScene(float center, float left, float right, float down, float up) {
+		return Math.max(center, Math.max(Math.max(left, right), Math.max(down, up)));
+	}
+
+	/**
+	 * The seed rule of {@link #USE_DEPTH_PACK}: {@link #visible} on {@link #jitterTolerantScene}.
+	 */
+	static boolean visibleJittered(float center, float left, float right, float down, float up, float itemZ) {
+		return visible(jitterTolerantScene(center, left, right, down, up), itemZ);
+	}
+
+	/**
+	 * The distance of the seed that the occlusion rule ({@link #hidden}) compares against, in blocks.
+	 * <p>
+	 * With {@link #USE_DEPTH_SCENE} it is the scene depth at the seed: seeds are visible item pixels, so the scene
+	 * there is the item (within {@link #SEED_EPSILON}). Under a shader pack the scene depth at the seed can be the
+	 * background (the pack drew the item into its targets after Iris copied {@code depthtex1}, for example the
+	 * translucent item sheet with separate entity draws), so the item's own depth from the mask is used.
+	 */
+	static float seedDistance(int useDepth, float sceneAtSeed, float itemAtSeed, float projZ, float projW) {
+		return linear(useDepth == USE_DEPTH_PACK ? itemAtSeed : sceneAtSeed, projZ, projW);
 	}
 
 	/**

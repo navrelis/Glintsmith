@@ -267,6 +267,78 @@ class OutlineDepthTest {
 		assertTrue(g.composite(true, OutlineDepth.HAND_TOLERANCE)[g.at(10, 5)]);
 	}
 
+	// ---- world outlines under a shader pack (UseDepth 2)
+
+	@Test
+	void taaJitterOnASlopedItemKeepsItsPixelsSeedsOnlyWithTheNeighbourhood() {
+		// A surface seen at a grazing angle: window depth changes by `slope` per pixel along x or y. The pack draws the
+		// scene shifted by up to half a pixel, the mask is unshifted: the scene at a pixel shows the surface `offset`
+		// pixels away. Every offset within half a pixel on both axes must keep the pixel a seed.
+		float base = window(4.0f);
+		for (float slope : new float[] { 1.0e-6f, 2.0e-5f, 4.0e-4f }) {
+			for (float dx = -0.5f; dx <= 0.5f; dx += 0.25f) {
+				for (float dy = -0.5f; dy <= 0.5f; dy += 0.25f) {
+					for (int axis = 0; axis < 2; axis++) {
+						float gx = axis == 0 ? slope : slope * 0.3f;
+						float gy = axis == 0 ? -slope * 0.3f : -slope;
+						// Scene depth at pixel (x, y) = item depth at (x - dx, y - dy) of the plane base + gx x + gy y.
+						float center = base - gx * dx - gy * dy;
+						float left = center - gx;
+						float right = center + gx;
+						float down = center - gy;
+						float up = center + gy;
+						assertTrue(OutlineDepth.visibleJittered(center, left, right, down, up, base),
+							"slope " + slope + " offset " + dx + "," + dy + " axis " + axis);
+					}
+				}
+			}
+		}
+		// Without the neighbourhood the steepest case loses the seed: that is the flicker the rule prevents.
+		assertFalse(OutlineDepth.visible(base - 4.0e-4f * 0.5f, base));
+	}
+
+	@Test
+	void taaToleranceStillHidesItemsBehindAnOccluder() {
+		// A pillar 1 block in front of the item covers the pixel and its neighbours: no seed, whatever the jitter.
+		float item = window(6.0f);
+		float pillar = window(5.0f);
+		assertFalse(OutlineDepth.visibleJittered(pillar, pillar, pillar, pillar, pillar, item));
+		// At the pillar's edge one neighbour shows the item: the edge moves by one pixel (the price of the tolerance).
+		assertTrue(OutlineDepth.visibleJittered(pillar, item, pillar, pillar, pillar, item));
+		assertEquals(Math.max(0.3f, 0.7f), OutlineDepth.jitterTolerantScene(0.1f, 0.3f, 0.7f, 0.2f, 0.5f));
+	}
+
+	@Test
+	void underAShaderPackTheSeedDistanceIsTheItemsOwnDepth() {
+		float projZ = OutlineDepth.projectionZ(NEAR, FAR);
+		float projW = OutlineDepth.projectionW(NEAR, FAR);
+		float item = window(3.0f);
+		float background = window(40.0f); // the pack drew the item after copying depthtex1: the scene there is behind it
+		assertEquals(40.0f, OutlineDepth.seedDistance(OutlineDepth.USE_DEPTH_SCENE, background, item, projZ, projW), 0.5f);
+		assertEquals(3.0f, OutlineDepth.seedDistance(OutlineDepth.USE_DEPTH_PACK, background, item, projZ, projW), 0.01f);
+		// The wall 1 block behind the item keeps the outline with the item's depth; with the background as seed
+		// distance it would be "in front" and hide it.
+		float wall = OutlineDepth.linear(window(4.0f), projZ, projW);
+		assertFalse(OutlineDepth.hidden(false, wall,
+			OutlineDepth.seedDistance(OutlineDepth.USE_DEPTH_PACK, background, item, projZ, projW), OutlineDepth.WORLD_TOLERANCE));
+		assertTrue(OutlineDepth.hidden(false, wall,
+			OutlineDepth.seedDistance(OutlineDepth.USE_DEPTH_SCENE, background, item, projZ, projW), OutlineDepth.WORLD_TOLERANCE));
+	}
+
+	@Test
+	void theSolidHandInDepthtex1HidesWorldOutlinesBehindIt() {
+		// depthtex1 holds the first-person hand drawn with Iris's 1/8 z scale. Read with the world projection terms it
+		// is a few centimetres away, in front of any world item, so a world outline drawn over the arm is hidden.
+		float projZ = OutlineDepth.projectionZ(NEAR, FAR);
+		float projW = OutlineDepth.projectionW(NEAR, FAR);
+		float arm = OutlineDepth.linear(window(0.6f, IRIS_HAND_SCALE), projZ, projW);
+		assertTrue(arm < 0.2f, "the arm reads as " + arm + " blocks");
+		for (float itemDistance : new float[] { 0.8f, 2.0f, 30.0f }) {
+			assertTrue(OutlineDepth.hidden(false, arm, itemDistance, OutlineDepth.WORLD_TOLERANCE), "item at " + itemDistance);
+			assertTrue(OutlineDepth.hidden(true, arm, itemDistance, OutlineDepth.WORLD_TOLERANCE), "item behind the arm");
+		}
+	}
+
 	// ---- mirror
 
 	/** Window depth of a linear distance (inverse of the composite's linearDepth), quantised like a depth buffer. */

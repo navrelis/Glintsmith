@@ -22,6 +22,8 @@ import org.jetbrains.annotations.Nullable;
  *                  glint override: the renderer then leaves all glints vanilla without any work
  * @param atlasScale whether customised glints drawn with block-atlas UVs get the atlas factor of {@link GlintAtlasScale};
  *                   it never makes a glint custom by itself
+ * @param customWithShaderPack whether the customised glints are also drawn in the world while a shader pack is active
+ *                             (the pack's glint program draws them); off keeps the vanilla glint there
  */
 public record GlintRuntimeSettings(
 	GlintCategoryRuntime item,
@@ -29,7 +31,8 @@ public record GlintRuntimeSettings(
 	GlintCategoryRuntime entity,
 	GlintCategoryRuntime gui,
 	boolean anyCustom,
-	boolean atlasScale
+	boolean atlasScale,
+	boolean customWithShaderPack
 ) {
 	/** Everything vanilla. */
 	public static final GlintRuntimeSettings VANILLA = from(null);
@@ -86,7 +89,7 @@ public record GlintRuntimeSettings(
 		if (glint == null) {
 			GlintsmithConfig.GlintCategorySettings defaults = new GlintsmithConfig.GlintCategorySettings();
 			GlintCategoryRuntime d = GlintCategoryRuntime.of(defaults);
-			return new GlintRuntimeSettings(d, d, d, d, false, true);
+			return new GlintRuntimeSettings(d, d, d, d, false, true, true);
 		}
 		GlintCategoryRuntime item = GlintCategoryRuntime.of(orDefault(glint.item));
 		GlintCategoryRuntime armor = GlintCategoryRuntime.of(orDefault(glint.armor));
@@ -105,7 +108,8 @@ public record GlintRuntimeSettings(
 				}
 			}
 		}
-		return new GlintRuntimeSettings(item, armor, entity, gui, custom, glint.atlasIndependentScale);
+		return new GlintRuntimeSettings(item, armor, entity, gui, custom, glint.atlasIndependentScale,
+			glint.customWithShaderPack);
 	}
 
 	private static GlintsmithConfig.GlintCategorySettings orDefault(@Nullable GlintsmithConfig.GlintCategorySettings s) {

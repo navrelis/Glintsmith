@@ -154,6 +154,11 @@ public final class GlintsmithConfig {
 		/** Keep first-person outlines while an Iris shader pack is active. */
 		public boolean handWithShaderPack = true;
 		/**
+		 * Keep world outlines (third person, armor, dropped items, item frames, other) while an Iris shader pack is
+		 * active; they are then hidden with Iris's depth and drawn after the pack's final pass.
+		 */
+		public boolean worldWithShaderPack = true;
+		/**
 		 * Proportional outlines: a thickness is in pixels on the item held in first person (at a window height of 1080
 		 * pixels); every other item gets it scaled by its size on screen relative to that item. Off: the same pixels
 		 * everywhere.
@@ -326,6 +331,13 @@ public final class GlintsmithConfig {
 		 * default: they get it on.
 		 */
 		public boolean atlasIndependentScale = true;
+		/**
+		 * Draws the customised glints in the world (armor, held items of entities, item frames, dropped items) while a
+		 * shader pack is active; the pack's own glint program then draws them, so how tint and strength look depends on
+		 * the pack. Off keeps the vanilla glint there. Configs written before this switch lack the field, so Gson keeps
+		 * this default: they get it on.
+		 */
+		public boolean customWithShaderPack = true;
 		public GlintCategorySettings item = GlintCategorySettings.defaults();
 		public GlintCategorySettings armor = GlintCategorySettings.defaults();
 		public GlintCategorySettings entity = GlintCategorySettings.defaults();

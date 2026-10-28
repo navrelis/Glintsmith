@@ -11,7 +11,8 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
  * G7: the glint swap of G5a for Iris's {@code FullyBufferedMultiBufferSource}. While Iris is installed (shaders on or
  * off) that source replaces {@code RenderBuffers.bufferSource()} for the whole of {@code LevelRenderer.renderLevel},
  * and its {@code getBuffer} override never calls the vanilla {@code BufferSource.getBuffer}, so G5a does not see world
- * glints. {@link GlintSystem#substituteBuffered} decides; it is a no-op under an active shader pack.
+ * glints. {@link GlintSystem#substituteBuffered} decides; under an active shader pack it swaps only with
+ * {@code glint.customWithShaderPack}, and it also sees Iris's entity-wrapped types there.
  * <p>
  * Iris is optional: {@code @Pseudo} lets the target be absent, and the injector is {@code require = 0}. The mixin is
  * not remapped. The class name is Iris's own, and {@code getBuffer} is the method name in every namespace (vanilla's

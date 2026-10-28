@@ -13,7 +13,8 @@
 		"outline.GuiGraphicsOutlineMixin",
 		"outline.HumanoidArmorLayerOutlineMixin",
 		"outline.ItemInHandRendererOutlineMixin",
-		"outline.ItemRendererOutlineMixin"
+		"outline.ItemRendererOutlineMixin",
+		"outline.LevelRendererOutlineMixin"
 	],
 	"injectors": {
 		"defaultRequire": 0

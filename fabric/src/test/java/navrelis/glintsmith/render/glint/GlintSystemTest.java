@@ -52,12 +52,18 @@ class GlintSystemTest {
 	}
 
 	@Test
-	void bufferedSwapNeedsCustomLooksAStartedClientNoShaderPackAndNoTrip() {
-		assertTrue(GlintSystem.bufferedSwapAllowed(true, true, false, false));
-		assertFalse(GlintSystem.bufferedSwapAllowed(false, true, false, false), "all vanilla");
-		assertFalse(GlintSystem.bufferedSwapAllowed(true, false, false, false), "main source not captured yet");
-		assertFalse(GlintSystem.bufferedSwapAllowed(true, true, true, false), "shader pack: world glint stays vanilla");
-		assertFalse(GlintSystem.bufferedSwapAllowed(true, true, false, true), "failsafe tripped");
+	void bufferedSwapNeedsCustomLooksAStartedClientAPackPermissionAndNoTrip() {
+		for (boolean switchOn : new boolean[] {true, false}) {
+			assertTrue(GlintSystem.bufferedSwapAllowed(true, true, false, switchOn, false), "no pack: the switch is irrelevant");
+			assertFalse(GlintSystem.bufferedSwapAllowed(false, true, false, switchOn, false), "all vanilla");
+			assertFalse(GlintSystem.bufferedSwapAllowed(true, false, false, switchOn, false), "main source not captured yet");
+			assertFalse(GlintSystem.bufferedSwapAllowed(true, true, false, switchOn, true), "failsafe tripped");
+			assertFalse(GlintSystem.bufferedSwapAllowed(true, true, true, switchOn, true), "failsafe tripped under a pack");
+		}
+		assertTrue(GlintSystem.bufferedSwapAllowed(true, true, true, true, false), "shader pack with the switch on");
+		assertFalse(GlintSystem.bufferedSwapAllowed(true, true, true, false, false), "shader pack with the switch off");
+		assertFalse(GlintSystem.bufferedSwapAllowed(false, true, true, true, false), "shader pack, all vanilla");
+		assertFalse(GlintSystem.bufferedSwapAllowed(true, false, true, true, false), "shader pack, main source not captured yet");
 	}
 
 	@Test
