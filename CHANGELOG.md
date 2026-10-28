@@ -1,10 +1,39 @@
 # Changelog
 
-## Unreleased
+## 2.2.0 (unreleased)
+
+### Added
+
+- World outlines under Iris shader packs: third-person held items, worn armor, dropped items and item frames now get their
+  outline while a pack is active. Blocks hide them using the depth of the pack itself (Iris's `depthtex1`), and they are
+  drawn on top of the pack's final image. New switch "World with shader pack" on the Outline tab
+  (`outline.worldWithShaderPack`, on by default; "Off with shader packs" still turns every outline off). Best effort: it
+  reads Iris internals that have no public API; if they are not found, world outlines stay off under packs for the session
+  and the log says so once at INFO. Limits: the outlines are drawn over translucent surfaces, clouds, rain and particles;
+  packs that bend the world (curvature, refraction) misalign them; the outline may move by about one pixel at the edge of
+  a hiding block; with portal mods that render the level twice per frame only the last view has them. Tested only with
+  Complementary Unbound r5.9.3, in the Fabric shader smoke: worn armor (all four pieces), third-person held sword and
+  shield, a dropped sword, a framed pickaxe, the first-person arm on top. Not checked: items behind blocks, glass or water,
+  TAA motion, other packs, NeoForge with Iris.
+- Custom glint under shader packs: the customised glint is now drawn on armor, held items, shields, dropped items and item
+  frames in the world and in the first-person hand while a pack is active, through the pack's own glint program (so how tint
+  and strength look depends on the pack). New switch "Custom glint with shader pack" on the Glint tab
+  (`glint.customWithShaderPack`, on by default; off keeps the vanilla glint under packs). Config files from before this
+  version get both switches on.
 
 ### Changed
 
+- Fabric: the outline consumer implements Sodium's vertex writer, so Sodium keeps its fast paths for outlined items and no
+  longer logs the warning about `TeeVertexConsumer`.
+- The settings screen hint for shader packs no longer says that world outlines are off.
+- The preview note about the glint under a shader pack only appears when a pack is active and "Custom glint with shader
+  pack" is off.
 - Internal: source split into common + per-loader builds for multi-loader support
+
+### Known issues
+
+- Worn armor glint under a shader pack is partial: the chestplate shows the custom glint, helmet, leggings and boots do not
+  yet. Being investigated.
 
 ## 2.1.0 (Fabric 1.21.1) — 2026-10-18
 

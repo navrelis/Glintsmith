@@ -167,8 +167,12 @@ Fabric only (not with `-Exported`). The script copies the Iris and Sodium jars i
   `gradle.properties`: 0.19.5 cannot remap the descriptor-less mixin targets of Iris 1.8.14 in the dev environment (NPE in
   `MixinIntermediaryDevRemapper`, "Mixin apply for mod iris failed ... MixinLevelRenderer"). Normal runs and `build` are unchanged.
 
-Expected today: the world outline pixel checks of `03_third_person_front`, `05_dropped_closeup` and `06_item_frame_closeup`
-(`screenshots`) may fail until world outlines under shader packs are implemented (so far the four worn armor pieces of `03`
-have 0 outline pixels); the hand shot `01_first_person` and the GUI shots (`02_inventory`, `04_glintsmith_screen`) should pass.
-Sodium also logs a WARN that mentions `TeeVertexConsumer` ("does not support optimized vertex writing code paths"), which fails
-`log: warnings`. Judge the pictures by eye.
+Expected: all checks pass. World outlines under shader packs are implemented (2.2.0), so the outline pixel checks of
+`03_third_person_front` (each of the four worn armor pieces separately), `05_dropped_closeup` and `06_item_frame_closeup`
+(`screenshots`) are expected to pass, as do the hand shot `01_first_person` and the GUI shots (`02_inventory`,
+`04_glintsmith_screen`). The glint colour of the helmet in `03` is information only (see above): it does not prove the armor
+glint under a pack, which needs a look at the pictures.
+Sodium itself logs WARNs ("does not support optimized vertex writing code paths") for vanilla classes under a pack
+(`BufferBuilder`, `VertexMultiConsumer$Double`, `SpriteCoordinateExpander`); they are not Glintsmith's and the check
+`log: warnings` ignores them. A WARN that names `TeeVertexConsumer` would be ours: it means the Sodium vertex writer was not
+installed.

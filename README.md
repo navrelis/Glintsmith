@@ -62,6 +62,8 @@ with the settings you are changing. The same settings live in one JSON file that
 - The glint keeps following the game's own Glint Speed and Glint Strength sliders; the mod's values are multiplied onto them.
 - A master switch ("Custom glint" on the Glint tab, `glint.enabled`) turns the whole feature off and leaves the vanilla
   glint untouched. Each layer also has its own switch, and its texture can be set back to `vanilla`.
+- Under an Iris shader pack the custom glint is drawn in the world and the hand too ("Custom glint with shader pack", on by
+  default, `glint.customWithShaderPack`). See Compatibility for the limits.
 - Atlas-independent scale (Glint tab, on by default): item glints are textured through the item's own UVs on the block
   atlas, like vanilla. In packs with a very large block atlas (for example 8192 x 4096 px) an item covers only a tiny
   part of the atlas, so a preset at Scale 1.00 would look like a flat colour wash instead of its bands or sparkles. The
@@ -173,8 +175,11 @@ Client side only. Do not put it on a server; the mod does nothing there and is d
 
 ## Compatibility
 
-- **Sodium.** Supported. Works with Sodium 0.8.13 in the test pack. The log has one expected Sodium WARN that
-  `TeeVertexConsumer` does not support optimized vertex writing; it is harmless.
+- **Sodium.** Supported. Works with Sodium 0.8.13 in the test pack. The outline code hands Sodium its own vertex writer,
+  so Sodium keeps its fast paths for outlined items and should log no warning about `TeeVertexConsumer` any more (not yet
+  confirmed with a log in game). If Sodium's API differs in another version, Glintsmith logs one WARN and falls back to the
+  plain consumer, and Sodium then logs the old harmless warning that `TeeVertexConsumer` does not support optimized vertex
+  writing.
 - **ImmediatelyFast.** HUD batching works with GUI outlines. An outlined GUI item flushes the batch before its outline
   is drawn, so the hotbar sprite, the items and the counts are drawn and outlined as usual. Checked in game with
   ImmediatelyFast 1.6.15. Custom glints are also applied to its buffers (first-person hand, world without Iris,
@@ -183,18 +188,33 @@ Client side only. Do not put it on a server; the mod does nothing there and is d
 - **First-person animation mods (Punchy).** The held item keeps its first-person outline and glint rules (checked in
   game with Punchy 2.8f, main hand and offhand). Items such as
   Punchy's bedrock-geometry items, chests and boats are not outlined in first person, and with player-animation-lib or
-  Better Combat in first-person mode the held item is outlined as a third-person item (none under a shader pack).
+  Better Combat in first-person mode the held item is outlined as a third-person item (under a shader pack as a world
+  outline; not tested).
 - **Iris with no shader pack selected.** Treated like vanilla rendering. Custom glints work everywhere, including in the
   world (armor, held items of other entities, item frames, dropped items). Checked in game with Iris 1.8.14-beta.1: the
   generated presets show in their colours on armor stands, against the purple vanilla glint.
-- **Iris with a shader pack.** World outlines (third person, armor, dropped items, item frames) are turned off, because
-  the scene depth they need is not available. Hand outlines stay on by default ("Hand with shader pack" switches them
-  off), and the arm hides them correctly. GUI outlines work. "Off with shader packs" disables all outlines while a pack
-  is active. The glint keeps the vanilla look in the world and in the hand under a shader pack and is customised in the
-  GUI. Checked in game with Iris 1.8.14-beta.1 and Complementary Unbound with Euphoria Patches: no crash, one INFO line
-  in the log ("A shader pack is active: world outlines are off, first-person and GUI outlines stay on."), world outlines
-  off, hand outlines on with the arm hiding them (no outline along the sleeve), GUI outlines (inventory, hotbar) work,
-  and the settings screen shows a hint about shader packs.
+- **Iris with a shader pack.** Outlines and custom glints work on a best-effort basis. They use Iris internals that have no
+  public API, so they must be checked again after every Iris update. Tested only with Iris 1.8.14-beta.1 and Complementary
+  Unbound r5.9.3 on Fabric. Outlines were checked in the Fabric shader smoke (dev client): worn armor (all four pieces),
+  third-person held sword and shield, a dropped sword, a framed pickaxe, and the first-person arm on top. Not checked:
+  items behind blocks, glass or water, TAA motion, other packs, NeoForge with Iris, Forge.
+  - World outlines (third person, worn armor, dropped items, item frames) are on by default (Outline tab, "World with
+    shader pack", `outline.worldWithShaderPack`). Blocks hide them with the depth that the pack's own rendering produced
+    (Iris's `depthtex1`), and they are drawn on top of the pack's final image. Limits: they are drawn over translucent
+    surfaces (water, glass), clouds, rain and particles, without being tinted by them; a pack that bends the world
+    (curvature, refraction) misaligns them; the outline can move by about one pixel at the edge of a hiding block; with a
+    mod that renders the level twice in one frame (portal mods) only the last view has them. If the Iris internals are not
+    found, or one of them fails, world outlines stay off under shader packs for the session and the log says so once at
+    INFO.
+  - Hand outlines stay on by default ("Hand with shader pack"), and the arm hides them. GUI outlines work. "Off with shader
+    packs" turns all outlines off while a pack is active.
+  - Custom glints are drawn in the world and in the hand too (Glint tab, "Custom glint with shader pack",
+    `glint.customWithShaderPack`, on by default). The pack's own glint program draws them, so how tint and strength look
+    depends on the pack. Checked in game with Complementary Unbound r5.9.3: hand, shield, held items, dropped items and item
+    frames. Worn armor is only partly covered: the chestplate shows the custom glint, helmet, leggings and boots do not
+    (being investigated). Turn the switch off to keep the vanilla glint under shader packs.
+  - The settings screen shows a hint about shader packs, and the log has one INFO line each time a pack is activated that
+    says which outlines stay on.
 - **Fabulous graphics.** Tested in game without a shader pack: held items, item frames, dropped items, occlusion,
   stained glass (from the front and the side), water, rain and GUI outlines are all correct.
 - **Other glint mods.** A mod that replaces the vanilla glint render types itself can win over Glintsmith's glint, or the

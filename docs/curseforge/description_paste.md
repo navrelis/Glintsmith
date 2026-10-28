@@ -52,13 +52,13 @@ Glintsmith works on what the game really draws, so there are no item whitelists 
 
 Glintsmith is made to run with Sodium and Iris. With Iris and no shader pack selected, outlines and glint work as in vanilla rendering, and custom glints show everywhere, including in the world (armor, held items of other entities, item frames, dropped items). With a shader pack:
 
-- Outlines in the world are turned off, because they need the scene depth that the shader pack changes.
+- Outlines in the world (third person, worn armor, dropped items, item frames) are on by default ("World with shader pack"). Blocks hide them with the depth of the pack, and they are drawn on top of the pack's final image. They are also drawn over water, glass, clouds and rain, packs that bend the world misalign them, and they may be off with a pack or an Iris version they do not support.
 - Outlines on the item in your hand stay on by default, and the arm hides them correctly. They can be switched off ("Hand with shader pack").
 - Outlines in the GUI work.
 - "Off with shader packs" turns all outlines off while a pack is active.
-- The glint keeps the vanilla look in the world and in your hand, and is customised in the GUI.
+- The custom glint is drawn in the world and in your hand too ("Custom glint with shader pack", on by default). The pack draws it, so tint and strength depend on the pack. On worn armor only the chestplate shows it so far.
 
-Checked in game with Sodium 0.8.13 and Iris 1.8.14-beta.1, and with the shader pack Complementary Unbound with Euphoria Patches: no crash, and the settings screen shows a hint about shader packs. Fabulous graphics was tested in game without a shader pack: held items, item frames, dropped items, occlusion, stained glass, water, rain and GUI outlines are all correct.
+Checked with Sodium 0.8.13 and Iris 1.8.14-beta.1, and with the shader pack Complementary Unbound (r5.9.3) only: no crash, and the settings screen shows a hint about shader packs. World outlines were checked in the Fabric shader smoke on worn armor, a held sword and shield, a dropped sword and a framed pickaxe; not checked: items behind blocks, glass or water, motion with TAA, other packs. Fabulous graphics was tested in game without a shader pack: held items, item frames, dropped items, occlusion, stained glass, water, rain and GUI outlines are all correct.
 
 >>> PASTE IMAGE: card_shaders.png | Sodium and Iris friendly <<<
 
@@ -77,7 +77,7 @@ Checked on 2026-10-17 against the public pages and repositories of each project.
 | Allow and deny | Rules with allow and except lists by id, tag, enchantment, mod | Whitelist; a blacklist is asked for in an open issue | not applicable | not applicable | not applicable |
 | Colours | Static, rainbow, pulse, gradient, per enchantment; per rule | Colour picker, RGB mode; separate settings for tools and totem | not applicable | Rainbow | One fixed colour; the page points to another pack for other colours |
 | Through walls | Hidden by depth test | Not stated on its pages | not applicable | not applicable | not applicable |
-| Shader packs | World outlines off, hand and GUI work | Lists Iris as compatible | not applicable | not stated | Page says compatible with most shader packs |
+| Shader packs | World, hand and GUI outlines work (best effort); custom glint through the pack | Lists Iris as compatible | not applicable | not stated | Page says compatible with most shader packs |
 | Enchantment glint | Presets, own PNG, resource-pack textures, tint, speed, scale, strength, rotation, per layer and per rule | No | No | One look for all enchanted items; the page has no settings | No |
 | Gap fix | Yes: UV shrink, side faces, modes, settings | No | Yes: removes texture zooming; an extra step for 2D items is Forge only, per its page | No | No |
 | Settings | In-game screen with live preview, JSON with live reload, commands | In-game screen (F7) | None on its page | None (resource pack) | Resource pack options |

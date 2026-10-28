@@ -95,7 +95,8 @@ Minecraft.runTick → GameRenderer.render(DeltaTracker, boolean)
  ├─ [O7, G6 HEAD] frame begin: frame++, timeSeconds = Util.getMillis()/1000.0, release stale slots
  ├─ GameRenderer.renderLevel(DeltaTracker)
  │   ├─ LevelRenderer.renderLevel(DeltaTracker, boolean, Camera, GameRenderer, LightTexture, Matrix4f, Matrix4f)
- │   │   ├─ [WorldRenderEvents.START] open the WORLD phase (only if world targets are on and no shader pack is active)
+ │   │   ├─ [WorldRenderEvents.START] open the WORLD phase (only if world targets are on; with a shader pack also only if
+ │   │   │     "World with shader pack" is on and Iris's depth texture is usable, and then the phase is "deferred", 3.3)
  │   │   ├─ clear, sky, terrain solid / cutout_mipped / cutout (replaced by Sodium; irrelevant to us)
  │   │   ├─ Fabulous: itemEntityTarget.clear + copyDepthFrom(main)
  │   │   ├─ modelViewStack.push().mul(viewRotation); RenderSystem.applyModelViewMatrix()
@@ -119,9 +120,14 @@ Minecraft.runTick → GameRenderer.render(DeltaTracker, boolean)
  │   │   │     └─ [G5 TAIL endBatch(entityGlintDirect)] flush all Glintsmith glint slot types (after vanilla glint)
  │   │   ├─ endBatch(waterMask)
  │   │   │     └─ [O6 TAIL endBatch(waterMask), main source, not inside endBatch()] WORLD COMPOSITE, close phase
- │   │   ├─ crumbling; translucent terrain; tripwire; particles; clouds; weather/world border
+ │   │   │           (a deferred phase of a shader pack is ignored here)
+ │   │   ├─ crumbling
+ │   │   ├─ [O8 CONSTANT "translucent", priority 900, before Iris's hooks at the same point] shader pack only: close the
+ │   │   │     deferred WORLD phase and draw its mask into the `worldMask` target (3.3). Iris then flushes its batched
+ │   │   │     entities (prio 999) and copies depthtex2, draws the solid hand and copies depthtex1 (prio 1000)
+ │   │   ├─ translucent terrain; tripwire; particles; clouds; weather/world border
  │   │   │     (Fabulous: translucent/particles/clouds/weather go to their targets, then transparencyChain.process())
- │   │   ├─ [WorldRenderEvents.LAST] fallback WORLD composite if the phase is still open
+ │   │   ├─ [WorldRenderEvents.LAST] fallback WORLD composite if the phase is still open (shader pack: fallback mask draw)
  │   │   ├─ modelViewStack.pop()
  │   │   └─ (Iris with a pack: HandRenderer.renderSolid / renderTranslucent inside renderLevel; pipeline.finalizeLevelRendering() at RETURN)
  │   ├─ if renderHand: RenderSystem.clear(DEPTH) → renderItemInHand(camera, partial, viewRotation)
@@ -132,7 +138,8 @@ Minecraft.runTick → GameRenderer.render(DeltaTracker, boolean)
  │   │       [O2 after original] vanilla: HAND COMPOSITE now (same matrices, before screen effects)
  │   │                           Iris:    flush the HAND mask only; composite is deferred
  │   │     ScreenEffectRenderer.renderScreenEffect (fire / underwater / suffocation overlay)
- │   └─ [O7 RETURN renderLevel] Iris only: deferred HAND COMPOSITE onto main (Iris final image is in main now)
+ │   └─ [O7c RETURN renderLevel] shader pack only: deferred WORLD COMPOSITE, then deferred HAND COMPOSITE, onto main (Iris's
+ │         final image is in main now). The world composite reads Iris's depthtex1.
  ├─ levelRenderer.doEntityOutline(); postEffect (spectator shaders)
  ├─ RenderSystem.clear(DEPTH); ortho GUI projection; new GuiGraphics(minecraft, main source)
  │   Gui.render → renderSlot → GuiGraphics.renderItem(...)  ─┐
@@ -151,6 +158,7 @@ Composite locations at a glance:
 |---|---|---|---|
 | WORLD | mask LEQUAL against its own depth (cleared to far), then a copy of main depth for the passes | `endBatch(waterMask)` TAIL (before translucent terrain, particles, weather) | main |
 | HAND, vanilla | same, with the main depth as it is after the hand's depth clear | after `renderHandsWithItems` returns (before screen effects) | main |
+| WORLD, Iris pack | own `worldMask` target, mask depth cleared to far (the item's own depth only); no copy of the main depth. The scene depth is Iris's `depthtex1`, bound at the composite (3.3) | mask: O8 (`translucent` section, before Iris's hand pass); composite: `GameRenderer.renderLevel` RETURN, before the HAND composite | main (contains Iris's final image) |
 | HAND, Iris pack | mask depth cleared to far; no copy of the main depth; the hand's occluder geometry is drawn into it after the item masks (3.3) | `GameRenderer.renderLevel` RETURN | main (contains Iris's final image) |
 | GUI | none (no depth test, every mask pixel is a seed) | after each `GuiGraphics.renderItem` (the item is drawn by then: by its own flush, or under HUD batching by the O1-end flush of outlined GUI items) | main |
 
@@ -168,7 +176,7 @@ innermost open phase wins.
 
 | Phase | Opened by | Closed by | Item targets accepted |
 |---|---|---|---|
-| WORLD | `WorldRenderEvents.START`, if any world target is enabled, no shader pack is active and the failsafe has not tripped | world composite (O6), else `WorldRenderEvents.LAST`, else frame end (discard) | THIRD_PERSON, ARMOR, DROPPED, ITEM_FRAME, OTHER. Any other display context seen in world is treated as OTHER. |
+| WORLD | `WorldRenderEvents.START`, if any world target is enabled and the failsafe has not tripped. Under a shader pack also: `disableWithShaders` off, `worldWithShaderPack` on and Iris's depth texture usable (`IrisCompat.packDepthUsable()`, 3.3). The phase is then marked `deferred`. | world composite (O6), else `WorldRenderEvents.LAST`, else frame end (discard). Deferred (shader pack): the mask is drawn and the phase closed by O8, else by `OutlineSystem.beginHands`, else by `WorldRenderEvents.LAST`, else by `renderLevel` RETURN (O7c); the composite is always at `renderLevel` RETURN (3.3). | THIRD_PERSON, ARMOR, DROPPED, ITEM_FRAME, OTHER. Any other display context seen in world is treated as OTHER. |
 | HAND | O2 wrap of `renderHandsWithItems`, if FIRST_PERSON is enabled | end of that wrap (vanilla), or `GameRenderer.renderLevel` RETURN (Iris) | FIRST_PERSON. Both hand pairs count: FIRST_PERSON_* and THIRD_PERSON_* contexts drawn inside the phase (see below). |
 | GUI | O5 wrap of private `GuiGraphics.renderItem(...)`, if GUI is enabled | end of that wrap | GUI |
 | PREVIEW (2.0.0) | `OutlineSystem.beginPreview`, called by `PreviewRenderer` around one item render of the settings screen | `OutlineSystem.endPreview` | FIRST_PERSON, whatever the context (section 12.2) |
@@ -214,7 +222,8 @@ Not covered by design, and documented as such:
   bedrock-geometry items, chests and boats: they get no first-person outline.
 * With player-animation-lib or Better Combat in first-person mode, the held item is drawn in the world pass
   (not inside `renderHandsWithItems`) with a THIRD_PERSON context. It is outlined as a third-person item,
-  governed by the THIRD_PERSON switch and rules, and under a shader pack it gets no outline.
+  governed by the THIRD_PERSON switch and rules, and under a shader pack as a deferred world outline (3.3; not
+  tested **[UNVERIFIED]**).
 * Geometry that a mod draws with its own Tesselator outside any `MultiBufferSource`.
 * EMI/JEI panels that batch items without `GuiGraphics.renderItem`.
 
@@ -369,17 +378,21 @@ RenderType.create("glintsmith_outline_mask", DefaultVertexFormat.POSITION_TEX_CO
 
 ### 3.3 Targets, depth and resize
 
-`OutlineTargets` holds two `com.mojang.blaze3d.pipeline.TextureTarget`s, created lazily on first use:
+`OutlineTargets` holds `com.mojang.blaze3d.pipeline.TextureTarget`s, created lazily on first use (two, and a third only
+for world outlines under a shader pack):
 
 * `mask = new TextureTarget(w, h, true, Minecraft.ON_OSX)`: RGBA8 colour plus a `GL_DEPTH_COMPONENT`
   float depth texture (vanilla format, so `copyDepthFrom` works).
 * `edt = new TextureTarget(w, h, false, Minecraft.ON_OSX)`: RGBA8.
+* `worldMask`: like `mask`, only used by the deferred WORLD phase of a shader pack (see "WORLD, Iris" below); it has its own
+  idle counter.
 * Before every use, `ensureSize(main)` compares the target size with `Minecraft.getMainRenderTarget()`
   width and height and calls `resize(w, h, ON_OSX)` on mismatch. No resize hook is needed. A main
   size ≤ 0 (minimised window) skips the phase.
-* Both targets are released (`destroyBuffers`) after 600 consecutive frames without use, so their
+* Each target is released (`destroyBuffers`) after 600 consecutive frames without use, so their
   memory only costs while outlines are on screen. At 1080p that is about 25 MB in use; at 4K about
-  100 MB.
+  100 MB. `worldMask` adds about 16 MB at 1080p (RGBA8 plus depth) **[UNVERIFIED, estimated]** while world outlines are on
+  under a shader pack.
 
 Why the mask is not tested against the scene. An earlier design drew the mask `LEQUAL` against a copy
 of the scene depth, with a polygon offset so that the mask would pass against the item's own depth.
@@ -463,6 +476,61 @@ Depth handling per phase (`OutlineCompositor.MaskDepth`):
   not checked in game. Verified in game (Iris 1.8.14-beta.1 + Complementary Unbound with Euphoria
   Patches): the arm hides the outline, the visible blade is fully outlined and nothing is traced
   along the sleeve.
+* **WORLD, Iris** (`CLEAR`, own target; `UseDepth=2`). Verified against the Iris 1.8.14-beta.1 jar (reflection, see
+  below). Checked with Complementary Unbound r5.9.3 only, in the Fabric shader smoke (dev client): worn armor (all four
+  pieces, outline pixels per piece), third-person held sword and shield, a dropped sword, a framed pickaxe, the
+  first-person arm on top. **[UNVERIFIED]**: items behind blocks, glass or water, TAA motion, other packs, NeoForge with
+  Iris. Without a pack the scene depth is a copy of the main
+  depth, but under a pack the main depth is not the scene depth (the entities go to Iris's gbuffers). In order:
+  1. **Gate** (`OutlineRuntimeSettings.worldPhaseAllowed(shaderPack, packDepth)` at E1; the pack state and
+     `packDepthUsable()` are read once per frame at O7a): outlines on, a world target on, and under a pack
+     `!disableWithShaders && worldWithShaderPack && packDepthUsable()`. The phase opens at E1 with `deferred = true`. Items are captured as usual; the first capture also stores the projection and
+     model-view matrices in effect (`PhaseState.projection`, `modelView`), because the mask is drawn later under other
+     matrices.
+  2. **Mask draw** at O8 (`OutlineSystem.onBeforeTranslucent`): `OutlineCompositor.drawDeferredWorldMask` closes the phase,
+     puts the captured matrices into `RenderSystem` (projection, model-view and the model-view stack, because layering
+     shards such as the armor's view offset rebuild the model-view from the stack), draws the mask into the separate
+     `worldMask` target (`OutlineTargets.drawToWorldMask(true)` redirects the output shard of the mask types; same size,
+     lazily created, freed after 600 idle frames like the other targets) with `MaskDepth.CLEAR` and the phase region as
+     scissor, and puts the current matrices back. Only the item's own depth is in the mask. It is a second target
+     because `mask` holds the hand mask from the hand pass until `renderLevel` RETURN. Around the draw
+     `IrisCompat.beginOwnDraw()` / `endOwnDraw()` save and restore Iris's "main target bound" flag: `bindWrite` of our
+     targets changes it, our restore of the previous framebuffer is a raw bind, and Iris only redirects or masks
+     unknown programs while the flag says "main bound".
+  3. **Why O8 and not O6.** The mask must be drawn before Iris's hand pass at the same point (prio 1000), or the
+     first-person items would be captured as world items. O8 has priority 900 against Iris's 999 (batched entities) and
+     1000 (hand), and mixins of one priority class run in ascending order at one injection point (Iris 1.8.14 bytecode
+     and the Mixin ordering rules; the order itself is **[UNVERIFIED in game]**). By then all world items of the frame
+     have been captured (entity loop, block entities, the item sheet flushes). Fallbacks, in order: `OutlineSystem.beginHands`
+     (O2b, closes the phase if still open), E2 `WorldRenderEvents.LAST`, and O7c itself. O6 ignores a deferred phase.
+  4. **Composite** at O7c (`GameRenderer.renderLevel` RETURN), world first, then the hand, so first-person outlines lie on
+     top as without a pack. `OutlineCompositor.resolveDeferredWorld` binds Iris's **depthtex1** as `DepthSampler`
+     (`IrisCompat.packSceneDepthTexture(width, height)`): the depth without translucent terrain and translucent entity
+     draws, with the solid first-person hand (Iris copies it right before the translucent terrain, so at RETURN it
+     holds this frame's depth). The solid hand in it is why the arm hides world outlines. If the texture size differs
+     from the main target (resize) the phase is discarded for that frame. `DepthProj` comes from the projection
+     captured in step 1. The passes run with `UseDepth=2`, `DepthTolerance` of the WORLD phase, the distance fade of
+     the settings.
+  5. **Reflection (`IrisCompat.Internals`).** Iris has no API for its targets. Resolved once at first use into cached
+     method handles typed over `Object`, so no Iris type appears in Glintsmith's bytecode (the Iris classes are not
+     remapped, so the names hold on every loader):
+     `Iris.getPipelineManager()`, `PipelineManager.getPipelineNullable()`, the private field
+     `IrisRenderingPipeline.renderTargets`, `IrisRenderingPipeline.shouldOverrideShaders()` (is-rendering-world and
+     main-bound), `setIsMainBound(boolean)`, `RenderTargets.getDepthTextureNoTranslucents()`, `getCurrentWidth()`,
+     `getCurrentHeight()` and `DepthTexture.getTextureId()`. The handles are plain `MethodHandle` calls afterwards, so the
+     "no reflection in hot paths" rule of 3.7 holds for the per-frame work.
+  6. **Failure.** Any class or member missing, or any exception: `IrisCompat.disablePackDepth` turns world outlines under
+     packs off for the rest of the session with one INFO line; first-person and GUI outlines are not affected. A
+     pipeline that is not an `IrisRenderingPipeline`, or has no depth texture, is rejected for that pipeline only (one
+     INFO line; the next pack or dimension tries again). An error while drawing or compositing the deferred mask discards
+     the phase and disables world outlines under packs (one INFO line); it does not trip the outline failsafe (3.8)
+     and does not touch first-person or GUI outlines.
+  7. **Known limits.** The outline is drawn over translucent terrain, clouds, rain and particles, because it is
+     composited onto the final image: water and glass do not tint it. Packs that distort the world (curvature,
+     refraction) misalign it, as the mask is drawn undistorted. The occluder edge may move by about one pixel (mode 2
+     below). With portal mods, which call `renderLevel` more than once per frame, only the last view has outlines.
+     Not tested: other packs than Complementary (BSL, packs with distortion), NeoForge with Iris (the reflection may be
+     refused there, which falls back to off). **[UNVERIFIED]**
 * **GUI** (`NONE`). Scissored clear of the mask colour inside the item's bbox; the mask depth is not
   touched. Mask types use `NO_DEPTH_TEST`. The composite uses `UseDepth=0`: every mask pixel is a seed.
 
@@ -505,6 +573,25 @@ mask colour (24-bit window depth).
 
   `DepthTolerance` is set per phase by `OutlineCompositor.frontTolerance(phase)`.
 
+**`UseDepth` modes** (`OutlineDepth.USE_DEPTH_OFF` 0, `_SCENE` 1, `_PACK` 2). Mode 0: GUI and preview, every mask pixel
+is a seed. Mode 1: everything above (vanilla WORLD and HAND, Iris HAND). Mode 2: WORLD under a shader pack. The rules
+are the same except for two points, because the scene depth is Iris's `depthtex1`:
+
+* **Seed rule, TAA tolerant.** A TAA pack draws the scene shifted by up to half a pixel on each axis, while the mask is
+  drawn unshifted. On a sloped item surface the scene depth at a pixel can then lie in front of the mask's item depth by
+  up to half the depth step to the next pixel, and a visible item pixel would count as hidden. The scene depth in the
+  seed rule is therefore the **farthest** depth of the pixel and its four neighbours
+  (`OutlineDepth.jitterTolerantScene`, `sceneDepth(q)` in both shaders; the inside-the-silhouette check of the
+  composite uses it too). For a planar surface one neighbour is at least that far behind, so the item pixel stays a seed.
+  Cost: an item pixel right at the edge of an occluder may count as visible, so the occluder edge moves by about one
+  pixel, about as much as the pack's own jitter.
+* **Seed distance from the mask.** `zs` is the item's own depth unpacked from the mask (`OutlineDepth.seedDistance`),
+  not the scene depth at the seed. `depthtex1` lacks what the pack draws after Iris copies it (for example the
+  translucent item sheet drawn by separate entity passes), so the scene at a seed can be the background. `zp` (the
+  scene depth at the output pixel) is read as it is. The distance fade also uses `zs`.
+
+Mode 2 is mirrored in `OutlineDepth` (`visibleJittered`, `seedDistance`) and covered by `OutlineDepthTest`.
+
 Cost: unchanged. One mask draw plus two clipped full-screen passes per phase, plus the scissored depth
 clear and the depth blit that WORLD and vanilla HAND already had. The item depth is stored in the mask
 colour, so no extra target and no extra pass is needed.
@@ -533,7 +620,8 @@ WORLD and HAND (vanilla) outlines; GUI keeps working.
     surface wins). In WORLD and vanilla HAND it is then overwritten with a copy of the main depth, so
     that the passes read the item depth from the colour and the scene depth from the depth attachment
     (3.3). Under a shader pack (HAND) it is only cleared, and the hand occluders are then drawn into
-    it (3.3). In GUI it is not used.
+    it (3.3). Under a shader pack (WORLD) it is the mask's own depth only; the passes read the scene depth from
+    Iris's `depthtex1` instead (3.3). In GUI it is not used.
 * **Style table** (`StyleTable`, one per phase). Open addressing over `int[]` keys
   (argb, packed thickness/softness/opacity bytes). It is reset after each composite. At most 255
   entries per composite. A new width or softness of a colour that is already in a full table reuses the nearest
@@ -695,6 +783,8 @@ void main() { gl_Position = vec4(Position.xy, 0.0, 1.0); }
 // Pass 1 of the exact separable distance transform: for every pixel the signed horizontal offset to the
 // nearest mask seed on the same row, searched up to Radius pixels. With UseDepth, a mask pixel is a seed only
 // where the item is visible (OutlineDepth.visible): item pixels hidden behind the scene are no seeds.
+// UseDepth 2 (world outlines under a shader pack, OutlineDepth.USE_DEPTH_PACK): the scene depth is Iris's depthtex1,
+// drawn with the pack's TAA offset, so the seed rule takes the farthest depth of the pixel and its four neighbours.
 
 uniform sampler2D MaskSampler;
 uniform sampler2D DepthSampler;
@@ -710,10 +800,23 @@ float unpackDepth(vec3 gba) {
     return float((b.x << 16) | (b.y << 8) | b.z) / 16777215.0;
 }
 
+// Scene depth for the seed rule at q (OutlineDepth.jitterTolerantScene in mode 2).
+float sceneDepth(ivec2 q) {
+    float z = texelFetch(DepthSampler, q, 0).r;
+    if (UseDepth == 2) {
+        ivec2 hi = textureSize(DepthSampler, 0) - 1;
+        z = max(z, texelFetch(DepthSampler, clamp(q + ivec2(-1, 0), ivec2(0), hi), 0).r);
+        z = max(z, texelFetch(DepthSampler, clamp(q + ivec2(1, 0), ivec2(0), hi), 0).r);
+        z = max(z, texelFetch(DepthSampler, clamp(q + ivec2(0, -1), ivec2(0), hi), 0).r);
+        z = max(z, texelFetch(DepthSampler, clamp(q + ivec2(0, 1), ivec2(0), hi), 0).r);
+    }
+    return z;
+}
+
 // Style id of the seed at q, or 0.0 if q is no seed.
 float seedId(ivec2 q) {
     vec4 m = texelFetch(MaskSampler, q, 0);
-    if (m.r > 0.0 && UseDepth == 1 && texelFetch(DepthSampler, q, 0).r < unpackDepth(m.gba) - SeedEpsilon) {
+    if (m.r > 0.0 && UseDepth != 0 && sceneDepth(q) < unpackDepth(m.gba) - SeedEpsilon) {
         return 0.0; // the scene is in front of the item here
     }
     return m.r;
@@ -778,6 +881,9 @@ void main() {
 // seed, hides the outline where scene geometry is in front of the item and blends it onto the target.
 // The mask holds every item pixel, visible or hidden, with the item's own depth in G, B, A; DepthSampler is the
 // scene depth. The depth rules are mirrored in OutlineDepth (Java) and tested there.
+// UseDepth 2 (world outlines under a shader pack, OutlineDepth.USE_DEPTH_PACK): DepthSampler is Iris's depthtex1. The
+// inside check uses the jitter-tolerant scene depth of the EDT pass, and the seed distance is the item's own depth from
+// the mask (the pack may draw the item after depthtex1 is copied).
 
 uniform sampler2D MaskSampler;
 uniform sampler2D EdtSampler;
@@ -805,12 +911,25 @@ float unpackDepth(vec3 gba) {
     return float((b.x << 16) | (b.y << 8) | b.z) / 16777215.0;
 }
 
+// Scene depth for the seed rule at q, the same as in outline_edt.fsh (OutlineDepth.jitterTolerantScene in mode 2).
+float sceneDepth(ivec2 q) {
+    float z = texelFetch(DepthSampler, q, 0).r;
+    if (UseDepth == 2) {
+        ivec2 hi = textureSize(DepthSampler, 0) - 1;
+        z = max(z, texelFetch(DepthSampler, clamp(q + ivec2(-1, 0), ivec2(0), hi), 0).r);
+        z = max(z, texelFetch(DepthSampler, clamp(q + ivec2(1, 0), ivec2(0), hi), 0).r);
+        z = max(z, texelFetch(DepthSampler, clamp(q + ivec2(0, -1), ivec2(0), hi), 0).r);
+        z = max(z, texelFetch(DepthSampler, clamp(q + ivec2(0, 1), ivec2(0), hi), 0).r);
+    }
+    return z;
+}
+
 void main() {
     ivec2 p = ivec2(gl_FragCoord.xy);
     vec4 m = texelFetch(MaskSampler, p, 0);
     bool onHiddenItem = false;
     if (m.r > 0.0) {
-        if (UseDepth != 1 || texelFetch(DepthSampler, p, 0).r >= unpackDepth(m.gba) - SeedEpsilon) {
+        if (UseDepth == 0 || sceneDepth(p) >= unpackDepth(m.gba) - SeedEpsilon) {
             discard; // inside the visible silhouette: no outline
         }
         onHiddenItem = true; // the item continues behind an occluder here
@@ -857,11 +976,14 @@ void main() {
     float inner = thickness * (1.0 - softness);
     float outer = thickness * (1.0 + softness) + 0.5;
     float a = (1.0 - smoothstep(inner, outer, d)) * col.a;
-    if (UseDepth == 1) {
+    if (UseDepth != 0) {
         float zp = linearDepth(texelFetch(DepthSampler, p, 0).r);
-        float zs = linearDepth(texelFetch(DepthSampler, seed, 0).r);
-        // zs is the item's depth: seeds are visible item pixels. On a hidden item pixel the occluder must be clearly
-        // behind the seed, elsewhere it must not be clearly in front of it.
+        // zs is the item's depth (OutlineDepth.seedDistance): the scene depth at the seed, which is the item there since
+        // seeds are visible item pixels, or under a shader pack the item depth from the mask.
+        float zs = linearDepth(UseDepth == 2 ? unpackDepth(texelFetch(MaskSampler, seed, 0).gba)
+            : texelFetch(DepthSampler, seed, 0).r);
+        // On a hidden item pixel the occluder must be clearly behind the seed, elsewhere it must not be clearly in
+        // front of it.
         float relative = zs * 0.02;
         if (onHiddenItem ? zp < zs + max(CoverTolerance, relative) : zp < zs - max(DepthTolerance, relative)) {
             discard; // something is in front of the item here
@@ -924,7 +1046,13 @@ state, return.
    `ShaderInstance.clear()` already unbinds sampler units.
 8. Reset `phase.styles`, `phase.bbox`, `phase.hasGeometry` and the matrix snapshot.
 
-Why the world composite sits at `endBatch(waterMask)`:
+The deferred WORLD phase of a shader pack splits this procedure in two (3.3, "WORLD, Iris"): steps 2 to 4 (state save, region,
+mask draw) run at O8 into `worldMask` with the matrices captured at the first capture, with no depth copy; steps 5 to 8
+run at `GameRenderer.renderLevel` RETURN (`OutlineCompositor.resolveDeferredWorld`) with `MaskSampler` = `worldMask`,
+`DepthSampler` = Iris's `depthtex1` and `UseDepth` = 2. `drawDeferredWorldMask` and `resolveDeferredWorld` each save and
+restore the GL state the same way.
+
+Why the world composite sits at `endBatch(waterMask)` (without a shader pack):
 
 * At AFTER_ENTITIES (the `"blockentities"` profiler constant), block entities and the item sheets
   `translucentCullBlockSheet`, `shieldSheet` and `bannerSheet` are still unflushed. Those flushes
@@ -945,8 +1073,13 @@ the middle of the entity loop would trigger an early composite.
   * Targets and shaders are created lazily.
   * When outlines are globally disabled, the O1 wrapper calls `original.call` immediately.
 * Hot paths (tee, mask consumer, `getBuffer`) allocate nothing in steady state: pooled consumers,
-  preallocated matrices and identity caches. There is no reflection anywhere. Mixin accessors are
-  compiled access, and the Iris API instance is cached once.
+  preallocated matrices and identity caches. There is no reflection in these paths. Mixin accessors are
+  compiled access, and the Iris API instance is cached once. Reflection is used in two places, both outside the hot
+  paths: `IrisCompat.Internals` (world outlines under a shader pack, 3.3) resolves the Iris internals once into
+  `MethodHandle`s, which are plain calls afterwards (a few calls per frame); `IrisWrappedTypes` (glint, 5.2 point 6) looks
+  up Iris's `OuterWrappedRenderType` members once, then calls `unwrap` through `Method.invoke` for every wrapped type that G7
+  sees under a shader pack while any look is custom (and reads the extra shard with `Field.get` for glint types); only the re-wrapped slot
+  types are cached. Its cost per request has not been measured **[UNVERIFIED]**.
 * `RuleEngine.resolve` and `outlineColor` are called once per item render. T3 must keep the no-outline
   path allocation-free (see section 9).
 * `IrisApi.getInstance().isShaderPackInUse()` is read once per frame in `onFrameBegin`.
@@ -990,19 +1123,20 @@ All mixins live in package `navrelis.glintsmith.mixin` (sub-packages `outline`, 
 |---|---|---|---|---|---|---|
 | O1 | `outline.ItemRendererOutlineMixin` | `net.minecraft.client.renderer.entity.ItemRenderer` | `render(Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/ItemDisplayContext;ZLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;IILnet/minecraft/client/resources/model/BakedModel;)V` | `@WrapMethod` | Replace the source argument with the tee (`beginItem` / `endItem`). At the end of an outlined GUI item, flush the source it was handed (HUD batching, see section 6) | No outlines for held, dropped, framed or GUI items. Armor still works. A diagnostic logs once if outlines are enabled but O1 never fired after 600 in-world frames. |
 | O2a | `outline.ItemInHandRendererOutlineMixin` | `net.minecraft.client.renderer.ItemInHandRenderer` | `renderItem(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/ItemDisplayContext;ZLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V` | `@WrapMethod` | Push/pop the holder entity (for "only local player") | The holder is unknown, so "only local player" treats every holder as non-local and THIRD_PERSON outlines are suppressed when the option is on |
-| O2b | same class | same | `renderHandsWithItems(FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lnet/minecraft/client/player/LocalPlayer;I)V` | `@WrapMethod` | Open the HAND phase; after `original.call`, flush the mask and composite (vanilla) or flush only (Iris) | No first-person outlines |
+| O2b | same class | same | `renderHandsWithItems(FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lnet/minecraft/client/player/LocalPlayer;I)V` | `@WrapMethod` | Open the HAND phase; after `original.call`, flush the mask and composite (vanilla) or flush only (Iris). Under a shader pack, first close a WORLD phase that is still open (fallback of O8) | No first-person outlines |
 | O3 | `outline.HumanoidArmorLayerOutlineMixin` | `net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer` | `renderArmorPiece(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/entity/EquipmentSlot;ILnet/minecraft/client/model/HumanoidModel;)V` (private) | `@WrapMethod` | Tee the armor geometry with style `resolve(entity.getItemBySlot(slot), ARMOR)`. Wraps Fabric's `ArmorRenderer` HEAD cancellation too, so mod armor renderers get the tee. | No armor outlines |
 | O4 | `outline.ElytraLayerOutlineMixin` | `net.minecraft.client.renderer.entity.layers.ElytraLayer` | `render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;ILnet/minecraft/world/entity/LivingEntity;FFFFFF)V` (the LivingEntity overload, not the bridge) | `@WrapMethod` | Tee the elytra with style of the CHEST item, target ARMOR | No elytra outlines |
 | O5 | `outline.GuiGraphicsOutlineMixin` | `net.minecraft.client.gui.GuiGraphics` | `renderItem(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/level/Level;Lnet/minecraft/world/item/ItemStack;IIII)V` (private, the 7-argument one; every public `renderItem` / `renderFakeItem` goes through it) | `@WrapMethod` | Open the GUI phase; after `original.call` (the item is drawn by then, see O1), composite clipped to the bbox | No GUI outlines |
-| O6 | `outline.BufferSourceOutlineMixin` | `net.minecraft.client.renderer.MultiBufferSource$BufferSource` | `endBatch()V` HEAD and TAIL; `endBatch(Lnet/minecraft/client/renderer/RenderType;)V` TAIL | `@Inject` | Track `inFullFlush`. Trigger the WORLD composite when `this == mainSource && type == RenderType.waterMask() && !inFullFlush && phase == WORLD`. | WORLD composite happens at `WorldRenderEvents.LAST` (outlines then sit over water and particles) |
+| O6 | `outline.BufferSourceOutlineMixin` | `net.minecraft.client.renderer.MultiBufferSource$BufferSource` | `endBatch()V` HEAD and TAIL; `endBatch(Lnet/minecraft/client/renderer/RenderType;)V` TAIL | `@Inject` | Track `inFullFlush`. Trigger the WORLD composite when `this == mainSource && type == RenderType.waterMask() && !inFullFlush && phase == WORLD`. Ignores a deferred WORLD phase (shader pack): O8 closes that one. | WORLD composite happens at `WorldRenderEvents.LAST` (outlines then sit over water and particles) |
 | O7a | `outline.GameRendererOutlineMixin` | `net.minecraft.client.renderer.GameRenderer` | `render(Lnet/minecraft/client/DeltaTracker;Z)V` HEAD | `@Inject` | `onFrameBegin` (time, Iris state, idle counters) | Time is taken lazily per call; no other effect |
 | O7b | same | same | `render(Lnet/minecraft/client/DeltaTracker;Z)V` RETURN | `@Inject` | `onFrameEnd`: discard leftover mask geometry, close stray phases | Leftovers are discarded at the next phase open instead |
-| O7c | same | same | `renderLevel(Lnet/minecraft/client/DeltaTracker;)V` RETURN | `@Inject` | Iris only: deferred HAND composite | No hand outlines under a shader pack |
+| O7c | same | same | `renderLevel(Lnet/minecraft/client/DeltaTracker;)V` RETURN | `@Inject` | Shader pack only: deferred WORLD composite, then deferred HAND composite (`onLevelRendered`). Also closes a deferred WORLD phase that no earlier hook closed | No hand outlines and no world outlines under a shader pack |
+| O8 | `outline.LevelRendererOutlineMixin` (`priority = 900`) | `net.minecraft.client.renderer.LevelRenderer` | `renderLevel(Lnet/minecraft/client/DeltaTracker;ZLnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/GameRenderer;Lnet/minecraft/client/renderer/LightTexture;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;)V` at `CONSTANT stringValue=translucent` (two sites: Fabulous branch and the other branch) | `@Inject`, `require = 0` | Shader pack only: close the deferred WORLD phase and draw its mask into `worldMask` (`onBeforeTranslucent`), before Iris's hooks at the same constant (batched entity flush, prio 999; `depthtex2` copy, solid hand and `depthtex1` copy, prio 1000). No-op without a pack. Applied at both sites (`OutlineMixinApplicationTest`). | The mask is drawn by `beginHands` (O2b), else at E2, else at O7c. If O8 and O2b are both missing, the first-person items of Iris's hand pass are captured into the WORLD phase as world items |
 | A1 | `outline.CompositeRenderTypeAccessor` | `net.minecraft.client.renderer.RenderType$CompositeRenderType` | `state()` | `@Invoker("state")` | Read the composite state | — |
 | A2 | `outline.CompositeStateAccessor` | `net.minecraft.client.renderer.RenderType$CompositeState` | fields `textureState`, `transparencyState`, `texturingState`, `writeMaskState`, `layeringState` | `@Accessor` | Texture shard, glint detection, invisible depth-only geometry, and the layering the depth-tested mask type copies | — |
 | A3 | `outline.EmptyTextureStateShardAccessor` | `net.minecraft.client.renderer.RenderStateShard$EmptyTextureStateShard` | `cutoutTexture()Ljava/util/Optional;` | `@Invoker("cutoutTexture")` | Texture for the mask | — |
-| E1 | Fabric event | `WorldRenderEvents.START` | — | event | Open the WORLD phase (gated) | — |
-| E2 | Fabric event | `WorldRenderEvents.LAST` | — | event | Fallback WORLD composite (the model-view is still pushed at LAST) | — |
+| E1 | Fabric event | `WorldRenderEvents.START` | — | event | Open the WORLD phase (gated; under a shader pack also by `worldWithShaderPack` and Iris's depth, marked deferred) | — |
+| E2 | Fabric event | `WorldRenderEvents.LAST` | — | event | Fallback WORLD composite (the model-view is still pushed at LAST). Under a shader pack: fallback mask draw of the deferred phase (the composite stays at O7c) | — |
 | E3 | Fabric event | `ClientLifecycleEvents.CLIENT_STARTED` / `CLIENT_STOPPING` | — | event | Capture the main source, create the white texture, release native buffers | — |
 | E4 | Fabric resource loader | `ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(SimpleSynchronousResourceReloadListener id glintsmith:outline_shaders)` | — | listener | Mark shaders dirty | — |
 
@@ -1017,7 +1151,7 @@ All mixins live in package `navrelis.glintsmith.mixin` (sub-packages `outline`, 
 | G5a | `glint.BufferSourceGlintMixin` | `MultiBufferSource$BufferSource` | `getBuffer(Lnet/minecraft/client/renderer/RenderType;)Lcom/mojang/blaze3d/vertex/VertexConsumer;` | `@ModifyVariable(at = @At("HEAD"), argsOnly = true)` | Substitute vanilla glint types with slot or off types (main source only); a request of ImmediatelyFast's non-batching GUI source (G11) goes to `substituteGui` instead | Vanilla glint everywhere; the feature is effectively off |
 | G5b | same | same | `endBatch(Lnet/minecraft/client/renderer/RenderType;)V` TAIL | `@Inject` | When `this == main && type == vanilla entityGlintDirect`, flush every registered slot and off type | Slot glints are flushed by the later `endBatch()`. In non-Fabulous mode that is after water, so items seen through water lose their glint. |
 | G5c | same | same | `endBatch(Lnet/minecraft/client/renderer/RenderType;Lcom/mojang/blaze3d/vertex/BufferBuilder;)V` (private) TAIL | `@Inject` | `GlintSystem.onBatchDrawn(this, type)` releases the slot; for a subclassed main source (ImmediatelyFast, G9) it also does the G5b flush after the vanilla `entityGlintDirect` | Slots are released only at frame start, so at most 32 distinct looks per kind per frame |
-| G6 | `glint.GameRendererGlintMixin` | `GameRenderer` | `render(Lnet/minecraft/client/DeltaTracker;Z)V` HEAD | `@Inject` | `GlintSystem.onFrameBegin()` | Frame counter is not advanced, so stale slots are never auto-released; `onBatchDrawn` still releases them, and G7 stays off (its shader-pack flag starts as "pack in use" and is only refreshed here), so with Iris the world keeps the vanilla glint |
+| G6 | `glint.GameRendererGlintMixin` | `GameRenderer` | `render(Lnet/minecraft/client/DeltaTracker;Z)V` HEAD | `@Inject` | `GlintSystem.onFrameBegin()` | Frame counter is not advanced, so stale slots are never auto-released; `onBatchDrawn` still releases them, and G7 treats every frame as "pack in use" (its shader-pack flag starts as true and is only refreshed here), so it swaps only with `glint.customWithShaderPack` on |
 | GA1 | `glint.BufferSourceAccessor` | `MultiBufferSource$BufferSource` | field `fixedBuffers` | `@Accessor` | Register slot types as fixed buffers | — |
 | GA2 | `glint.RenderBuffersAccessor` | `net.minecraft.client.renderer.RenderBuffers` | field `bufferSource` | `@Accessor` | Get the vanilla main source without going through Iris's `bufferSource()` replacement | — |
 | G8 | `glint.ItemInHandRendererGlintMixin` | `net.minecraft.client.renderer.ItemInHandRenderer` | `renderHandsWithItems(...)` (same descriptor as O2b) | `@WrapMethod`, `require = 0` | `GlintContext.beginHands()`; `endHands()` in `finally`. Held items drawn inside count as FIRST_PERSON for rules, also with a THIRD_PERSON hand context (first-person animation mods). Independent of the outline hook O2b. | Items drawn by a first-person animation mod use the THIRD_PERSON rules; vanilla hands are unaffected |
@@ -1025,7 +1159,7 @@ All mixins live in package `navrelis.glintsmith.mixin` (sub-packages `outline`, 
 | G10 | `glint.TextureAtlasGlintMixin` | `net.minecraft.client.renderer.texture.TextureAtlas` | `upload(Lnet/minecraft/client/renderer/texture/SpriteLoader$Preparations;)V` TAIL | `@Inject` | `GlintSystem.onAtlasUploaded(location(), preparations)`: for the block atlas, stores the atlas size and the size of the reference sprite for the atlas factor (5.4.1). Runs after every stitch (every resource reload). | The atlas factor stays 1: item glints are atlas dependent as in 1.0.0 |
 | G11 | `glint.compat.ImmediatelyFastGuiSourceGlintMixin` | `@Pseudo @Mixin(targets = "net.raphimc.immediatelyfast.feature.batching.BatchingBuffers", remap = false)` | `getNonBatchingEntityVertexConsumers` by bare name, RETURN (verified in the ImmediatelyFast 1.6.15+1.21.1 jar: `public static class_4597$class_4598 getNonBatchingEntityVertexConsumers()`, the only method of that name) | static `@Inject(RETURN, require = 0, remap = false)` | `GlintSystem.onGuiSource(returned)`: remembers ImmediatelyFast's non-batching GUI source. G5a then hands that source's requests to `substituteGui` (5.2, point 8). Not verified in game yet. | With ImmediatelyFast, GUI glints outside batched HUD layers (inventories, menus) keep the vanilla look |
 | G12 | `glint.compat.ImmediatelyFastHudGlintMixin` | `@Pseudo @Mixin(targets = "net.raphimc.immediatelyfast.feature.batching.HudBatchingBufferSource", remap = false)` | `getBuffer` by bare name (verified in the same jar: `public class_4588 getBuffer(class_1921)`, the only `getBuffer` of the class; same naming argument as G7) | `@ModifyVariable(HEAD, argsOnly, require = 0, remap = false)` | `GlintSystem.substituteGui(this, requested)` for the HUD batch (hotbar, offhand slot; also ImmediatelyFast's experimental screen batching), 5.2, point 8. Not verified in game yet. | With ImmediatelyFast HUD batching, HUD item glints keep the vanilla look |
-| G7 | `glint.compat.IrisFullyBufferedGlintMixin` | `@Pseudo @Mixin(targets = "net.irisshaders.batchedentityrendering.impl.FullyBufferedMultiBufferSource", remap = false)` | `getBuffer` by bare name. Verified in the shipped Iris 1.8.14-beta.1 jar: `public class_4588 getBuffer(class_1921)`, the only `getBuffer` of the class; vanilla does not obfuscate `MultiBufferSource.getBuffer` (no intermediary entry), so the name is the same in dev and production while the descriptor is not. | `@ModifyVariable(HEAD, argsOnly, require = 0, remap = false)` | `GlintSystem.substituteBuffered`: the G5a swap for Iris's world buffer source, with pinned slots (5.2, point 6). Off while a shader pack is in use. Verified in game (Iris 1.8.14-beta.1, shaders off): preset glints on armor stands and on the showcase stand show their own colours; under Complementary Unbound the world glint stays vanilla. | With Iris installed (shaders on or off), world glints (armor, entity-held items, item frames, dropped items, armor stands) keep the vanilla look; hand and GUI unaffected |
+| G7 | `glint.compat.IrisFullyBufferedGlintMixin` | `@Pseudo @Mixin(targets = "net.irisshaders.batchedentityrendering.impl.FullyBufferedMultiBufferSource", remap = false)` | `getBuffer` by bare name. Verified in the shipped Iris 1.8.14-beta.1 jar: `public class_4588 getBuffer(class_1921)`, the only `getBuffer` of the class; vanilla does not obfuscate `MultiBufferSource.getBuffer` (no intermediary entry), so the name is the same in dev and production while the descriptor is not. | `@ModifyVariable(HEAD, argsOnly, require = 0, remap = false)` | `GlintSystem.substituteBuffered`: the G5a swap for Iris's world buffer source, with pinned slots (5.2, point 6). Gate: `anyCustom && started && (!shaderPack || glint.customWithShaderPack) && !tripped`. Under a pack the types arrive already wrapped by Iris (`OuterWrappedRenderType`): `GlintSystem` unwraps them with `IrisWrappedTypes` (reflection), swaps the vanilla glint type for a slot type and wraps the slot type again with the same extra shard. Verified in game (Iris 1.8.14-beta.1, shaders off): preset glints on armor stands and on the showcase stand show their own colours. Under a pack (Complementary Unbound r5.9.3): hand, shield, held items, dropped items and item frames show the custom glint; worn armor only on the chestplate **[SH3b pending]**. | With Iris installed, world glints (armor, entity-held items, item frames, dropped items, armor stands) and the Iris hand keep the vanilla look; GUI unaffected. If `IrisWrappedTypes` cannot resolve Iris's wrapper, it logs one WARN and wrapped types stay vanilla under a pack |
 
 Fabric events for T6: `ClientLifecycleEvents.CLIENT_STARTED` (capture the main source, generate the
 presets) and the reload listener `glintsmith:glint_textures`.
@@ -1147,7 +1281,21 @@ presets) and the reload listener `glintsmith:glint_textures`.
    level pass and draws only at its own flush, our slot types are classified `DECAL` like the vanilla
    glint (same `GLINT_TRANSPARENCY` instance) and so drawn after the base layers. Same checks as G5a
    (custom looks, known kind, render thread, failsafe, main source captured) minus `source == main`,
-   plus "no shader pack in use this frame" (queried once per frame in G6). Slot lifetime: Iris never
+   plus "no shader pack in use this frame (queried once per frame in G6) or `glint.customWithShaderPack`"
+   (`GlintSystem.bufferedSwapAllowed`). **Under a shader pack** the entity renderers draw through Iris's
+   `BufferSourceWrapper`, which hands every type to the fully buffered source already wrapped in an
+   `OuterWrappedRenderType`: the vanilla type plus an extra state shard (for example `iris:is_entity`) that sets the
+   pack's entity uniforms. `GlintKind.of` does not know such a type, so G7 first asks `IrisWrappedTypes.isWrapper`, then
+   unwraps (`unwrap()`), swaps the vanilla type for the slot type as usual, and wraps the slot type again with the same
+   extra shard (`wrapExactlyOnce`, cached per extra shard and slot type, so nothing is allocated per request after the
+   first use of a slot). The wrapper delegates `setupRenderState`, `clearRenderState`, drawing and the transparency
+   class to the wrapped type, so the slot's own shards still run. All of this is reflection on Iris's class
+   (`net.irisshaders.iris.layer.OuterWrappedRenderType`: `unwrap`, static `wrapExactlyOnce(String, RenderType,
+   RenderStateShard)`, field `extra`), looked up from the first instance; a missing or renamed member, or a module that
+   refuses `setAccessible`, switches the helper off for the session with one WARN and wrapped types stay vanilla. The
+   pack's own glint program (`gbuffers_armor_glint` and the like) draws the slots: texture and matrix are honoured,
+   how tint and strength look is pack-dependent **[UNVERIFIED per pack]**; only Complementary Unbound r5.9.3 was looked at.
+   Slot lifetime: Iris never
    passes G5c, so the slot is acquired **pinned**. `release` leaves a pinned slot in use (a main-source
    draw of a shared look cannot free it), so its params cannot be handed to another look before Iris
    draws it later in the same `renderLevel`; G6 frees and unpins it at the next frame start. The slot
@@ -1507,8 +1655,9 @@ names, not valid specs.
    which G7 handles (5.2, point 6). With shaders off, hand and GUI use the main source (G5a). Shader
    pack on: substitution still runs on the main source (GUI); the hand is drawn inside `renderLevel`
    by Iris's `HandRenderer` through its own `FullyBufferedMultiBufferSource` instance (also a G7
-   target), and G7 is a no-op under a pack, so world and hand keep the vanilla look
-   (unchanged behaviour; enabling G7 under a pack is a separate, untested step).
+   target). G7 runs under a pack too, as long as `glint.customWithShaderPack` is on (the default), and handles
+   Iris's wrapped types (5.2, point 6); with the switch off, world and hand keep the vanilla look. Worn armor
+   under a pack: only the chestplate shows the custom glint so far **[SH3b pending]**.
 6. A category is disabled: return the kind's off type. It is registered fixed like slots. The colour
    and depth masks are off, so the geometry is drawn but invisible. Optional optimisation, not
    required: also `@ModifyVariable` the `boolean` foil parameter of
@@ -1526,14 +1675,14 @@ names, not valid specs.
 |---|---|---|---|---|
 | Vanilla (Fast/Fancy) | Full | Full | Full | Full |
 | Fabulous | Full. Composite goes into main before the transparency chain; translucent layers combine over it correctly. `glintTranslucent` / `entityGlint` slots keep `ITEM_ENTITY_TARGET`. Outlines tested in game without a shader pack (held items, item frames, dropped items, occlusion, stained glass from the front and side, water, rain, GUI on and off). | Full | Full | Full |
-| Sodium 0.8.13 | Full. Sodium replaces terrain only. Its item fast path (`ItemRendererMixin`) and `putBulkData` intrinsics fall back to vanilla code for our tee because it is not a `BufferBuilder` or `VertexBufferWriter`. Sodium logs **one** WARN per class (`VertexConsumerTracker`: "does not support optimized vertex writing code paths"). FRAPI models render through the `MultiBufferSource` we pass. | Full | Full | Full |
+| Sodium 0.8.13 | Full. Sodium replaces terrain only. Its item fast path (`ItemRendererMixin`) and `putBulkData` intrinsics push whole vertices as raw memory to a consumer that implements Sodium's `VertexBufferWriter`. On Fabric the tee does (`SodiumTeeVertexConsumer`, installed in `onInitializeClient` only if Sodium is loaded): the vertices go to the mask first (`TeeVertexConsumer.copyToMask`), then to the real consumer, pushed unchanged if that is a writer too (`VertexBufferWriter.tryOf`), else replayed through its per-vertex `addVertex` (`TeeVertexConsumer.replay`, as Sodium's own fallback does; for example while Iris extends the vertex format). So the fast paths stay on and Sodium should log no warning **[UNVERIFIED in game: no log with Sodium 0.8.13 checked since the change]**. If the class cannot be installed (another Sodium API), the plain tee stays, Glintsmith logs one WARN, and Sodium logs **one** WARN per class (`VertexConsumerTracker`: "does not support optimized vertex writing code paths") and uses its slow path. FRAPI models render through the `MultiBufferSource` we pass. | Full | Full | Full |
 | Iris installed, shaders off | Full (Iris hand pathway inactive) | Full | Full | Full. Iris's batching is active even without a pack: the world draws through its `FullyBufferedMultiBufferSource`, which G7 covers (5.2, point 6); hand and GUI through the main source (G5a; with ImmediatelyFast see its row). Verified in game (Iris 1.8.14-beta.1, shaders off): preset glints on armor stands and the showcase stand show their colours. |
-| Iris, shader pack on | **Off** (log once per pack activation, at INFO). Main depth is not the scene depth and entities go to Iris gbuffers. The shadow pass is skipped too (phase closed, plus an explicit `isRenderingShadowPass()` check). | **Best effort, default on, option to disable.** The mask is flushed at TAIL of `renderHandsWithItems` with Iris's hand matrices; the composite happens after Iris's final pass at `GameRenderer.renderLevel` RETURN. The arm hides the outline through hand occluders: under a pack the hand buffer source is wrapped in an `OccluderBufferSource` that records every depth-writing render type of the hand pass (arm, sleeve, held items, maps) as depth-only geometry (`DEPTH_WRITE`, `LEQUAL`, the source's layering and cutout), drawn into the mask depth after the item masks; the composite runs with `UseDepth=1` and linearises depth from the hand projection terms (`DepthProj`; Iris scales the hand projection by 1/8 in z), see 3.3. Known limits: with both Iris hand passes an arm from pass 1 can cover an item from pass 2; hand geometry drawn outside the passed buffer source does not occlude. Packs that move or distort the hand (DOF, hand sway) may misalign it. Verified in game (Iris 1.8.14-beta.1 + Complementary Unbound): the arm hides the outline, the visible blade is fully outlined. | Full | GUI full. World and hand use the vanilla look: G7 is a no-op while a shader pack is in use. Allowing it there would send our slots through Iris's glint program (texture and matrix honoured; tint and strength pack-dependent), not done yet (9, point 4). |
+| Iris, shader pack on | **Best effort, default on, option to disable** (`outline.worldWithShaderPack`, "World with shader pack"; also off with `disableWithShaders`). Main depth is not the scene depth and entities go to Iris gbuffers, so the mask is drawn at O8 into `worldMask` before Iris's hand pass, and composited at `GameRenderer.renderLevel` RETURN onto the final image against Iris's `depthtex1` with `UseDepth=2` (TAA-tolerant seed rule, seed distance from the item's own depth), see 3.3. The Iris internals come by reflection (`IrisCompat.Internals`); if they are missing or a call fails, world outlines under packs are off for the session (one INFO line), and for a pipeline that is not an `IrisRenderingPipeline`, off until the pack or dimension changes. One INFO line per pack activation says what stays on. The shadow pass is skipped (an explicit `isRenderingShadowPass()` check in the capture). Known limits: drawn over translucent terrain, clouds, rain and particles (no tint from water or glass); packs that distort the world (curvature, refraction) misalign it; the occluder edge may move by about 1 px; portal mods with two `renderLevel` per frame show only the last view. Checked with Complementary Unbound r5.9.3 only, in the Fabric shader smoke (dev client): worn armor (all four pieces), third-person held sword and shield, a dropped sword, a framed pickaxe, the first-person arm on top. Not checked **[UNVERIFIED]**: items behind blocks, glass or water, TAA motion, BSL, distortion packs, NeoForge with Iris (the reflection may be refused there; it then falls back to off). | **Best effort, default on, option to disable.** The mask is flushed at TAIL of `renderHandsWithItems` with Iris's hand matrices; the composite happens after Iris's final pass at `GameRenderer.renderLevel` RETURN. The arm hides the outline through hand occluders: under a pack the hand buffer source is wrapped in an `OccluderBufferSource` that records every depth-writing render type of the hand pass (arm, sleeve, held items, maps) as depth-only geometry (`DEPTH_WRITE`, `LEQUAL`, the source's layering and cutout), drawn into the mask depth after the item masks; the composite runs with `UseDepth=1` and linearises depth from the hand projection terms (`DepthProj`; Iris scales the hand projection by 1/8 in z), see 3.3. Known limits: with both Iris hand passes an arm from pass 1 can cover an item from pass 2; hand geometry drawn outside the passed buffer source does not occlude. Packs that move or distort the hand (DOF, hand sway) may misalign it. Verified in game (Iris 1.8.14-beta.1 + Complementary Unbound): the arm hides the outline, the visible blade is fully outlined. | Full | GUI full. World and hand: custom look by default (`glint.customWithShaderPack`, "Custom glint with shader pack"; off keeps the vanilla look). G7 swaps the slot types and wraps them again for Iris (5.2, point 6); the pack's own glint program draws them (texture and matrix honoured; tint and strength pack-dependent **[UNVERIFIED per pack]**). Verified in game with Complementary Unbound r5.9.3: hand, shield, held items, dropped items, item frames. Worn armor: only the chestplate shows it **[SH3b pending]**. |
 | First-person animation mods (Punchy 2.8f) | n/a | Full for items drawn through `ItemRenderer.render` inside `renderHandsWithItems`: THIRD_PERSON hand contexts there count as FIRST_PERSON. Not outlined: items Punchy draws without `ItemRenderer.render` (bedrock-geometry items, chests, boats). Verified in game: first-person outlines and glint rules on Punchy-held items drawn through `ItemRenderer.render` (main hand and offhand). | n/a | Full: the hand pass marker (G8) applies first-person rules to the same items |
-| First-person mode of player-animation-lib / Better Combat | The held item is drawn in the world pass as THIRD_PERSON and is outlined as a third-person item; none under a shader pack | Not applicable (the item is not drawn in the HAND phase) | n/a | THIRD_PERSON rules |
+| First-person mode of player-animation-lib / Better Combat | The held item is drawn in the world pass as THIRD_PERSON and is outlined as a third-person item; under a shader pack as a deferred world outline **[UNVERIFIED, not tested]** | Not applicable (the item is not drawn in the HAND phase) | n/a | THIRD_PERSON rules |
 | Other glint mods | Unaffected | Unaffected | Unaffected | If they replace the `RenderType.glint()` getters, our G5a never sees vanilla types and their look wins. If they also hook `BufferSource.getBuffer`, the last modifier wins. Document as incompatible-by-design. |
 | Mods with a stencil main framebuffer (e.g. portals) | Disabled after the first failed depth blit (one log line) | Vanilla: disabled likewise | Full | Full |
-| Multiple `renderLevel` per frame (portal mods) | The phase opens and composites per call | Unchanged | Unchanged | Unchanged |
+| Multiple `renderLevel` per frame (portal mods) | The phase opens and composites per call. Under a shader pack the composite is deferred to the end of `GameRenderer.renderLevel`, so only the last view has world outlines (3.3) | Unchanged | Unchanged | Unchanged |
 | Mods drawing items without `MultiBufferSource`, or GUI items without `GuiGraphics.renderItem` (EMI batching) | Not outlined | Not outlined | Not outlined | Vanilla glint if not on the main source |
 | ImmediatelyFast HUD batching (1.6.x) | Unaffected | Unaffected | Full. IF swaps the `GuiGraphics` buffer source for its `HudBatchingBufferSource`, skips the flush inside `renderItem` and draws its batch at the end of each HUD layer, or earlier when anything calls `BufferUploader.draw` / `_drawWithShader` (its `tryForceDrawHudBuffers`). Our mask draw is such a call, made with the mask target bound and scissored; without a flush first, the batch so far (hotbar sprite, earlier slots, counts) would be drawn into the mask and lost. Therefore, when `ItemRenderer.render` of an outlined GUI item ends (O1, the point where vanilla flushes, still with the item's lighting), its buffer source is flushed (depth test off as in `GuiGraphics.flush()`, then restored), which draws the batch onto main in order before the composite; non-outlined items keep batching. The same applies to IF screen batching (`experimental_screen_batching`, off by default). | Glint: ImmediatelyFast's `BatchableBufferSource` is the main source and bypasses G5a/G5b (5.1); G9 covers it, so the first-person hand (and the world without Iris) get the custom look (not yet verified in game). GUI glints: its non-batching GUI `BufferSource` and `HudBatchingBufferSource` are not the main source; G11 and G12 (5.2, point 8, since 2.0.0) register the slot types as fixed buffers of those sources, so inventories, menus and the batched hotbar get the custom look too (not yet verified in game). They never draw or flush the HUD batch themselves, so the hotbar flush rule above is unchanged. |
 
@@ -1545,7 +1694,13 @@ Detection (`navrelis.glintsmith.render.outline.compat.IrisCompat`, T5):
 * `boolean shaderPackInUse()` is cached per frame in `onFrameBegin`. `boolean shadowPass()` is called
   directly.
 * Any `Throwable` from the Iris API → treat as "pack in use" (safe side) and log once.
-* No Sodium API is used at all. Sodium needs no detection.
+* World outlines under a pack also use Iris internals by reflection (`IrisCompat.Internals`, 3.3): resolved once on
+  first use, cached as method handles. Failure → world outlines under packs are off for the session with one INFO line;
+  an unknown pipeline → off for that pipeline. Names verified in the Iris 1.8.14-beta.1 jar; they must be verified again
+  on every Iris update (9, point 3).
+* The outline core uses no Sodium API. The Fabric build adds `SodiumTeeVertexConsumer` (Sodium's `VertexBufferWriter`),
+  installed by `GlintsmithFabric.onInitializeClient` only if `FabricLoader.isModLoaded("sodium")`, in its own method so that
+  the class is not resolved without Sodium; an error there logs one WARN and leaves the plain tee.
 
 Failure behaviour summary:
 
@@ -1562,7 +1717,8 @@ Failure behaviour summary:
   branches. No tees, no GPU work, no allocations. Targets are freed after 600 idle frames.
 * **CPU per outlined item:** one extra vertex write per vertex (mask: position, colour, UV) plus a
   16-FMA projection for the bbox. A flat generated item has a few hundred vertices, so this is a few
-  µs. Real buffers lose Sodium's intrinsics for outlined items only.
+  µs. On Fabric with Sodium the tee is a Sodium vertex writer, so the intrinsics stay on for outlined items (the mask copy
+  reads the pushed memory); otherwise real buffers lose them for outlined items only.
 * **GPU per phase:** mask draw (a few draw calls, one per distinct texture) plus pass H and pass V over
   the clipped region, and in WORLD and vanilla HAND a scissored depth clear and a depth blit. The
   visible-item rule (3.3) adds no pass and no target. Taps per pixel are at most 2(R+1) per pass, with early exit. Estimates
@@ -1578,8 +1734,9 @@ Failure behaviour summary:
 * **Glint:** zero extra draws when all looks are vanilla (shortcut). Otherwise one draw per used slot
   per flush (GUI: per item, like vanilla). No per-frame `RenderType` or texture allocation.
   `RenderSystem.setTextureMatrix` copies a `Matrix4f` per draw (vanilla does the same).
-* **No reflection.** Accessors are compiled. The Iris API is reached through a cached instance in a
-  lazily loaded holder.
+* **Reflection only for Iris internals.** Accessors are compiled. The Iris API is reached through a cached instance in a
+  lazily loaded holder. Under a shader pack, world outlines call a few cached method handles per frame (3.3), and the glint
+  unwraps Iris's wrapped render types (5.2, point 6).
 * **Resize** is handled by comparing sizes before each composite. Resource reload marks shaders dirty
   (outline) and rebuilds the neutral textures (glint).
 
@@ -1617,7 +1774,12 @@ public final class OutlineSystem {                          // static façade; r
     // O7
     public static void onFrameBegin();
     public static void onFrameEnd();
-    public static void onLevelRendered();                   // GameRenderer.renderLevel RETURN
+    public static void onLevelRendered();                   // GameRenderer.renderLevel RETURN (shader pack: WORLD, then HAND composite)
+    // O8
+    public static void onBeforeTranslucent();               // LevelRenderer.renderLevel, "translucent" (shader pack: draw the WORLD mask)
+    // E1, E2
+    public static void onWorldStart(@Nullable MultiBufferSource consumers);
+    public static void onWorldLast();
 }
 enum OutlinePhase { NONE, WORLD, HAND, GUI }
 final class PhaseState {                                    // one per phase
@@ -1630,10 +1792,14 @@ final class PhaseState {                                    // one per phase
 }
 record OutlineRuntimeSettings(boolean enabled, boolean firstPerson, boolean thirdPerson, boolean armor,
                        boolean dropped, boolean itemFrame, boolean gui, boolean other, boolean onlyLocalPlayer,
-                       boolean disableWithShaders, boolean handWithShaderPack, boolean scaleWithResolution,
-                       boolean proportional, float minThickness, float fadeStart, float fadeEnd) {
+                       boolean disableWithShaders, boolean handWithShaderPack, boolean worldWithShaderPack,
+                       boolean scaleWithResolution, boolean proportional, float minThickness, float fadeStart, float fadeEnd) {
     static OutlineRuntimeSettings from(GlintsmithConfig cfg);   // the ONLY place that reads outline config fields
     boolean anyWorld();
+    boolean worldPhaseAllowed(boolean shaderPack, boolean packDepth);   // pack: !disableWithShaders && worldWithShaderPack && packDepth
+    boolean handPhaseAllowed(boolean shaderPack);
+    boolean guiPhaseAllowed(boolean shaderPack);
+    @Nullable String shaderPackNotice(boolean packDepth);       // the INFO line per pack activation
     boolean accepts(OutlinePhase phase, OutlineTarget target);
     float thicknessScale(int framebufferHeight);                // proportional off: T × this (3.4)
     float itemThickness(float thickness, float pixelsPerUnit, int framebufferHeight);   // 3.4.1
@@ -1662,7 +1828,7 @@ final class TeeBufferSource extends MultiBufferSource.BufferSource { /* see sect
 final class TeeVertexConsumer implements VertexConsumer { /* real first, mask guarded */ }
 final class MaskVertexConsumer implements VertexConsumer { /* EntityOutlineGenerator-like + bbox */ }
 final class ScreenBounds { void snapshot(); void include(float x, float y, float z); boolean toPixels(int w, int h, int pad, int[] out4); void reset(); }
-final class OutlineTargets { com.mojang.blaze3d.pipeline.RenderTarget mask(); com.mojang.blaze3d.pipeline.RenderTarget edt(); void ensureSize(com.mojang.blaze3d.pipeline.RenderTarget main); void tickIdle(boolean used); void release(); }
+final class OutlineTargets { com.mojang.blaze3d.pipeline.RenderTarget worldMask(); void ensureWorldMaskSize(int w, int h); void drawToWorldMask(boolean world); /* shader pack WORLD, 3.3 */ com.mojang.blaze3d.pipeline.RenderTarget mask(); com.mojang.blaze3d.pipeline.RenderTarget edt(); void ensureSize(com.mojang.blaze3d.pipeline.RenderTarget main); void tickIdle(boolean used); void release(); }
 final class OutlineShaders { static @Nullable ShaderInstance mask(); static @Nullable ShaderInstance edt(); static @Nullable ShaderInstance composite(); static void markDirty(); }
 final class FullscreenQuad { static void draw(ShaderInstance shader); static void close(); }
 final class OutlineCompositor {
@@ -1670,14 +1836,25 @@ final class OutlineCompositor {
     static void composite(PhaseState phase, MaskDepth depth, boolean useDepth, float fadeStart, float fadeEnd);
     static boolean drawMaskOnly(PhaseState phase, boolean clear);   // Iris hand: mask now, composite later
     static void resolve(PhaseState phase);                          // passes over an earlier mask, UseDepth 1
+    static boolean drawDeferredWorldMask(PhaseState phase);         // shader pack WORLD, O8: mask into worldMask
+    static void resolveDeferredWorld(PhaseState phase, float fadeStart, float fadeEnd);   // O7c: passes against depthtex1, UseDepth 2
 }
-final class OutlineDepth { /* constants and the depth rules as plain Java; mirrored by the shaders, tested on the JVM */ }
+final class OutlineDepth { /* constants (USE_DEPTH_OFF/SCENE/PACK) and the depth rules as plain Java; mirrored by the shaders, tested on the JVM */ }
 final class OutlineFailsafe { static boolean tripped(); static void trip(String where, Throwable t); }
 // navrelis.glintsmith.render.outline.compat
-final class IrisCompat { static boolean loaded(); static boolean shaderPackInUse(); static boolean shadowPass(); static void refreshPerFrame(); }
+final class IrisCompat {
+    static boolean loaded(); static boolean shaderPackInUse(); static boolean queryShaderPack(); static boolean shadowPass(); static void refreshPerFrame();
+    static boolean packDepthUsable();                               // once per frame under a pack; resolves the internals on first use
+    static int packSceneDepthTexture(int width, int height);        // GL id of Iris's depthtex1, -1 if unusable this frame
+    static void beginOwnDraw(); static void endOwnDraw();           // save/restore Iris's "main target bound" flag around our draws
+    static void disablePackDepth(String reason, @Nullable Throwable cause);   // world outlines under packs off for the session
+    // private static final class Internals: cached MethodHandles over Object (3.3, point 5)
+}
+// navrelis.glintsmith.render.outline (Fabric build only, needs Sodium's API)
+public final class SodiumTeeVertexConsumer extends TeeVertexConsumer implements VertexBufferWriter { static void install(); }
 ```
 
-Mixins (T5): O1–O7, A1–A3 as in section 4. Handler pattern, which must be followed exactly:
+Mixins (T5): O1–O8, A1–A3 as in section 4. Handler pattern, which must be followed exactly:
 
 ```java
 @Mixin(ItemRenderer.class)
@@ -1704,7 +1881,10 @@ these:
 * master `enabled`
 * per target `firstPerson`, `thirdPerson`, `onlyLocalPlayer`, `armor`, `dropped`, `itemFrame`, `gui`,
   `other` (default off)
+* `disableWithShaders` (default false; with a pack, turns every outline off)
 * `handWithShaderPack` (default true)
+* `worldWithShaderPack` (default true; keeps world outlines, 3.3, under a pack; older config files without the field get
+  true)
 * `thickness` 0.5 to 16 (`OutlineSettings.MAX_THICKNESS = 16`; there is no `maxThickness` field), default 7.5
 * `proportional` (2.0.0, default true), `minThickness` (2.0.0, default 1, range 0.5 to 8) and `scaleWithResolution`
   (default false, only used while `proportional` is off); see 3.4.1
@@ -1757,8 +1937,9 @@ final class GlintSlotPool { RenderType acquire(GlintKind k, GlintParams p); Rend
                             void release(RenderType t); void releaseStale(long frame); void flushAll(MultiBufferSource.BufferSource main); }
 record CategorySettings(boolean enabled, @Nullable String texture, @Nullable ColorStyle tint, float speed,
                         float scale, float strength, float rotation, GlintLook categoryLook) {}
-record GlintSettings(CategorySettings item, CategorySettings armor, CategorySettings entity, CategorySettings gui, boolean anyCustom) {
-    static GlintSettings from(GlintsmithConfig cfg);   // reads cfg.glint.item/armor/entity/gui
+record GlintSettings(CategorySettings item, CategorySettings armor, CategorySettings entity, CategorySettings gui, boolean anyCustom,
+                     boolean atlasScale, boolean customWithShaderPack) {   // (the class is GlintRuntimeSettings; atlasScale since 2.0.0)
+    static GlintSettings from(GlintsmithConfig cfg);   // reads cfg.glint.item/armor/entity/gui, atlasIndependentScale, customWithShaderPack (default true)
     CategorySettings get(GlintCategory c);
 }
 final class GlintTextures { static void init(); static void reload(ResourceManager rm); static void onConfigChanged();
@@ -1790,9 +1971,11 @@ T6 data flow, step by step:
 6. G6 `onFrameBegin` → `frame++`; `timeSeconds = Util.getMillis() / 1000.0`;
    `shaderPack = IrisCompat.queryShaderPack()`; `pool.releaseStale(frame)` (frees and unpins).
 7. G7 `substituteBuffered(requested)` (Iris's world source): fast exit unless
-   `bufferedSwapAllowed(anyCustom, main captured, !shaderPack, !tripped)` and a known kind on the render
-   thread; then the same resolution as G5a step 2, with `pool.acquire(..., pin = true)` and without
-   registering the slot in `main`.
+   `bufferedSwapAllowed(anyCustom, main captured, shaderPack, customWithShaderPack, tripped)` (that is
+   `anyCustom && started && (!shaderPack || customWithShaderPack) && !tripped`) and a known kind on the render
+   thread. A kind that `GlintKind.of` does not know is tried again after `IrisWrappedTypes.unwrap` (5.2, point 6). Then the
+   same resolution as G5a step 2, with `pool.acquire(..., pin = true)` and without registering the slot in `main`; a
+   wrapped request gets the slot type wrapped again with the same extra shard.
 8. Every public entry point catches Throwable → `GlintFailsafe.trip` → vanilla behaviour.
 9. G10 `onAtlasUploaded` (block atlas only) → `GlintAtlasScale.update(width, height, reference sprite)`.
    In step 3.2, after the vanilla-equivalence check, `settings.atlasScale && blockAtlasUvs(kind, frame,
@@ -1822,7 +2005,7 @@ the user folder `<configDir>/glintsmith/glints/` is created if missing.
    outline.ItemRendererOutlineMixin, outline.ItemInHandRendererOutlineMixin, outline.HumanoidArmorLayerOutlineMixin,
    outline.ElytraLayerOutlineMixin, outline.GuiGraphicsOutlineMixin, outline.BufferSourceOutlineMixin,
    outline.GameRendererOutlineMixin, outline.CompositeRenderTypeAccessor, outline.CompositeStateAccessor,
-   outline.EmptyTextureStateShardAccessor,
+   outline.EmptyTextureStateShardAccessor, outline.LevelRendererOutlineMixin (O8, priority 900),
    glint.ItemRendererGlintMixin, glint.HumanoidArmorLayerGlintMixin, glint.ElytraLayerGlintMixin,
    glint.BlockEntityWithoutLevelRendererGlintMixin, glint.BufferSourceGlintMixin, glint.GameRendererGlintMixin,
    glint.ItemInHandRendererGlintMixin, glint.BufferSourceAccessor, glint.RenderBuffersAccessor,
@@ -1834,8 +2017,11 @@ the user folder `<configDir>/glintsmith/glints/` is created if missing.
    ```
 3. No access widener and no `build.gradle` change are needed. Fabric API's transitive access wideners
    cover the render-state classes, and the accessors cover the rest.
-4. The config screen should show, when `IrisCompat.shaderPackInUse()`, a note: "World outlines are
-   disabled while a shader pack is active".
+4. The config screen shows, when `IrisCompat.shaderPackInUse()`, a note (`glintsmith.outline.iris_active`): "A shader
+   pack is active: world and first-person outlines are drawn on top of the pack's image (best effort, see the shader
+   pack switches below). GUI outlines work." The Outline tab has the switches "Hand with shader pack"
+   (`glintsmith.outline.hand_with_shader_pack`) and "World with shader pack" (`glintsmith.outline.world_with_shader_pack`);
+   the Glint tab has "Custom glint with shader pack" (`glintsmith.glint.with_shader_pack`).
 
 ---
 
@@ -1857,18 +2043,29 @@ the user folder `<configDir>/glintsmith/glints/` is created if missing.
    drawn outside the passed buffer source does not occlude, and packs that move or distort the hand
    (DOF, hand sway) may misalign the outline.
    *Recommendation:* keep as is; test BSL and a DOF pack if users report problems.
-3. **World outlines under shader packs** are off. Making them work would need either rendering the
-   mask from Iris's depth texture or an Iris API that 1.21.1 does not have.
-   *Recommendation:* accept for v1. Revisit with Iris's depth texture via its internals only if users
-   ask; this would be fragile.
+3. **World outlines under shader packs** are implemented (3.3, "WORLD, Iris"; switch `outline.worldWithShaderPack`,
+   default on). They rest on Iris internals that have no API: the pipeline, the private `renderTargets` field,
+   `getDepthTextureNoTranslucents()` (`depthtex1`), `setIsMainBound`. They also rest on O8, a hook in vanilla's
+   `LevelRenderer.renderLevel` at the `"translucent"` constant, which must run before Iris's own hooks there. A missing
+   Iris member degrades to "off" with one INFO line; a wrong hook order does not fail visibly. Verified in the
+   Iris 1.8.14-beta.1 jar; checked in the Fabric shader smoke with Complementary Unbound r5.9.3 only (scenes in 3.3).
+   Known limits are in 3.3, point 7.
+   *Recommendation:* re-verify every name above, and the order of O8 against Iris's hooks (an in-game check: hand items
+   must not get a world outline), on every Iris update. Test BSL, a pack with world
+   distortion (curvature or refraction), a pack without TAA, NeoForge with Iris, and a portal mod, before
+   promising more than "best effort".
 4. **Glint customisation in world and hand under shader packs.** G7 (`@Pseudo` into Iris's
    `FullyBufferedMultiBufferSource`) is implemented, because Iris uses that source for the world even
-   with shaders off (5.1). It is a no-op while a shader pack is in use, so the pack behaviour is
-   unchanged. No `IMixinConfigPlugin` version guard: `@Pseudo` and `require = 0` make it inert without
-   Iris or without the method, and the hook only relies on "one `getBuffer(RenderType)`, drawn later in
-   the same frame", which the pinned slots tolerate.
-   *Recommendation:* after the in-game check of the shaders-off world glint, try lifting the shader-pack
-   gate (test armor, entity-held items, item frames and the first-person hand with Complementary).
+   with shaders off (5.1). Since 2.2.0 it also runs under a shader pack (`glint.customWithShaderPack`, default on): it
+   unwraps the `OuterWrappedRenderType` that Iris puts around entity render types, swaps, and wraps again with the same
+   extra shard (5.2, point 6). No `IMixinConfigPlugin` version guard: `@Pseudo` and `require = 0` make it inert
+   without Iris or without the method, and the hook only relies on "one `getBuffer(RenderType)`, drawn later in the
+   same frame", which the pinned slots tolerate; the unwrapping is reflection and switches itself off with one WARN
+   if Iris's class changes. Tint and strength depend on the pack's glint program. Verified in game with Complementary
+   Unbound r5.9.3: hand, shield, held items, dropped items, item frames. Worn armor: only the chestplate shows the
+   custom glint; helmet, leggings and boots do not **[SH3b pending]**.
+   *Recommendation:* fix worn armor (SH3b), then re-verify `OuterWrappedRenderType` (`unwrap`, `wrapExactlyOnce`,
+   `extra`) on every Iris update and look at other packs (BSL) before claiming more than Complementary.
 5. **The mask cannot see geometry drawn outside `MultiBufferSource`** (direct Tesselator draws in some
    mod BEWLRs).
    *Recommendation:* accept and document. GL-level interception would be far worse.
@@ -1895,9 +2092,12 @@ the user folder `<configDir>/glintsmith/glints/` is created if missing.
 11. **Memory of full-resolution RGBA8 targets** (about 25 MB at 1080p).
     *Recommendation:* keep the idle release. Phase 2 could switch to custom R8 and RG8 FBOs (a 75 %
     saving).
-12. **Sodium WARN line** for our consumer class.
-    *Recommendation:* accept. Phase 2 could add an optional Sodium `VertexBufferWriter` implementation
-    in a compat class loaded only when Sodium is present.
+12. **Sodium WARN line** for our consumer class. Resolved on Fabric (2.2.0): `SodiumTeeVertexConsumer` implements
+    Sodium's `VertexBufferWriter` and is installed only when Sodium is loaded (section 6, Sodium row). If installing it
+    fails, the plain tee stays and the old Sodium WARN returns. **[UNVERIFIED in game]**: no Sodium 0.8.13 log has been
+    checked since the change.
+    *Recommendation:* check the log of a Sodium run once (`scripts/smoke.ps1 -Loader fabric -Shaders` includes Sodium and
+    checks `log: warnings`); re-check the writer interface on every Sodium update.
 13. **Stencil main framebuffers** cause a failed depth blit.
     *Recommendation:* detect once and disable world and hand outlines, as specified.
 14. **GLSL portability** (`texelFetch` on a depth `sampler2D`, int loops with uniform bounds). This is
@@ -1950,10 +2150,19 @@ Outlines:
 11. Resize the window, toggle fullscreen, change GUI scale, minimise and restore: no stretched or
     offset outlines, no errors.
 12. F3+T resource reload and resource-pack change: outlines come back (shaders recreated).
-13. Iris shaders on: world outlines are off (one INFO line), hand outlines on (option off works), GUI
-    outlines on, no errors in the log. Toggle the shader pack while in game. Hand part passed in game
-    (Iris 1.8.14-beta.1 + Complementary Unbound with Euphoria Patches): hand outlines stay on, the arm
-    hides them, world outlines off with one INFO line, GUI outlines work.
+13. Iris shaders on (2.2.0 behaviour; the automated run is `pwsh scripts/smoke.ps1 -Loader fabric -Shaders`, see
+    `docs/TESTING.md`, "Shader pack smoke"): one INFO line per activation that says which outlines stay on. World
+    outlines (switch "World with shader pack"): your own held item in F5, an armor stand or player with all four armor
+    pieces, a dropped item and an item frame are outlined; behind a wall or a pillar they are not; the first-person arm
+    hides the outline of a world item behind it; "World with shader pack" off removes them, "Off with shader packs" removes
+    every outline. Hand outlines on (option off works), GUI outlines on, no errors in the log. Toggle the shader pack
+    while in game, and change dimension. With the Iris internals made unavailable (another Iris version): one INFO line,
+    world outlines off, hand and GUI unaffected. Hand part passed in game (Iris 1.8.14-beta.1 + Complementary Unbound with
+    Euphoria Patches): hand outlines stay on, the arm hides them, GUI outlines work. The world part is implemented in
+    2.2.0 (3.3, "WORLD, Iris"). Passed in the Fabric shader smoke (Complementary Unbound r5.9.3, dev client): worn armor
+    (all four pieces), third-person held sword and shield, a dropped sword, a framed pickaxe, the first-person arm on
+    top. Still to be checked **[UNVERIFIED]**: items behind blocks, glass or water, TAA motion, BSL, a pack with
+    distortion, a portal mod (only the last view), NeoForge with Iris.
 14. Fabulous **F**: dropped stained glass block (`itemEntityTarget`), translucent items, rain in
     front of an outlined item (rain over the outline). Tested in game, passed (stained glass seen
     from the front and side).
@@ -1980,8 +2189,14 @@ Glint:
     water.
 22. 40 different glint looks on screen (creative inventory full of tinted books): no flicker, no
     wrong looks; at most a debug log line about slot overflow in the world.
-23. Iris shaders on: GUI glint customised; world and hand vanilla glint (G7 is a no-op under a pack);
-    no visual breakage, no errors.
+23. Iris shaders on (2.2.0 behaviour; automated run: `pwsh scripts/smoke.ps1 -Loader fabric -Shaders`, `docs/TESTING.md`):
+    GUI glint customised; with "Custom glint with shader pack" on (default) the world and the hand show the custom glint
+    too: held items, shield, dropped items, item frames, worn armor on armor stands and players (G7 unwraps and wraps
+    Iris's render types, 5.2 point 6). How tint and strength look depends on the pack. With the switch off the world and
+    the hand keep the vanilla glint, and the preview shows the note `shader_glint`. No visual breakage, no errors in the
+    log, no WARN from `IrisWrappedTypes`. Verified in game with Complementary Unbound r5.9.3: hand, shield, held items,
+    dropped items, item frames. Worn armor: only the chestplate shows the custom glint, helmet, leggings and boots do
+    not **[SH3b pending]**.
 24. Resource reload with a pack that replaces `enchanted_glint_item.png`: the neutral variant is
     rebuilt from the new texture.
 25. Punchy 2.8f installed: an enchanted sword in the main hand has a first-person outline and the
@@ -1994,10 +2209,10 @@ Glint:
     an item frame with an enchanted pickaxe, a dropped enchanted book. All show the custom look (not the
     vanilla purple), the glint sits on the item (no glint drawn before or beside its base), and 40+
     different looks in the world fall back to vanilla only past 32 per kind (debug log). Switch a pack on
-    and off again in game: world glint turns vanilla under the pack and custom again without it.
+    and off again in game: the world glint stays custom under the pack (item 23; vanilla there if "Custom glint with
+    shader pack" is off) and custom again without it.
     Verified in game (Iris 1.8.14-beta.1, shaders off) for armor stands and the showcase stand: every
-    preset shows in its colour against the purple vanilla glint. Under Complementary Unbound the world
-    glint stays vanilla, GUI and hand outlines work, world outlines stay off. Not checked: zombie or
+    preset shows in its colour against the purple vanilla glint. Not checked with shaders off: zombie or
     player held items, item frames, dropped items.
 28. ImmediatelyFast 1.6.15 installed (G9), shaders off, Item layer with a preset at Scale 0.13 and a
     RAINBOW tint: the enchanted sword in the first-person hand shows the custom look (the same colours
@@ -2250,7 +2465,7 @@ field of the session class: it survives closing and reopening the screen for the
 * Notes (`PreviewNotes.keys`, pure Java, in priority order): `unavailable` (outline failsafe tripped or preview
   disabled); one reason why there is no outline, which exclude each other (`outlines_off`, `first_person_off`,
   `no_outline`, `map`); `shader_hand_off` (shader pack active and the hand phase not allowed under it); `shader_glint`
-  (shader pack active and the item has a custom glint); `no_world`; `empty_hand`. The panel shows the first note under
+  (shader pack active, `glint.customWithShaderPack` off and the item has a custom glint); `no_world`; `empty_hand`. The panel shows the first note under
   the item name and lists all of them in its tooltip. The rule editor adds `rule_not_first_person` (the rule has
   targets but not first person) or `rule_no_match` (the edited rule does not match the shown item) through
   `previewNote`.
@@ -2283,8 +2498,8 @@ it closes (Done, or discarding on Cancel).
 
 * **Model gap fix** is not previewed: it changes baked models and only takes effect after a resource reload.
 * **Shader packs**: the preview shows the configured look, drawn by the vanilla programs. A pack changes the real hand
-  (hand outlines depend on the "Hand with shader pack" switch, the glint stays vanilla); the notes `shader_hand_off`
-  and `shader_glint` say so, the preview itself does not imitate the pack. Whether a GUI-time render of a first-person
+  (hand outlines depend on the "Hand with shader pack" switch, the glint is vanilla only if "Custom glint with shader
+  pack" is off); the notes `shader_hand_off` and `shader_glint` say so, the preview itself does not imitate the pack. Whether a GUI-time render of a first-person
   context shows glint and outline correctly while Iris has a pack active is **[UNVERIFIED in game]**.
 * **First-person animation mods** that hook first-person rendering may add transforms; the bounds fit absorbs offsets
   **[UNVERIFIED in game]**. The lighting is a taste (the entity-in-inventory setup) and may be tuned.
