@@ -234,3 +234,6 @@
 - 2026-10-19 s21 | 1.20.6: merged dd20c30; chestplate report was a misread (outline present, 103-110 px); build-all green (502/262/262), Fabric dev smoke PASS; Forge smoke + javap audit running
 - 2026-10-19 s21 | 1.21.3 (branch claude/fervent-fermi-0c770f): toolchain/common/hooks/smoke/tests (Fabric 508)/NeoForge/Forge committed; Fabric+NeoForge dev smoke PASS; audit OK; merging 713de69+dd20c30 next
 - 2026-10-19 s21 | PC rebooted ~11:55Z (overload); lead state verified: eloquent-wing on its branch, mc/1.21.1 clean at dd20c30 = origin; port continuations resume (1.20.6: local_e9e96451, 1.21.3: local_82b750a7); owner resource rules recorded in requirements.md
+- 2026-10-28 s22 | owner report: no Glintsmith rendering in third person with shaders = documented v1 limit (world phase + G7 gated off under a pack); owner chose glint + outlines, mc/1.21.1, dev-client test
+- 2026-10-28 s22 | SH1 world outlines under shader packs | Opus L | delegated (worktree mc-1.21.1)
+- 2026-10-28 s22 | SH2 shader smoke harness | Sonnet S | delegated (parallel, disjoint files, shared gradle lock)

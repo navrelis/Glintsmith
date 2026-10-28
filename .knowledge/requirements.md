@@ -78,3 +78,9 @@ Owner: "you can't really see the difference in the pictures in curseforge" and "
 3. At most 2 subagents alive at once per session; a subagent running Gradle follows rule 1.
 4. Every Gradle invocation runs with `--no-daemon` (or org.gradle.daemon=false in the worktree), never `gradlew --stop` (it kills other sessions' daemons of the same Gradle version); kill smoke/game clients as soon as their screenshots are taken. (Corrected by the recovery session, 2026-10-19.)
 5. After a restart nothing is assumed running; re-verify on disk.
+
+## Session 22 owner task (2026-10-28): shaders on, third person
+Owner: "Glintsmith not rendering with shaders on in third person i think" (screenshot: Iris + shader pack, third person, worn diamond armor, no outline, no custom glint). Cause: by design (DESIGN 9 points 3-4) world outlines are off and the world glint is vanilla while a shader pack is active. Owner answers (all lead defaults):
+1. Scope: custom glint in world and hand under shader packs (lift the G7 gate) AND world outlines under shader packs (third person, armor, dropped, frames) via Iris's depth through internals, behind a toggle.
+2. Branch: mc/1.21.1 (three-loader reference), ships with 2.2.0 (MINOR); port sessions merge it.
+3. Test: automated dev client (Fabric) with Iris 1.8.14-beta.1 + Sodium 0.8.13 + Complementary Unbound r5.9.3 (local copies, never the owner's instances); lead reviews screenshots.
