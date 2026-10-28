@@ -62,3 +62,6 @@ studio-mods/
 # glintsmith smoke test (dev-only in-game test): run folder of each loader
 run-smoke/
 run-smoke-exported/
+
+# glintsmith smoke test, shader mode (scripts/smoke.ps1 -Shaders): Iris and Sodium jars copied from a local mods folder
+fabric/smoke-mods/

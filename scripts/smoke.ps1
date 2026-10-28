@@ -29,15 +29,34 @@
 	(`<loader>/run-smoke-exported`) instead of the dev classes, so the jar contents (access transformer, mod metadata, mixin
 	configs, jar-in-jar, Fabric remapping) are exercised. Results go to <OutDir>/<minecraft>-<loader>-exported/.
 
+.PARAMETER Shaders
+	Shader pack mode (fabric only, not with -Exported): the Fabric dev client runs with Iris and Sodium (jars copied from
+	-ShaderModsDir to fabric/smoke-mods/) and the shader pack -ShaderPack active, the smoke mod waits until Iris reports a pack in
+	use (up to 2 minutes) and holds 100 ticks / 8 s before the first screenshot. Adds the check "shader pack in use"; all other
+	checks stay. The run is called fabric-shaders and its results go to <OutDir>/<minecraft>-fabric-shaders/.
+
+.PARAMETER ShaderModsDir
+	With -Shaders: the folder that holds iris-fabric-*+mc<minecraft>.jar and sodium-fabric-*+mc<minecraft>.jar.
+	Default: F:\Coding\AutoModpackUpdater\work\instance\mods
+
+.PARAMETER ShaderPack
+	With -Shaders: the shader pack zip. Default: ComplementaryUnbound_r5.9.3.zip in F:\Coding\AutoModpackUpdater\work\instance\shaderpacks
+
 .EXAMPLE
 	pwsh scripts/smoke.ps1 -Loader fabric
+
+.EXAMPLE
+	pwsh scripts/smoke.ps1 -Loader fabric -Shaders
 #>
 [CmdletBinding()]
 param(
 	[string[]]$Loader = @('fabric'),
 	[string]$OutDir,
 	[int]$TimeoutMinutes = 10,
-	[switch]$Exported
+	[switch]$Exported,
+	[switch]$Shaders,
+	[string]$ShaderModsDir = 'F:\Coding\AutoModpackUpdater\work\instance\mods',
+	[string]$ShaderPack = 'F:\Coding\AutoModpackUpdater\work\instance\shaderpacks\ComplementaryUnbound_r5.9.3.zip'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -50,6 +69,13 @@ New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 
 # "-Loader fabric,neoforge" arrives as one string when the script is started with pwsh -File
 $loaders = @($Loader | ForEach-Object { $_ -split '[,\s]+' } | Where-Object { $_ } | ForEach-Object { $_.ToLowerInvariant() })
+
+if ($Shaders) {
+	if ($Exported) { throw '-Shaders cannot be combined with -Exported (the shader run uses the dev classes).' }
+	if (@($loaders | Where-Object { $_ -ne 'fabric' }).Count -or -not $loaders.Count) { throw '-Shaders is only supported for -Loader fabric.' }
+	# the compile of the pack and the wait for it make the run longer
+	if (-not $PSBoundParameters.ContainsKey('TimeoutMinutes')) { $TimeoutMinutes = 15 }
+}
 
 $shots = '01_first_person', '02_inventory', '03_third_person_front', '04_glintsmith_screen', '05_dropped_closeup', '06_item_frame_closeup'
 $minDistinctColors = 200
@@ -74,6 +100,7 @@ function Test-Loader([string]$Name) {
 	$dir = Join-Path $root $Name
 	$checks = [System.Collections.Generic.List[object]]::new()
 	$mc = Get-MinecraftVersion
+	$suffix = if ($Exported) { '-exported' } elseif ($Shaders) { '-shaders' } else { '' }
 	$runDirName = if ($Exported) { 'run-smoke-exported' } else { 'run-smoke' }
 	$gradleTask = if ($Exported) { 'runSmokeExported' } else { 'runSmoke' }
 	$runDir = Join-Path $dir $runDirName
@@ -82,13 +109,39 @@ function Test-Loader([string]$Name) {
 
 	if (-not (Test-Path (Join-Path $dir 'gradlew.bat'))) {
 		$checks.Add((New-Check 'loader folder' $false "$dir has no gradlew.bat"))
-		return [pscustomobject]@{ Loader = $Name; Minecraft = $mc; Checks = $checks; Seconds = 0; Target = $null }
+		return [pscustomobject]@{ Loader = "$Name$suffix"; Minecraft = $mc; Checks = $checks; Seconds = 0; Target = $null }
+	}
+
+	# --- shader mode: Iris, Sodium and the pack ------------------------------------------------------------------------
+	$gradleArgs = @('--no-daemon', $gradleTask, '--console=plain')
+	if ($Shaders) {
+		$packFile = if (Test-Path -LiteralPath $ShaderPack -PathType Leaf) { (Resolve-Path -LiteralPath $ShaderPack).Path } else { $null }
+		$jars = @()
+		foreach ($mod in 'iris', 'sodium') {
+			$found = if (Test-Path -LiteralPath $ShaderModsDir -PathType Container) {
+				@(Get-ChildItem -LiteralPath $ShaderModsDir -Filter "$mod-fabric-*+mc$mc.jar" -File | Sort-Object Name | Select-Object -Last 1)
+			} else { @() }
+			if ($found.Count) { $jars += $found[0] }
+		}
+		if (-not $packFile -or $jars.Count -ne 2) {
+			$what = @()
+			if (-not $packFile) { $what += "shader pack '$ShaderPack' not found" }
+			if ($jars.Count -ne 2) { $what += "need iris-fabric-*+mc$mc.jar and sodium-fabric-*+mc$mc.jar in '$ShaderModsDir' (found: $(@($jars | ForEach-Object Name) -join ', '))" }
+			$checks.Add((New-Check 'shader setup' $false ($what -join '; ')))
+			return [pscustomobject]@{ Loader = "$Name$suffix"; Minecraft = $mc; Checks = $checks; Seconds = 0; Target = $null }
+		}
+		$modsOut = Join-Path $dir 'smoke-mods'
+		if (Test-Path $modsOut) { Remove-Item -Recurse -Force $modsOut }
+		New-Item -ItemType Directory -Force -Path $modsOut | Out-Null
+		$jars | Copy-Item -Destination $modsOut
+		$gradleArgs = @('--no-daemon', $gradleTask, '-PsmokeShaders=true', "-PsmokeShaderPack=$packFile", '--console=plain')
+		Write-Host "[$Name] shader mode: $(@($jars | ForEach-Object Name) -join ', '), pack $(Split-Path -Leaf $packFile)"
 	}
 
 	# --- run -----------------------------------------------------------------------------------------------------------
-	$gradleLog = Join-Path $OutDir "$Name$(if ($Exported) { '-exported' })-gradle.log"
-	Write-Host "[$Name] gradlew $gradleTask ..."
-	$p = Start-Process -FilePath (Join-Path $dir 'gradlew.bat') -ArgumentList @($gradleTask, '--console=plain') `
+	$gradleLog = Join-Path $OutDir "$Name$suffix-gradle.log"
+	Write-Host "[$Name$suffix] gradlew $gradleTask ..."
+	$p = Start-Process -FilePath (Join-Path $dir 'gradlew.bat') -ArgumentList $gradleArgs `
 		-WorkingDirectory $dir -PassThru -NoNewWindow -RedirectStandardOutput $gradleLog -RedirectStandardError "$gradleLog.err"
 	$null = $p.Handle # keeps the exit code readable after WaitForExit
 	if (-not $p.WaitForExit($TimeoutMinutes * 60000)) {
@@ -141,6 +194,26 @@ function Test-Loader([string]$Name) {
 	}
 	$checks.Add((New-Check 'screenshots' ($shotProblems.Count -eq 0) $(if ($shotProblems.Count) { $shotProblems -join '; ' } else { "6 PNGs, outline pixels $($shotInfo -join ' '); armor $($armorInfo -join ' ')" })))
 
+	# Shader mode: Iris must have reported a pack in use after the settle, at the end and in every screenshot step
+	if ($Shaders) {
+		$sh = if ($result) { $result.shaders } else { $null }
+		if (-not $sh) {
+			$checks.Add((New-Check 'shader pack in use' $false 'no "shaders" object in the result (the game did not get past the world load)'))
+		} else {
+			$shotSteps = @($result.steps | Where-Object { $null -ne $_.shaderPackInUse })
+			$notInUse = @($shotSteps | Where-Object { -not $_.shaderPackInUse } | ForEach-Object { $_.name })
+			$problems = @()
+			if (-not $sh.irisLoaded) { $problems += 'Iris API not found' }
+			if ($sh.packTimedOut) { $problems += 'no pack in use after the 2 minute wait' }
+			if (-not $sh.inUseAfterSettle) { $problems += 'not in use after the settle' }
+			if (-not $sh.inUseAtEnd) { $problems += 'not in use at the end' }
+			if ($notInUse.Count) { $problems += "not in use in: $($notInUse -join ', ')" }
+			if ($shotSteps.Count -ne $shots.Count) { $problems += "only $($shotSteps.Count) of $($shots.Count) screenshot steps recorded the pack state" }
+			if ($sh.error) { $problems += "iris error: $($sh.error)" }
+			$checks.Add((New-Check 'shader pack in use' ($problems.Count -eq 0) $(if ($problems.Count) { $problems -join '; ' } else { "'$($sh.packName)' active after $([int]($sh.settleMs / 1000)) s, in all $($shotSteps.Count) screenshots and at the end" })))
+		}
+	}
+
 	# Routing of the glint layers: the armor layer of the smoke config is a red preset, so the helmet must not stay diamond teal.
 	# Information only: the glint is a sparse animation, so a fixed spot of the helmet is not a reliable colour test.
 	$step3 = if ($result) { @($result.steps | Where-Object { $_.name -eq '03_third_person_front' })[0] } else { $null }
@@ -172,14 +245,14 @@ function Test-Loader([string]$Name) {
 	}
 
 	# --- collect -------------------------------------------------------------------------------------------------------
-	$target = Join-Path $OutDir "$mc-$Name$(if ($Exported) { '-exported' })"
+	$target = Join-Path $OutDir "$mc-$Name$suffix"
 	if (Test-Path $target) { Remove-Item -Recurse -Force $target }
 	New-Item -ItemType Directory -Force -Path $target | Out-Null
 	if (Test-Path (Join-Path $runDir 'screenshots')) { Copy-Item -Path (Join-Path $runDir 'screenshots/*') -Destination $target }
 	foreach ($f in @($resultFile, $logFile, $gradleLog)) {
 		if (Test-Path $f) { Copy-Item -Path $f -Destination $target }
 	}
-	return [pscustomobject]@{ Loader = $Name; Minecraft = $mc; Checks = $checks; Seconds = $elapsed; Target = $target }
+	return [pscustomobject]@{ Loader = "$Name$suffix"; Minecraft = $mc; Checks = $checks; Seconds = $elapsed; Target = $target }
 }
 
 $reports = @()

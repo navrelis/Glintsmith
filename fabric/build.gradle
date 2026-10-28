@@ -71,6 +71,19 @@ sourceSets {
 	}
 }
 
+// Shader mode of the smoke test (docs/TESTING.md, scripts/smoke.ps1 -Shaders): -PsmokeShaders=true -PsmokeShaderPack=<zip>.
+// The Iris and Sodium jars in fabric/smoke-mods/ (git-ignored, copied there by the script) join the smoke run at runtime;
+// they are no dependency and never packaged.
+def smokeShaders = "true" == project.findProperty("smokeShaders")?.toString()
+def smokeShaderMods = smokeShaders ? (file("smoke-mods").listFiles()?.findAll { it.isFile() && it.name.endsWith(".jar") }?.sort { it.name } ?: []) : []
+if (smokeShaders && !(smokeShaderMods.any { it.name.startsWith("iris") } && smokeShaderMods.any { it.name.startsWith("sodium") })) {
+	throw new GradleException("-PsmokeShaders=true needs an Iris and a Sodium jar in ${file('smoke-mods')} (found: ${smokeShaderMods*.name}); scripts/smoke.ps1 -Shaders copies them there")
+}
+
+// Fabric Loader 0.19.5 fails to remap Iris' descriptor-less mixin targets in the dev environment (NullPointerException in
+// MixinIntermediaryDevRemapper, "Mixin apply for mod iris failed ... MixinLevelRenderer"), so a shader run uses an older loader.
+def smokeLoaderVersion = project.findProperty("smokeLoaderVersion") ?: "0.16.14"
+
 loom {
 	mods {
 		"glintsmith" {
@@ -117,6 +130,10 @@ loom {
 			client()
 			name = "Glintsmith Smoke"
 			source sourceSets.smoke
+			if (smokeShaders) {
+				property "glintsmith.smoke.shaders", "true"
+				property "fabric.addMods", smokeShaderMods.collect { it.absolutePath }.join(File.pathSeparator)
+			}
 			runDir "run-smoke"
 			ideConfigGenerated false
 			property "glintsmith.smoke.minecraft", minecraft_version
@@ -142,7 +159,7 @@ dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${minecraft_version}"
 	mappings loom.officialMojangMappings()
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	modImplementation "net.fabricmc:fabric-loader:${smokeShaders ? smokeLoaderVersion : project.loader_version}"
 
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
@@ -208,11 +225,12 @@ def smokeConfig = file("${commonDir}/src/smoke/resources/glintsmith-smoke.json")
 def configureSmokeRun = { Task task, String dirName, Closure prepare ->
 	def runDir = file(dirName)
 	task.inputs.file smokeConfig
-	task.timeout = java.time.Duration.ofMinutes(9)
+	// A shader run waits for the pack to compile (the game's own watchdog is 11 minutes then)
+	task.timeout = java.time.Duration.ofMinutes(smokeShaders ? 13 : 9)
 	// The result file decides; the exit code is checked after the result was read
 	task.ignoreExitValue = true
 	task.doFirst {
-		["smoke-result.json", "screenshots", "saves", "logs/latest.log", "config/glintsmith.json"].each {
+		["smoke-result.json", "screenshots", "saves", "logs/latest.log", "config/glintsmith.json", "config/iris.properties", "shaderpacks"].each {
 			delete new File(runDir, it)
 		}
 		new File(runDir, "config").mkdirs()
@@ -238,7 +256,25 @@ def configureSmokeRun = { Task task, String dirName, Closure prepare ->
 }
 
 tasks.named("runSmoke") {
-	configureSmokeRun(it, "run-smoke") { }
+	configureSmokeRun(it, "run-smoke") { File runDir ->
+		if (smokeShaders) {
+			// After the clean-up of the run folder: the pack and the Iris config that selects it (shaders on, no update message)
+			def packProp = project.findProperty("smokeShaderPack")
+			def pack = packProp == null ? null : file(packProp.toString())
+			if (pack == null || !pack.isFile()) {
+				throw new GradleException("-PsmokeShaders=true needs -PsmokeShaderPack=<shader pack zip> (got: ${packProp})")
+			}
+			def packDir = new File(runDir, "shaderpacks")
+			packDir.deleteDir()
+			packDir.mkdirs()
+			java.nio.file.Files.copy(pack.toPath(), new File(packDir, pack.name).toPath())
+			def props = new Properties()
+			props.setProperty("shaderPack", pack.name)
+			props.setProperty("enableShaders", "true")
+			props.setProperty("disableUpdateMessage", "true")
+			new File(runDir, "config/iris.properties").withOutputStream { props.store(it, "written by the Glintsmith smoke test") }
+		}
+	}
 }
 
 // The smoke mod as a jar (smoke classes and metadata only), remapped to intermediary like a released mod, for the exported run.

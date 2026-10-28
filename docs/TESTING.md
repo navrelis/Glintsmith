@@ -142,3 +142,33 @@ The smoke config gives every glint layer its own preset and tint so a picture sh
 items `preset:rainbow` (no tint), armor `preset:fire` with a red tint, entities (shield, trident) `preset:frost` with a blue tint, GUI
 `preset:aurora` with a yellow tint. The result file records the helmet colour of step 03 as information; the glint is a sparse
 animation, so judge routing on the pictures (the shield is blue, worn armor gets red spots).
+
+### Shader pack smoke
+
+```powershell
+pwsh scripts/smoke.ps1 -Loader fabric -Shaders
+# other jars or pack: -ShaderModsDir <folder with iris-fabric-*+mc1.21.1.jar and sodium-fabric-*+mc1.21.1.jar> -ShaderPack <zip>
+```
+
+Fabric only (not with `-Exported`). The script copies the Iris and Sodium jars into `fabric/smoke-mods/` (git-ignored) and runs
+`gradlew --no-daemon runSmoke -PsmokeShaders=true -PsmokeShaderPack=<zip>`. With that property the run task adds the jars with
+`fabric.addMods` (runtime only, no dependency, never packaged), copies the pack to `run-smoke/shaderpacks/` and writes
+`run-smoke/config/iris.properties` (`shaderPack=<zip>`, `enableShaders=true`, `disableUpdateMessage=true`); the game gets
+`-Dglintsmith.smoke.shaders=true`. The scene, the daytime and the screenshots stay as in the normal run.
+
+* Settle: after the world is loaded the runner asks Iris (reflectively, `IrisApi.isShaderPackInUse()`; the pipeline appears in the
+  first frame after the pack compiled) every tick until a pack is in use, for 120 s at most. Then it holds at least 100 ticks AND
+  8 s before the first screenshot. A timeout is recorded and the run goes on, so the script fails it. The watchdog is 11 minutes.
+* `smoke-result.json` gets a `shaders` object (`irisLoaded`, `packName`, `inUseAfterSettle`, `inUseAtEnd`, `settleMs`,
+  `packTimedOut`, `error` of the reflection) and `shaderPackInUse` per screenshot step.
+* The script adds the check "shader pack in use" (after the settle, at the end and in all six screenshots, no Iris error); all
+  other checks stay. The run shows as `fabric-shaders` and its results go to `<OutDir>/<minecraft version>-fabric-shaders/`.
+* Fabric Loader: the shader run uses loader 0.16.14 (`-PsmokeLoaderVersion=<version>` changes it) instead of the 0.19.5 of
+  `gradle.properties`: 0.19.5 cannot remap the descriptor-less mixin targets of Iris 1.8.14 in the dev environment (NPE in
+  `MixinIntermediaryDevRemapper`, "Mixin apply for mod iris failed ... MixinLevelRenderer"). Normal runs and `build` are unchanged.
+
+Expected today: the world outline pixel checks of `03_third_person_front`, `05_dropped_closeup` and `06_item_frame_closeup`
+(`screenshots`) may fail until world outlines under shader packs are implemented (so far the four worn armor pieces of `03`
+have 0 outline pixels); the hand shot `01_first_person` and the GUI shots (`02_inventory`, `04_glintsmith_screen`) should pass.
+Sodium also logs a WARN that mentions `TeeVertexConsumer` ("does not support optimized vertex writing code paths"), which fails
+`log: warnings`. Judge the pictures by eye.

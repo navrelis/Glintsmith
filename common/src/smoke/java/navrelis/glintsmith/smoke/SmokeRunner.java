@@ -74,6 +74,12 @@ public final class SmokeRunner {
 	private static final int STEP_TIMEOUT_TICKS = 20 * 30;
 	private static final int SETTLE_AFTER_LOAD_TICKS = 40;
 	private static final long DEFAULT_TIMEOUT_SECONDS = 420L;
+	/** Shader mode (-Dglintsmith.smoke.shaders=true): the shader compile and the wait for the pack make the run longer. */
+	private static final long SHADERS_TIMEOUT_SECONDS = 660L;
+	private static final long SHADER_PACK_TIMEOUT_MILLIS = 120_000L;
+	/** Once the pack is in use: at least this many ticks AND this much wall time before the first screenshot. */
+	private static final int SHADER_HOLD_TICKS = 100;
+	private static final long SHADER_HOLD_MILLIS = 8_000L;
 	/**
 	 * Minimum |cos(spin)| of the dropped item when a picture is taken: its flat side is turned at most about 30 degrees away
 	 * from the camera (which looks along the z axis). The item spins with its age, once around in about 6 seconds.
@@ -112,6 +118,15 @@ public final class SmokeRunner {
 	private long stepStartedNanos;
 	private volatile boolean sceneFailed;
 	private volatile String sceneError;
+	/** Shader run (scripts/smoke.ps1 -Shaders): the probe is created at the start of the settle phase. */
+	private final boolean shaderRun = Boolean.getBoolean("glintsmith.smoke.shaders");
+	private ShaderProbe shaders;
+	private long shaderWaitStartNanos;
+	private long shaderUsedNanos;
+	private int shaderUsedPhaseTick;
+	private boolean shaderPackTimedOut;
+	private boolean shaderInUseAfterSettle;
+	private long shaderSettleMillis = -1;
 
 	private SmokeRunner(Path runDir) {
 		this.runDir = runDir;
@@ -321,6 +336,10 @@ public final class SmokeRunner {
 				if (client.level != null && client.player != null && client.screen == null && client.getSingleplayerServer() != null
 					&& client.levelRenderer.hasRenderedAllSections()) {
 					LOGGER.info("{}World '{}' loaded.", PREFIX, worldName);
+					if (shaderRun) {
+						shaders = new ShaderProbe();
+						shaderWaitStartNanos = System.nanoTime();
+					}
 					phase = Phase.SETTLE;
 					phaseTicks = 0;
 				} else if (client.level == null && client.screen instanceof TitleScreen && phaseTicks > 60) {
@@ -331,7 +350,7 @@ public final class SmokeRunner {
 			}
 			case SETTLE -> {
 				clearNotifications(client);
-				if (phaseTicks >= SETTLE_AFTER_LOAD_TICKS) {
+				if (phaseTicks >= SETTLE_AFTER_LOAD_TICKS && (!shaderRun || shaderSettled())) {
 					phase = Phase.STEPS;
 					phaseTicks = 0;
 				}
@@ -343,6 +362,56 @@ public final class SmokeRunner {
 			default -> {
 			}
 		}
+	}
+
+	/**
+	 * Shader runs: true once Iris reports a pack in use and that state held for {@link #SHADER_HOLD_TICKS} ticks and
+	 * {@link #SHADER_HOLD_MILLIS} ms (the pipeline is created in the first frame after the compile, and the first frames of a
+	 * pack are not representative). After {@link #SHADER_PACK_TIMEOUT_MILLIS} without a pack the wait ends anyway; the
+	 * result records that and scripts/smoke.ps1 fails the run.
+	 */
+	private boolean shaderSettled() {
+		long now = System.nanoTime();
+		if (shaderUsedNanos == 0) {
+			if (shaders.inUse()) {
+				shaderUsedNanos = now;
+				shaderUsedPhaseTick = phaseTicks;
+				LOGGER.info("{}Shader pack '{}' is in use.", PREFIX, shaders.packName());
+			} else if ((now - shaderWaitStartNanos) / 1_000_000L > SHADER_PACK_TIMEOUT_MILLIS) {
+				shaderPackTimedOut = true;
+				shaderSettleMillis = (now - shaderWaitStartNanos) / 1_000_000L;
+				shaderInUseAfterSettle = false;
+				LOGGER.error("{}No shader pack in use after {} s.", PREFIX, SHADER_PACK_TIMEOUT_MILLIS / 1000L);
+				recordShaders(false);
+				return true;
+			} else {
+				return false;
+			}
+		}
+		if (phaseTicks - shaderUsedPhaseTick < SHADER_HOLD_TICKS || (now - shaderUsedNanos) / 1_000_000L < SHADER_HOLD_MILLIS) {
+			return false;
+		}
+		shaderSettleMillis = (shaderUsedNanos - shaderWaitStartNanos) / 1_000_000L;
+		shaderInUseAfterSettle = shaders.inUse();
+		recordShaders(false);
+		return true;
+	}
+
+	/** The "shaders" object of the result: written after the settle ({@code atEnd} false) and again when the run finishes. */
+	private void recordShaders(boolean atEnd) {
+		if (shaders == null) {
+			return;
+		}
+		JsonObject info = shaders.snapshot();
+		boolean inUseNow = info.get("inUse").getAsBoolean();
+		info.addProperty("inUseAfterSettle", shaderInUseAfterSettle);
+		info.addProperty("inUseAtEnd", atEnd && inUseNow);
+		info.addProperty("finished", atEnd);
+		info.addProperty("settleMs", shaderSettleMillis);
+		info.addProperty("packTimedOut", shaderPackTimedOut);
+		info.addProperty("holdTicks", SHADER_HOLD_TICKS);
+		info.addProperty("holdMs", SHADER_HOLD_MILLIS);
+		result.put("shaders", info);
 	}
 
 	/** Advancement and recipe toasts and their chat lines would cover the pictures; they are removed before every frame. */
@@ -445,6 +514,9 @@ public final class SmokeRunner {
 			info.addProperty("screenshot", "screenshots/" + name + ".png");
 			info.addProperty("width", image.getWidth());
 			info.addProperty("height", image.getHeight());
+			if (shaders != null) {
+				info.addProperty("shaderPackInUse", shaders.inUse());
+			}
 			analyse(image, info);
 			if (name.startsWith("03_")) {
 				// Every worn armor piece is checked on its own, so one piece that loses its outline cannot hide behind the others.
@@ -545,6 +617,7 @@ public final class SmokeRunner {
 		if (fatal != null) {
 			LOGGER.error("{}FAILED: {}", PREFIX, fatal);
 		}
+		recordShaders(true);
 		result.finish(fatal);
 		LOGGER.info("{}result written to {}, stopping the client.", PREFIX, runDir.resolve("smoke-result.json"));
 		try {
@@ -556,7 +629,7 @@ public final class SmokeRunner {
 	}
 
 	private void startWatchdog() {
-		long seconds = Long.getLong("glintsmith.smoke.timeout", DEFAULT_TIMEOUT_SECONDS);
+		long seconds = Long.getLong("glintsmith.smoke.timeout", shaderRun ? SHADERS_TIMEOUT_SECONDS : DEFAULT_TIMEOUT_SECONDS);
 		Thread watchdog = new Thread(() -> {
 			try {
 				Thread.sleep(seconds * 1000L);
