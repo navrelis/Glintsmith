@@ -30,11 +30,6 @@
   pack" is off.
 - Internal: source split into common + per-loader builds for multi-loader support
 
-### Known issues
-
-- Worn armor glint under a shader pack is partial: the chestplate shows the custom glint, helmet, leggings and boots do not
-  yet. Being investigated.
-
 ## 2.1.0 (Fabric 1.21.1) — 2026-10-18
 
 ### Changed
