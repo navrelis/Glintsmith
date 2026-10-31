@@ -142,14 +142,18 @@ Families: 1.18.1 (1.18-1.18.1), 1.18.2, 1.19.2 (1.19-1.19.2), 1.19.3, 1.19.4, 1.
 
 Usage session 21: Sonnet research S1, mapping S1, I1 L2, A1 L2, R1 L2, A2 L2, A3 L2, A4 L2; Opus D1 L2 -> Sonnet 14, Opus 2 (13 % Opus this session).
 
-# Plan session 22 (2026-10-28): world outlines + glint under shader packs (mc/1.21.1, worktree .claude/worktrees/mc-1.21.1)
+# Plan session 22 (2026-10-28): world outlines + glint under shader packs (branch claude/s22-shaders from mc/1.21.1 dd20c30, in the lead worktree)
 
 | # | Task | Definition of done | Deps | Model | Size | Status |
 |---|------|--------------------|------|-------|------|--------|
-| SH1 | World outlines under shader packs | WORLD phase runs under an Iris pack: mask occluded by Iris scene depth, composite after Iris final pass, shadow pass skipped, toggle "World with shader pack" (default on), failsafe if Iris internals missing (falls back to off + 1 INFO), no-pack path unchanged, tests, all 3 loaders build | - | Opus | L | in progress |
-| SH2 | Shader smoke harness | smoke.ps1 -Shaders (Fabric): Iris+Sodium via fabric.addMods from git-ignored folder, Complementary in run-smoke/shaderpacks, iris.properties on; results <mc>-fabric-shaders; no-shader smoke unchanged | - | Sonnet | S | in progress |
-| SH3 | Custom glint under shader packs | G7 gate lifted behind toggle "Custom glint with shader pack" (default on); world + hand show preset glints with Complementary; tests; build | SH1 (config/lang files) | Sonnet | S | open |
-| SH4 | Docs | README, DESIGN (9.3/9.4, compat table, G7/O rows), CHANGELOG 2.2.0, GUI hint text | SH1, SH3 | Sonnet | S | open |
-| SH5 | In-game check | shader smoke PASS, lead views third person/armor/dropped/frame/hand shots with and without shaders | SH1-SH3 | Lead | - | open |
+| SH1 | World outlines under shader packs | WORLD phase runs under an Iris pack: mask occluded by Iris scene depth, composite after Iris final pass, shadow pass skipped, toggle "World with shader pack" (default on), failsafe if Iris internals missing (falls back to off + 1 INFO), no-pack path unchanged, tests, all 3 loaders build | - | Opus | L | done 2e28ee4 (lead: diff read, neoforge + forge smoke PASS, hooks applied; fabric shader smoke PASS) |
+| SH2 | Shader smoke harness | smoke.ps1 -Shaders (Fabric): Iris+Sodium via fabric.addMods from git-ignored folder, Complementary in run-smoke/shaderpacks, iris.properties on; results <mc>-fabric-shaders; no-shader smoke unchanged | - | Sonnet | S | done 23f0c6d (correction 1 applied) |
+| SH3 | Custom glint under shader packs | G7 gate lifted behind toggle "Custom glint with shader pack" (default on); world + hand show preset glints with Complementary; tests; build | SH1 (config/lang files) | Sonnet | S | done 2e28ee4 except worn armor (-> SH3b) |
+| SH4 | Docs | README, DESIGN (9.3/9.4, compat table, G7/O rows), CHANGELOG 2.2.0, GUI hint text | SH1, SH3 | Sonnet | S | done 677212e (SH3b markers + Sodium "confirmed" wording follow after SH3b and the final smoke) |
+| SH5 | In-game check | shader smoke PASS, lead views third person/armor/dropped/frame/hand shots with and without shaders | SH1-SH3 | Lead | - | done 2026-10-31 at 60ee3b3: 4 smokes PASS, 3 builds green, shots viewed |
 
-Usage session 22: Opus SH1 L2; Sonnet SH2 S1 (planned SH3 S1, SH4 S1).
+Usage session 22: Opus SH1 L2, SH3b S1; Sonnet SH2 S1 (+relaunch, corr), SH3 S1, SH4 S1 -> about 43 % Opus this session (overrides SH1, SH3b in decisions).
+| SH3b | Worn-armor glint under shader packs | root cause why helmet/leggings/boots show no custom glint under Complementary while chestplate does (shader smoke 03); fix; shader + no-shader smoke; build 3 loaders | SH3 | Opus | S | done, no defect: all four pieces get the glint, sparse animated preset with chest out of phase; lead viewed the all-four-lit shot (786768d, report only) |
+| SH6 | Project map + docs follow-up | report with project map and every doc location; after SH3b and SH5: DESIGN markers, "only the chestplate" sentences, Sodium wording updated | SH3b, SH5 (docs part) | Sonnet | S | in progress: worker sh-docs-map (local_fb3ecc08-df4b-4cd5-8838-c24e418b49bb), task 1 done d15f039 (claude/fervent-jemison-95268b), project.md written; done be4d411 |
+
+Session 22 complete: pushed to origin/mc/1.21.1 at 60ee3b3. Open: port merge into mc/1.20.6 and claude/fervent-fermi-0c770f (no port sessions exist any more). Usage: a little over half Opus (overrides SH1, SH3b).

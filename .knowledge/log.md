@@ -237,3 +237,14 @@
 - 2026-10-28 s22 | owner report: no Glintsmith rendering in third person with shaders = documented v1 limit (world phase + G7 gated off under a pack); owner chose glint + outlines, mc/1.21.1, dev-client test
 - 2026-10-28 s22 | SH1 world outlines under shader packs | Opus L | delegated (worktree mc-1.21.1)
 - 2026-10-28 s22 | SH2 shader smoke harness | Sonnet S | delegated (parallel, disjoint files, shared gradle lock)
+- 2026-10-28 s22 | SH2 | Sonnet | blocked by the worktree guard (no edits made); relaunch in the lead worktree
+- 2026-10-28 s22 | SH2 shader smoke harness | Sonnet S | relaunched in the lead worktree (branch claude/s22-shaders); SH1 Opus redirected there
+- 2026-10-28 s22 | SH2 | Sonnet S | review: harness OK (pack active, shots show hand outline only, world glint vanilla = confirms cause); correction 1 --no-daemon everywhere
+- 2026-10-28 s22 | SH2 | Sonnet | accepted 23f0c6d
+- 2026-10-28 s22 | SH3 custom glint under shader packs | Sonnet S | delegated (parallel with SH1)
+- 2026-10-28 s22 | SH1 | Opus L | report: depthtex1 via reflection, O8 at 'translucent' (prio 900), deferred world composite before hand at renderLevel RETURN, UseDepth 2 (TAA-tolerant), Fabric Sodium VertexBufferWriter tee; diff read by lead, smokes pending
+- 2026-10-28 s22 | SH3 | Sonnet S | report: gate + IrisWrappedTypes; lead viewed 03 (shaders): outlines on all world items, glint custom except helmet/leggings/boots; armor = owner's case -> SH3b to Opus (no clear cause)
+- 2026-10-28 s22 | SH1+SH3 committed 2e28ee4 (neoforge/forge smoke PASS by lead) | SH3b Opus S delegated | SH4 docs Sonnet S delegated (parallel, disjoint files)
+- 2026-10-28 s22 | SH4 | Sonnet S | review: README/CHANGELOG/DESIGN consistent; correction 1 sent (Sodium confirmed, scenes, stale TESTING.md + curseforge description)
+- 2026-10-28 s22 | SH4 | Sonnet S | accepted 677212e after correction 1 (agent rightly kept Sodium 'not yet confirmed': current log came from an outlines-off debug run)
+- 2026-10-28 s22 | /handoff: SH3b Opus stopped mid-investigation; handoff file F:\Coding\Glintsmith\.claude\worktrees\project-lead-setup-855e3d\handoff-2026-10-28-s22-shaders.md
