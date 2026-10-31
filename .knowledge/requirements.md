@@ -84,3 +84,6 @@ Owner: "Glintsmith not rendering with shaders on in third person i think" (scree
 1. Scope: custom glint in world and hand under shader packs (lift the G7 gate) AND world outlines under shader packs (third person, armor, dropped, frames) via Iris's depth through internals, behind a toggle.
 2. Branch: mc/1.21.1 (three-loader reference), ships with 2.2.0 (MINOR); port sessions merge it.
 3. Test: automated dev client (Fabric) with Iris 1.8.14-beta.1 + Sodium 0.8.13 + Complementary Unbound r5.9.3 (local copies, never the owner's instances); lead reviews screenshots.
+
+## Session 22 owner decision (2026-10-31)
+No ports: withdraw the port tasks and do not continue them. Upload only Fabric 1.21.1 to CurseForge.

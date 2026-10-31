@@ -157,3 +157,5 @@ Usage session 22: Opus SH1 L2, SH3b S1; Sonnet SH2 S1 (+relaunch, corr), SH3 S1,
 | SH6 | Project map + docs follow-up | report with project map and every doc location; after SH3b and SH5: DESIGN markers, "only the chestplate" sentences, Sodium wording updated | SH3b, SH5 (docs part) | Sonnet | S | in progress: worker sh-docs-map (local_fb3ecc08-df4b-4cd5-8838-c24e418b49bb), task 1 done d15f039 (claude/fervent-jemison-95268b), project.md written; done be4d411 |
 
 Session 22 complete: pushed to origin/mc/1.21.1 at 60ee3b3. Open: port merge into mc/1.20.6 and claude/fervent-fermi-0c770f (no port sessions exist any more). Usage: a little over half Opus (overrides SH1, SH3b).
+
+Release 2.2.0 Fabric 1.21.1: uploaded 2026-10-31, CurseForge project 1751215, file 9387135, SHA-256 93b7eb6f716899bae31379b448481f688e8615ac94e262aa01d3afda2c146b00. Ports dropped by the owner. Not done: repo release steps (CHANGELOG heading still unreleased, upload-checklist, tag v2.2.0, main).

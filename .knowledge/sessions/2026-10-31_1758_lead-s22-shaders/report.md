@@ -48,3 +48,10 @@ This continuation: Opus SH3b (long), Sonnet SH6 map and docs (short). Whole of s
 - Shader smoke 05/06 outline checks are also satisfied by the hand outline, so judge those by eye. A single `03` cannot prove the armor glint with the fire look.
 - Worker debug runs with 14 extra shots reported FAIL in the script, reason unread (probably the screenshot count check). Clean runs pass.
 - Before release: `README.md:253` still says `glintsmith-2.1.0.jar`, and `docs/VERSIONING.md` names `gradle.properties` instead of `gradle/shared.properties`.
+
+## Release (added after the owner's decision, 2026-10-31)
+- Owner: no ports, upload only Fabric 1.21.1. Port cards withdrawn. The port limitation above no longer applies.
+- Uploaded `glintsmith-2.2.0+1.21.1-fabric.jar` to CurseForge project 1751215, file 9387135, release type release, tags 1.21.1, Fabric, Java 21, Client, relations Fabric API required, Mod Menu optional, SHA-256 93b7eb6f716899bae31379b448481f688e8615ac94e262aa01d3afda2c146b00.
+- Exported-jar smoke PASS on exactly that jar (worktree mc-1.21.1). The shader smoke ran from dev classes, not the exported jar.
+- Exported smoke fails in the long-path worktree with a Fabric Loader dev remapper error; see decisions.md.
+- Not done: repo release steps (CHANGELOG heading, upload-checklist, tag, main) and deleting the port branches.
