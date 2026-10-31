@@ -56,7 +56,7 @@ Glintsmith is made to run with Sodium and Iris. With Iris and no shader pack sel
 - Outlines on the item in your hand stay on by default, and the arm hides them correctly. They can be switched off ("Hand with shader pack").
 - Outlines in the GUI work.
 - "Off with shader packs" turns all outlines off while a pack is active.
-- The custom glint is drawn in the world and in your hand too ("Custom glint with shader pack", on by default). The pack draws it, so tint and strength depend on the pack. On worn armor only the chestplate shows it so far.
+- The custom glint is drawn in the world and in your hand too ("Custom glint with shader pack", on by default). The pack draws it, so tint and strength depend on the pack.
 
 Checked with Sodium 0.8.13 and Iris 1.8.14-beta.1, and with the shader pack Complementary Unbound (r5.9.3) only: no crash, and the settings screen shows a hint about shader packs. World outlines were checked in the Fabric shader smoke on worn armor, a held sword and shield, a dropped sword and a framed pickaxe; not checked: items behind blocks, glass or water, motion with TAA, other packs. Fabulous graphics was tested in game without a shader pack: held items, item frames, dropped items, occlusion, stained glass, water, rain and GUI outlines are all correct.
 
@@ -97,7 +97,7 @@ Client side only. Install it on your client; it does nothing on a server.
 
 ## Compatibility notes
 
-- Sodium 0.8.13 works. The log has one expected Sodium warning that `TeeVertexConsumer` does not support optimized vertex writing; it is harmless.
+- Sodium 0.8.13 works. Outlined items keep Sodium's fast paths, and Sodium logs no warning about Glintsmith's classes (checked together with Iris).
 - ImmediatelyFast: HUD batching works with GUI outlines. An outlined GUI item flushes the batch before its outline is drawn, so the hotbar, the items and the counts are drawn and outlined as usual (checked with ImmediatelyFast 1.6.15). Custom glints work with it too: in the first-person hand, in the world (without Iris), and in inventories, menus and the hotbar (checked with ImmediatelyFast 1.6.15).
 - First-person animation mods like Punchy keep the hand outline and the first-person glint rules (checked with Punchy 2.8f, main hand and offhand).
 - A mod that replaces the vanilla glint render types itself can win over Glintsmith's glint, or the other way round. Use one of them.

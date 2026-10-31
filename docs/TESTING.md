@@ -171,7 +171,9 @@ Expected: all checks pass. World outlines under shader packs are implemented (2.
 `03_third_person_front` (each of the four worn armor pieces separately), `05_dropped_closeup` and `06_item_frame_closeup`
 (`screenshots`) are expected to pass, as do the hand shot `01_first_person` and the GUI shots (`02_inventory`,
 `04_glintsmith_screen`). The glint colour of the helmet in `03` is information only (see above): it does not prove the armor
-glint under a pack, which needs a look at the pictures.
+glint under a pack, which needs a look at the pictures. Sparse armor presets (`preset:fire`, the armor layer of the smoke
+config) pulse on and off, and the chestplate runs out of phase with the other three pieces, so a dark piece in a single
+`03` shot is expected (it also happens without shaders); judge the armor glint from a series of shots.
 Sodium itself logs WARNs ("does not support optimized vertex writing code paths") for vanilla classes under a pack
 (`BufferBuilder`, `VertexMultiConsumer$Double`, `SpriteCoordinateExpander`); they are not Glintsmith's and the check
 `log: warnings` ignores them. A WARN that names `TeeVertexConsumer` would be ours: it means the Sodium vertex writer was not

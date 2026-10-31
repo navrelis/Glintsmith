@@ -30,3 +30,9 @@
 
 ## Open points
 - `docs/VERSIONING.md` release steps name `gradle.properties` `mod_version`; it is `gradle/shared.properties` now. `README.md:253` still says `glintsmith-2.1.0.jar`. Neither changed (out of scope).
+
+## Task 2: docs updated to the SH3b and Sodium results (docs only)
+- SH3b (no defect; armor pulses, chestplate out of phase): `docs/DESIGN.md` all 5 `[SH3b pending]` markers removed (G7 row, 5.2 point 5, section 6 Iris row, section 9 point 3, point 23); all say worn armor shows the glint on all four pieces. Point 3 also explains the pulsing; the "fix worn armor (SH3b)" recommendation is dropped, the Iris re-verify/BSL part is kept. `README.md` (Iris bullet), `CHANGELOG.md` (Known issues section removed, it was empty after), `docs/curseforge/description.md` and `description_paste.md` line 59 sentence removed. `docs/TESTING.md`: note after "Expected:" that sparse armor presets pulse, chestplate out of phase, a dark piece in a single `03` shot is expected, judge from a series.
+- Sodium (confirmed in the Fabric shader smoke, Sodium 0.8.13 + Iris 1.8.14-beta.1, 0 `TeeVertexConsumer` hits): `README.md` Sodium bullet, `docs/DESIGN.md` Sodium row (section 6) and 9.12 (check-the-log recommendation removed; "not checked with Sodium alone" stated). `description.md`/`description_paste.md` line 100: the "one expected Sodium warning" sentence replaced by "no warning about Glintsmith's classes (checked together with Iris)".
+- Checks: `grep` for `SH3b`, "only the chestplate", "partly covered", "being investigated", "not yet confirmed" in README, CHANGELOG, DESIGN, TESTING, description*.md finds nothing; `diff description.md description_paste.md` is identical in the changed regions (unchanged diff count 0 before and after). No Gradle or game run.
+- Open: remaining `[UNVERIFIED in game]` at DESIGN 503, 2503, 2505 are other topics, untouched. `README.md:253` and `docs/VERSIONING.md` left as told.

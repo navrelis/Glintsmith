@@ -176,8 +176,8 @@ Client side only. Do not put it on a server; the mod does nothing there and is d
 ## Compatibility
 
 - **Sodium.** Supported. Works with Sodium 0.8.13 in the test pack. The outline code hands Sodium its own vertex writer,
-  so Sodium keeps its fast paths for outlined items and should log no warning about `TeeVertexConsumer` any more (not yet
-  confirmed with a log in game). If Sodium's API differs in another version, Glintsmith logs one WARN and falls back to the
+  so Sodium keeps its fast paths for outlined items and logs no warning about `TeeVertexConsumer` any more (confirmed in
+  the Fabric shader smoke, Sodium 0.8.13 with Iris). If Sodium's API differs in another version, Glintsmith logs one WARN and falls back to the
   plain consumer, and Sodium then logs the old harmless warning that `TeeVertexConsumer` does not support optimized vertex
   writing.
 - **ImmediatelyFast.** HUD batching works with GUI outlines. An outlined GUI item flushes the batch before its outline
@@ -211,8 +211,7 @@ Client side only. Do not put it on a server; the mod does nothing there and is d
   - Custom glints are drawn in the world and in the hand too (Glint tab, "Custom glint with shader pack",
     `glint.customWithShaderPack`, on by default). The pack's own glint program draws them, so how tint and strength look
     depends on the pack. Checked in game with Complementary Unbound r5.9.3: hand, shield, held items, dropped items and item
-    frames. Worn armor is only partly covered: the chestplate shows the custom glint, helmet, leggings and boots do not
-    (being investigated). Turn the switch off to keep the vanilla glint under shader packs.
+    frames, and worn armor (all four pieces). Turn the switch off to keep the vanilla glint under shader packs.
   - The settings screen shows a hint about shader packs, and the log has one INFO line each time a pack is activated that
     says which outlines stay on.
 - **Fabulous graphics.** Tested in game without a shader pack: held items, item frames, dropped items, occlusion,
