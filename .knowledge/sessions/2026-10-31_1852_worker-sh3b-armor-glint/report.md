@@ -11,9 +11,8 @@ Evidence: 14 extra shots after step 03, 1.25 s apart, mean colour per piece (tem
 | No shaders, custom fire (R) | 54-163 | 65-167 | 43-158 | 55-168 |
 | Pack, vanilla glint (B) | 155-171 | 144-158 | 108-118 | 107-123 |
 | Pack, fire at scale 0.2 (R) | 62-145 | 68-136 | 21-88 | 35-108 |
-
-- Every piece pulses in every run; shoulder is high when the others are low; no-shader behaves the same.
-- Pictures: `shaders_03_helmet_legs_boots_lit.png` (outlines on), `shaders_fire_scale0.2_all_four_lit.png` (all four in one frame), `shaders_vanilla_glint_timeseries.png` (vanilla on all four, first step of the brief).
+- Every piece pulses in every run; shoulder is mostly high when the others are low; no-shader behaves the same.
+- Pictures: `shaders_03_helmet_legs_boots_lit.png` (outlines on), `shaders_fire_default_all_four_lit.png` (unchanged look, all four in one frame, shot ts_10), `shaders_fire_scale0.2_all_four_lit.png`, `shaders_vanilla_glint_timeseries.png` (vanilla on all four, first step of the brief).
 - Hypotheses refuted: first-piece-only and per-piece wrapped types. All four share one `glint` draw of 240 vertices with depth func EQUAL; positions match the base armor bit for bit (earlier debug log, `cmp` lines).
 - Not proven: my stored-vs-mesh depth readback gave no usable data (stored=1.0, no quad hits). Not needed, since the glint is seen on all four, so the depth test passes.
 - False lead: the pale face and orange hair in some shots are a different random default skin per run, not glint.
@@ -25,7 +24,7 @@ Tests on the clean tree, outlines on (first build also at the branch tip):
 - `gradlew --no-daemon build`: green in `fabric/`, `neoforge/`, `forge/`.
 
 Open points:
-- The final shader `03` again shows chest lit and the other three dark. That is the phase, not a failure. One fixed shot cannot show all four with this smoke look, so this item of the definition of done is met by the time series, not by `03`.
+- The final shader `03` again shows chest lit and the other three dark. That is the phase, not a failure. A fixed shot rarely shows all four with this smoke look (1 of 14 in the series), so this item of the definition of done is met by the time series, not by the final `03`.
 - Option: a finer smoke armor look (scale 0.2) helps `03` but guarantees nothing; left out to keep the smoke unchanged.
 - Docs: no behaviour changed. `docs/TESTING.md` already calls the glint a sparse animation. It could add that chest and the other pieces run out of phase, so a dark piece in `03` is expected.
 - Debug runs with 14 extra screenshots report FAIL in the script; I did not read the check table. Likely the screenshot-step count in the "shader pack in use" check, since all steps were ok. Clean runs pass.
